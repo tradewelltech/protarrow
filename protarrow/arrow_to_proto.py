@@ -37,7 +37,8 @@ def _timestamp_scalar_to_proto(scalar: pa.Scalar) -> Timestamp:
 
 def _prepare_array(array: pa.Array) -> pa.Array:
     if isinstance(array, pa.Time64Array):
-        # TODO: handle units when this is fixed https://issues.apache.org/jira/browse/ARROW-18257
+        # TODO: handle units correctly when this is fixed
+        #  https://issues.apache.org/jira/browse/ARROW-18257
         ratio = _TIME_CONVERTER[array.type]
         return pc.multiply(array.cast(pa.int64()), pa.scalar(ratio, pa.int64()))
     else:
@@ -304,9 +305,10 @@ def _extract_map_field(
 ) -> None:
     assert pa.types.is_map(array.type), array.type
     value_type = field_descriptor.message_type.fields_by_name["value"]
-    # Because protobuf doesn't warranty orders of map, we have to make a copy of the list of values here
 
     if is_custom_field(value_type):
+        # Because protobuf doesn't warranty orders of map,
+        # we have to make a copy of the list of values here
         values = []
         for assigner, key in zip(
             MapKeyAssigner(messages, field_descriptor, OffsetToSize(array.offsets)),

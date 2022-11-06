@@ -156,10 +156,6 @@ def _proto_field_to_array(
     validity_mask: Optional[Iterable[bool]],
     fill_null_with_default: bool,
 ) -> pa.Array:
-    """
-    Convert specified field within a set Protobuf Message to a strongly-typed PyArrow array
-    """
-    # TODO: Handle unions, oneofs and other special types
     if field.type == FieldDescriptorProto.TYPE_MESSAGE:
         converter = _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER.get(field.message_type)
         if converter is None:
@@ -183,7 +179,8 @@ def _proto_field_to_array(
         pa_type = _PROTO_PRIMITIVE_TYPE_TO_PYARROW.get(field.type)
         if pa_type is None:
             raise RuntimeError(
-                f"Unsupported field type {FieldDescriptorProto.Type.Name(field.type)} for {field.name}"
+                f"Unsupported field type {FieldDescriptorProto.Type.Name(field.type)} "
+                f"for {field.name}"
             )
 
         def converter(x: Any) -> Any:
@@ -258,7 +255,6 @@ def _proto_map_to_array(
     """
     key_field = field.message_type.fields_by_name["key"]
     value_field = field.message_type.fields_by_name["value"]
-    last_offset = 0
     offsets = _get_offsets(records)
     keys = _proto_field_to_array(
         MapKeyIterable(records),
@@ -285,10 +281,6 @@ def _proto_field_nullable(field: FieldDescriptor, is_struct: bool) -> bool:
 def _proto_field_validity_mask(
     records: Iterable[Message], field: FieldDescriptor
 ) -> Optional[List[bool]]:
-    """
-    Return array where true if value is defined for given message in extracted records else false
-    If given field cannot be nullable (and thus has no corresponding HasField), return None.
-    """
     if (
         field.type != FieldDescriptorProto.TYPE_MESSAGE
         or field.label == FieldDescriptorProto.LABEL_REPEATED
@@ -310,9 +302,6 @@ def _message_to_array(
     fill_null_with_default: bool,
     validity_mask: Optional[Sequence[bool]],
 ) -> pa.StructArray:
-    """
-    Convert Protobuf records to a set of PyArrow arrays and names for each field in the message
-    """
     arrays = []
     fields = []
 
