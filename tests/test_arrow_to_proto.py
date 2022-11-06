@@ -40,7 +40,7 @@ def test_arrow_to_proto_empty(message_type: GeneratedProtocolMessageType):
 
 @pytest.mark.parametrize("message_type", MESSAGES)
 def test_with_random(message_type: GeneratedProtocolMessageType):
-    source_messages = generate_messages(message_type.DESCRIPTOR, 10)
+    source_messages = generate_messages(message_type, 10)
     table = messages_to_table(source_messages, message_type)
     messages_back = table_to_messages(table, message_type)
     assert source_messages == messages_back
@@ -55,6 +55,48 @@ def test_with_sample_data(message_type: GeneratedProtocolMessageType):
     table = messages_to_table(source_messages, message_type)
     messages_back = table_to_messages(table, message_type)
     assert source_messages == messages_back
+
+
+def test_wrapped_type_nullable():
+    expected_types = {
+        "wrapped_double": pa.float64(),
+        "wrapped_float": pa.float32(),
+        "wrapped_int32": pa.int32(),
+        "wrapped_int64": pa.int64(),
+        "wrapped_uint32": pa.uint32(),
+        "wrapped_uint64": pa.uint64(),
+        "wrapped_bool": pa.bool_(),
+        "wrapped_string": pa.string(),
+        "wrapped_bytes": pa.binary(),
+    }
+
+    table = messages_to_table([], TestMessage)
+    schema = table.schema
+    for name, expected_type in expected_types.items():
+        field = schema.field(name)
+        assert field.type == expected_type
+        assert field.nullable is True
+
+
+def test_native_type_not_nullable():
+    expected_types = {
+        "double_value": pa.float64(),
+        "float_value": pa.float32(),
+        "int32_value": pa.int32(),
+        "int64_value": pa.int64(),
+        "uint32_value": pa.uint32(),
+        "uint64_value": pa.uint64(),
+        "bool_value": pa.bool_(),
+        "string_value": pa.string(),
+        "bytes_value": pa.binary(),
+    }
+
+    table = messages_to_table([], TestMessage)
+    schema = table.schema
+    for name, expected_type in expected_types.items():
+        field = schema.field(name)
+        assert field.type == expected_type
+        assert field.nullable is False
 
 
 def test_range():
@@ -80,7 +122,7 @@ def test_arrow_bug_is_not_fixed():
 
 def test_generate_random():
     for message_type in MESSAGES:
-        messages = generate_messages(message_type.DESCRIPTOR, 20)
+        messages = generate_messages(message_type, 20)
         file_name = message_type.DESCRIPTOR.name + ".jsonl"
         print(file_name)
         with open(file_name, "w") as fp:

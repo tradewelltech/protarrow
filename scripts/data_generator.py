@@ -8,7 +8,7 @@ from tests.random_generator import generate_messages
 
 def main():
     for message_type in tests.test_arrow_to_proto.MESSAGES:
-        messages = generate_messages(message_type.DESCRIPTOR, 20)
+        messages = generate_messages(message_type, 20)
         file_name = message_type.DESCRIPTOR.name + ".jsonl"
         print(file_name)
         with open(file_name, "w") as fp:

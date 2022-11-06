@@ -25,7 +25,7 @@ from google.type.timeofday_pb2 import TimeOfDay
 from protarrow.common import M
 
 _TIMESTAMP_CONVERTER = {"ns": 1, "us": 1_000, "ms": 1_000_000, "s": 1_000_000_000}
-_TIME_CONVERTER = {pa.time64(k.unit): v.value for k, v in _TIMESTAMP_CONVERTER}
+_TIME_CONVERTER = {pa.time64("ns"): 1, pa.time64("us"): 1_000}
 
 
 def _timestamp_scalar_to_proto(scalar: pa.Scalar) -> Timestamp:
@@ -39,7 +39,7 @@ def _prepare_array(array: pa.Array) -> pa.Array:
     if isinstance(array, pa.Time64Array):
         # TODO: handle units when this is fixed https://issues.apache.org/jira/browse/ARROW-18257
         ratio = _TIME_CONVERTER[array.type]
-        return pc.multiply(array.cast(pa.int64()), pa.scalar(ratio, pa.int64))
+        return pc.multiply(array.cast(pa.int64()), pa.scalar(ratio, pa.int64()))
     else:
         return array
 

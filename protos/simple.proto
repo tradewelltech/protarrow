@@ -41,7 +41,7 @@ message TestMessage {
   google.protobuf.Int32Value wrapped_int32 = 22;
   google.protobuf.Int64Value wrapped_int64 = 23;
   google.protobuf.UInt32Value wrapped_uint32 = 24;
-  google.protobuf.UInt64Value wrapped_uint65 = 25;
+  google.protobuf.UInt64Value wrapped_uint64 = 25;
   google.protobuf.BoolValue wrapped_bool = 26;
   google.protobuf.StringValue wrapped_string = 27;
   google.protobuf.BytesValue wrapped_bytes = 28;

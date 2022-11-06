@@ -3,11 +3,13 @@ import random
 import secrets
 import typing
 
-from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
+from google.protobuf.descriptor import EnumDescriptor, FieldDescriptor
 from google.protobuf.message import Message
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.type.date_pb2 import Date
 from google.type.timeofday_pb2 import TimeOfDay
+
+from protarrow.common import M
 
 EPOCH_RATIO = 24 * 60 * 60
 
@@ -63,22 +65,24 @@ MESSAGE_GENERATORS = {
 }
 
 
-def generate_message(descriptor: Descriptor, count: int) -> Message:
-    message = descriptor._concrete_class()
-    for one_of in descriptor.oneofs:
+def generate_message(message_type: typing.Type[M], repeated_count: int) -> M:
+    message = message_type()
+    for one_of in message_type.DESCRIPTOR.oneofs:
         one_of_index = random.randint(0, len(one_of.fields))
         if one_of_index < len(one_of.fields):
             field = one_of.fields[one_of_index]
-            set_field(message, field, count)
+            set_field(message, field, repeated_count)
 
-    for field in descriptor.fields:
+    for field in message_type.DESCRIPTOR.fields:
         if field.containing_oneof is None:
-            set_field(message, field, count)
+            set_field(message, field, repeated_count)
     return message
 
 
-def generate_messages(descriptor: Descriptor, count: int) -> typing.List[Message]:
-    return [generate_message(descriptor, count) for _ in range(count)]
+def generate_messages(
+    message_type: typing.Type[M], count: int, repeated_count: int = 10
+) -> typing.List[M]:
+    return [generate_message(message_type, repeated_count) for _ in range(count)]
 
 
 def set_field(message: Message, field: FieldDescriptor, count: int) -> None:
@@ -112,7 +116,7 @@ def _generate_data(field: FieldDescriptor, count: int) -> typing.Any:
     elif field.message_type in MESSAGE_GENERATORS:
         return MESSAGE_GENERATORS[field.message_type]()
     elif field.type == FieldDescriptor.TYPE_MESSAGE:
-        return generate_message(field.message_type, count)
+        return generate_message(field.message_type._concrete_class, count)
     elif field.type in TYPE_GENERATOR:
         return TYPE_GENERATOR[field.type](count)
     else:
