@@ -1,4 +1,4 @@
-# Protaarrow
+# Protarrow
 
 A library for converting from protobuf to arrow and back 
 
