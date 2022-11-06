@@ -1,0 +1,25 @@
+default_language_version:
+  python: python3.9
+repos:
+  - repo: https://github.com/ambv/black
+    rev: 22.10.0
+    hooks:
+    - id: black
+      name: black (python)
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        name: isort (python)
+  - repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
+    hooks:
+      - id: flake8
+        files: python/.*\.py
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.4
+    hooks:
+      - id: bandit
+        additional_dependencies:
+          - toml
+        args: [--config=pyproject.toml]
