@@ -78,11 +78,18 @@ python ./scripts/protoc.py
 
 ## TODO:
 
-* [ ] add doc
-* [ ] add benchmark
+* [ ] add pydoc to the 4 main functions
+* [ ] save benchmark results
+* [ ] add tests with imported messages
+* [ ] have test automatically read all messages in protobuf descriptor
 * [ ] make Timestamp unit configurable
 * [ ] make TimeOfDay unit configurable
 * [ ] make protobuf enum configurable
-* [ ] make random data configurable
+* [ ] make random data configurable and repatable
+* [ ] support oneof
 * [ ] add mypy and other linter
 * [ ] publish library
+* [ ] add test coverage
+* [ ] run tests in github action
+* [ ] use automatic versioning
+* [ ] publish doc
