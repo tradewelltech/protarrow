@@ -104,7 +104,8 @@ def test_range():
     random_date()
 
 
-def test_arrow_bug_is_not_fixed():
+def test_arrow_bug_18257():
+    """https://issues.apache.org/jira/browse/ARROW-18257"""
     dtype = pa.time64("ns")
     time_array = pa.array([1, 2, 3], dtype)
     assert pa.types.is_time64(time_array.type) is True
@@ -118,6 +119,25 @@ def test_arrow_bug_is_not_fixed():
     ):
         # Should be able to access unit:
         time_array.type.unit
+
+
+def test_arrow_bug_18264():
+    """https://issues.apache.org/jira/browse/ARROW-18264"""
+    time_ns = pa.array([1, 2, 3], pa.time64("ns"))
+    scalar = time_ns[0]
+    with pytest.raises(
+        ValueError,
+        match=r"Nanosecond resolution temporal type 1 is not safely convertible "
+        r"to microseconds to convert to datetime.datetime. "
+        r"Install pandas to return as Timestamp with nanosecond support or "
+        r"access the .value attribute",
+    ):
+        scalar.as_py()
+    with pytest.raises(
+        AttributeError,
+        match=r"'pyarrow.lib.Time64Scalar' object has no attribute 'value'",
+    ):
+        scalar.value
 
 
 def test_generate_random():

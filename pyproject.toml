@@ -17,6 +17,7 @@ python = "^3.8"
 
 [tool.poetry.dev-dependencies]
 black = "^22.10.0"
+grpcio-tools = "1.46.0"
 isort = "^5.10.1"
 pre-commit = "^2.20.0"
 pytest = "^7.2.0"
