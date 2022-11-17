@@ -91,6 +91,7 @@ python ./scripts/protoc.py
 
 * [ ] add pydoc to the 4 main functions + config
 * [ ] save benchmark results
+* [ ] explain the implementation
 * [ ] add tests with imported messages
 * [ ] have test automatically read all messages in protobuf descriptor
 * [ ] make Timestamp unit configurable

@@ -196,7 +196,6 @@ class AppendAssigner(collections.abc.Iterable):
         sizes: Iterable[int],
         converter: Callable[[Any], Any],
     ):
-        print(field_descriptor.name)
         self.messages = messages
         self.field_descriptor = field_descriptor
         assert self.field_descriptor.label == FieldDescriptor.LABEL_REPEATED
@@ -243,11 +242,11 @@ class MapKeyAssigner(collections.abc.Iterable):
         return self.attribute[self.converter(scalar)]
 
 
-def _direct_assign(attribute: ScalarMapContainer, key: Any, value: Any):
+def _direct_assign_map(attribute: ScalarMapContainer, key: Any, value: Any):
     attribute[key] = value
 
 
-def _merge_assign(attribute: ScalarMapContainer, key: Any, value: Any):
+def _merge_assign_map(attribute: ScalarMapContainer, key: Any, value: Any):
     if value is None:
         attribute[key]
     else:
@@ -275,9 +274,9 @@ class MapItemAssigner(collections.abc.Iterable):
         value_descriptor = self.field_descriptor.message_type.fields_by_name["value"]
         self.value_converter = get_converter(value_descriptor)
         self.assigner = (
-            _merge_assign
+            _merge_assign_map
             if (value_descriptor.type == FieldDescriptor.TYPE_MESSAGE)
-            else _direct_assign
+            else _direct_assign_map
         )
 
     def __iter__(self) -> Iterator[Callable[[pa.Scalar, pa.Scalar], Message]]:
@@ -356,10 +355,10 @@ def _extract_repeated_field(
         else:
             _extract_repeated_message(array, field_descriptor, messages)
     else:
-        _extract_repeated_primitive_assigner(array, field_descriptor, messages)
+        _extract_repeated_primitive(array, field_descriptor, messages)
 
 
-def _extract_repeated_primitive_assigner(
+def _extract_repeated_primitive(
     array: pa.Array, field_descriptor: FieldDescriptor, messages: Iterable[Message]
 ) -> None:
     assigner = AppendAssigner(
