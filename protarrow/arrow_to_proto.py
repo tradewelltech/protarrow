@@ -136,15 +136,21 @@ def convert_scalar(scalar: pa.Scalar) -> Any:
     return scalar.as_py()
 
 
+def create_enum_converter(enum_descriptor: EnumDescriptor):
+    def convert_enum(scalar: pa.Scalar) -> int:
+        if pa.types.is_integer(scalar.type):
+            return scalar.as_py()
+        elif pa.types.is_binary(scalar.type) or pa.types.is_string(scalar.type):
+            enum_value = enum_descriptor.values_by_name.get(scalar.as_py(), None)
+            return enum_value.number if enum_value else 0
+
+    return convert_enum
+
+
 def get_converter(field_descriptor: FieldDescriptor) -> Callable[[pa.Scalar], Any]:
     if field_descriptor.type == FieldDescriptor.TYPE_ENUM:
         enum_descriptor: EnumDescriptor = field_descriptor.enum_type
-
-        def convert_enum(scalar: pa.Scalar) -> Optional[int]:
-            enum_value = enum_descriptor.values_by_name.get(scalar.as_py(), None)
-            return enum_value.number if enum_value else None
-
-        return convert_enum
+        return create_enum_converter(enum_descriptor)
     elif field_descriptor.type == FieldDescriptor.TYPE_MESSAGE:
         if field_descriptor.message_type in NULLABLE_TYPES:
             return convert_scalar
@@ -190,6 +196,7 @@ class AppendAssigner(collections.abc.Iterable):
         sizes: Iterable[int],
         converter: Callable[[Any], Any],
     ):
+        print(field_descriptor.name)
         self.messages = messages
         self.field_descriptor = field_descriptor
         assert self.field_descriptor.label == FieldDescriptor.LABEL_REPEATED

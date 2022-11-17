@@ -4,43 +4,54 @@ A library for converting from protobuf to arrow and back
 
 # TLDR;
 
+Take a protobuf message:
+
+```protobuf
+message MyProto {
+  string name = 1;
+  repeated int32 values = 2;
+}
+```
+
+And convert them to from `google.protobuf.message.Message`s to `arrow.Table`, or vice versa
 ```python
-from my_proto_pb2 import MyProto
 
-import protarrow
+from protarrow import messages_to_table, table_to_messages
+from protarrow_protos.example_pb2 import MyProto
 
-messages = [
-    MyProto(foo="Bar"),
-    MyProto(hello="world"),
+my_protos = [
+    MyProto(name="foo", values=[1, 2, 4]),
+    MyProto(name="bar", values=[1, 2, 4]),
 ]
-table = protarrow.messages_to_table(messages, MyProto)
-messages_from_table = protarrow.table_to_messages(table, MyProto)
+
+table = messages_to_table(my_protos, MyProto)
+protos_from_table = table_to_messages(table, MyProto)
 ```
 
 # Type Mapping
 
 ## Native Types
 
-| Proto    | Pyarrow | Note                    |
-|----------|---------|-------------------------|
-| bool     | bool_   |                         |
-| bytes    | binary  |                         |
-| double   | float64 |                         |
-| enum     | binary  | To be made configurable |
-| fixed32  | int32   |                         |
-| fixed64  | int64   |                         |
-| float    | float32 |                         |
-| group    |         | No supported            |
-| int32    | int32   |                         |
-| int64    | int64   |                         |
-| message  | struct  |                         |
-| sfixed32 | int32   |                         |
-| sfixed64 | int64   |                         |
-| sint32   | int32   |                         |
-| sint64   | int64   |                         |
-| string   | string  |                         |
-| uint32   | uint32  |                         |
-| uint64   | uint64  |                         |
+| Proto    | Pyarrow                 | Note         |
+|----------|-------------------------|--------------|
+| bool     | bool_                   |              |
+| bytes    | binary                  |              |
+| double   | float64                 |              |
+| enum     | **int32**/string/binary | configurable |
+| fixed32  | int32                   |              |
+| fixed64  | int64                   |              |
+| float    | float32                 |              |
+| group    |                         | No supported |
+| int32    | int32                   |              |
+| int64    | int64                   |              |
+| message  | struct                  |              |
+| sfixed32 | int32                   |              |
+| sfixed64 | int64                   |              |
+| sint32   | int32                   |              |
+| sint64   | int64                   |              |
+| string   | string                  |              |
+| uint32   | uint32                  |              |
+| uint64   | uint64                  |              |
 
 ## Other types
 
@@ -78,14 +89,14 @@ python ./scripts/protoc.py
 
 ## TODO:
 
-* [ ] add pydoc to the 4 main functions
+* [ ] add pydoc to the 4 main functions + config
 * [ ] save benchmark results
 * [ ] add tests with imported messages
 * [ ] have test automatically read all messages in protobuf descriptor
 * [ ] make Timestamp unit configurable
 * [ ] make TimeOfDay unit configurable
-* [ ] make protobuf enum configurable
-* [ ] make random data configurable and repatable
+* [x] make protobuf enum configurable
+* [ ] make random data configurable and reproducible
 * [ ] support oneof
 * [ ] add mypy and other linter
 * [ ] publish library

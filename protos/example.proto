@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package protarrow.protos;
+
+message MyProto {
+  string name = 1;
+  repeated int32 values = 2;
+}

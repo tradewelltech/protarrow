@@ -20,7 +20,7 @@ from typing import (
 
 import pyarrow as pa
 import pyarrow.compute as pc
-from google.protobuf.descriptor import Descriptor, FieldDescriptor
+from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
 from google.protobuf.descriptor_pb2 import FieldDescriptorProto
 from google.protobuf.message import Message
 from google.protobuf.pyext._message import RepeatedScalarContainer, ScalarMapContainer
@@ -39,7 +39,7 @@ from google.protobuf.wrappers_pb2 import (
 from google.type.date_pb2 import Date
 from google.type.timeofday_pb2 import TimeOfDay
 
-from protarrow.common import M
+from protarrow.common import M, ProtarrowConfig
 
 _PA_TIMESTAMP_TYPE = pa.timestamp("ns", "UTC")
 _PA_TIME_TYPE = pa.time64("ns")
@@ -93,6 +93,7 @@ def _time_of_day_to_nanos(time_of_day: TimeOfDay) -> int:
 # Mapping from protobuf message descriptors to conversion functions used
 # for translating protobuf messages to types suitable for pyarrow.
 _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER = {
+    # TODO: remove this special case
     Date.DESCRIPTOR: lambda x: None
     if x.year == 0
     else datetime.date(x.year, x.month, x.day),
@@ -150,30 +151,57 @@ class MapValueIterable(collections.abc.Iterable):
                 yield value
 
 
+def get_enum_converter(
+    data_type: pa.DataType, enum_descriptor: EnumDescriptor
+) -> Callable[[int], Any]:
+    if data_type == pa.int32():
+        return lambda x: x
+
+    elif data_type == pa.binary() or data_type == pa.dictionary(
+        pa.int32(), pa.binary()
+    ):
+        values_by_number = {
+            k: bytes(v.name, encoding="UTF-8")
+            for k, v in enum_descriptor.values_by_number.items()
+        }
+
+        def converter(x: int) -> bytes:
+            return values_by_number[x]
+
+        return converter
+    elif data_type == pa.string() or data_type == pa.dictionary(
+        pa.int32(), pa.string()
+    ):
+        values_by_number = {
+            k: v.name for k, v in enum_descriptor.values_by_number.items()
+        }
+
+        def converter(x: int) -> bytes:
+            return values_by_number[x]
+
+        return converter
+    else:
+        raise TypeError(data_type)
+
+
 def _proto_field_to_array(
     records: Iterable[Message],
     field: FieldDescriptor,
     validity_mask: Optional[Iterable[bool]],
-    fill_null_with_default: bool,
+    config: ProtarrowConfig,
 ) -> pa.Array:
     if field.type == FieldDescriptorProto.TYPE_MESSAGE:
         converter = _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER.get(field.message_type)
         if converter is None:
             return _message_to_array(
-                records, field.message_type, fill_null_with_default, validity_mask
+                records, field.message_type, validity_mask=validity_mask, config=config
             )
         else:
             pa_type = _PROTO_DESCRIPTOR_TO_PYARROW[field.message_type]
 
     elif field.type == FieldDescriptorProto.TYPE_ENUM:
-        pa_type = pa.binary()
-        values_by_number = {
-            k: bytes(v.name, encoding="UTF-8")
-            for k, v in field.enum_type.values_by_number.items()
-        }
-
-        def converter(x: int) -> bytes:
-            return values_by_number[x]
+        pa_type = config.enum_type
+        converter = get_enum_converter(config.enum_type, field.enum_type)
 
     else:
         pa_type = _PROTO_PRIMITIVE_TYPE_TO_PYARROW.get(field.type)
@@ -186,7 +214,9 @@ def _proto_field_to_array(
         def converter(x: Any) -> Any:
             return x
 
-    null_value = field.default_value if fill_null_with_default else None
+    null_value = (
+        None if field.type == FieldDescriptor.TYPE_MESSAGE else field.default_value
+    )
     array = []
     for i, record in enumerate(records):
         if record is None or not (validity_mask is None or validity_mask[i]):
@@ -203,7 +233,7 @@ def _get_offsets(
     last_offset = 0
     offsets = []
     for record in records:
-        if record is None or len(record) == 0:
+        if record is None:
             offsets.append(None)
         else:
             offsets.append(last_offset)
@@ -212,27 +242,17 @@ def _get_offsets(
     return offsets
 
 
-def _proto_list_to_array(
+def _repeated_proto_to_array(
     records: Iterable[RepeatedScalarContainer],
     field: FieldDescriptor,
-    fill_null_with_default: bool,
+    config: ProtarrowConfig,
 ) -> pa.ListArray:
     """
     Convert Protobuf embedded lists to a 1-dimensional PyArrow ListArray with offsets
     See PyArrow Layout format documentation on how to calculate offsets.
     """
     offsets = _get_offsets(records)
-    if (
-        field.type == FieldDescriptor.TYPE_MESSAGE
-        and field.message_type not in _PROTO_DESCRIPTOR_TO_PYARROW
-    ):
-        array = _message_to_array(
-            FlattenedIterable(records), field.message_type, fill_null_with_default, None
-        )
-    else:
-        array = _proto_field_to_array(
-            FlattenedIterable(records), field, None, fill_null_with_default
-        )
+    array = _proto_field_to_array(FlattenedIterable(records), field, None, config)
     return pa.ListArray.from_arrays(
         offsets,
         array,
@@ -247,7 +267,7 @@ def _proto_list_to_array(
 def _proto_map_to_array(
     records: Iterable[ScalarMapContainer],
     field: FieldDescriptor,
-    fill_null_with_default: bool,
+    config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.MapArray:
     """
     Convert Protobuf maps to a 1-dimensional PyArrow MapArray with offsets
@@ -260,13 +280,13 @@ def _proto_map_to_array(
         MapKeyIterable(records),
         key_field,
         validity_mask=None,
-        fill_null_with_default=False,
+        config=config,
     )
     values = _proto_field_to_array(
         MapValueIterable(records),
         value_field,
         validity_mask=None,
-        fill_null_with_default=False,
+        config=config,
     )
 
     return pa.MapArray.from_arrays(offsets, keys, values)
@@ -299,8 +319,8 @@ def _proto_field_validity_mask(
 def _message_to_array(
     records: Iterable[Message],
     descriptor: Descriptor,
-    fill_null_with_default: bool,
     validity_mask: Optional[Sequence[bool]],
+    config: ProtarrowConfig,
 ) -> pa.StructArray:
     arrays = []
     fields = []
@@ -308,13 +328,13 @@ def _message_to_array(
     for field in descriptor.fields:
         field_values = NestedIterable(records, operator.attrgetter(field.name))
         if field.message_type and field.message_type.GetOptions().map_entry:
-            array = _proto_map_to_array(field_values, field, fill_null_with_default)
+            array = _proto_map_to_array(field_values, field, config)
         elif field.label == FieldDescriptorProto.LABEL_REPEATED:
-            array = _proto_list_to_array(field_values, field, fill_null_with_default)
+            array = _repeated_proto_to_array(field_values, field, config)
         else:
             mask = _proto_field_validity_mask(records, field)
             array = _proto_field_to_array(
-                field_values, field, mask, fill_null_with_default
+                field_values, field, validity_mask=mask, config=config
             )
 
         arrays.append(array)
@@ -335,11 +355,11 @@ def _message_to_array(
 def messages_to_record_batch(
     records: Iterable[M],
     message_type: Type[M],
-    fill_null_with_default: bool = False,
+    config: ProtarrowConfig = ProtarrowConfig(),
 ):
     return pa.RecordBatch.from_struct_array(
         _message_to_array(
-            records, message_type.DESCRIPTOR, fill_null_with_default, None
+            records, message_type.DESCRIPTOR, validity_mask=None, config=config
         )
     )
 
@@ -347,10 +367,9 @@ def messages_to_record_batch(
 def messages_to_table(
     records: Iterable[M],
     message_type: Type[M],
-    fill_null_with_default: bool = False,
+    config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.Table:
     """Converts a list of protobuf messages to a `pa.Table`"""
-    record_batch = messages_to_record_batch(
-        records, message_type, fill_null_with_default
-    )
+    assert isinstance(config, ProtarrowConfig), config
+    record_batch = messages_to_record_batch(records, message_type, config=config)
     return pa.Table.from_batches([record_batch])

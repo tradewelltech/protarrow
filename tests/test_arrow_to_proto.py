@@ -9,12 +9,21 @@ from google.protobuf.json_format import MessageToDict, Parse
 from google.protobuf.reflection import GeneratedProtocolMessageType
 
 from protarrow.arrow_to_proto import table_to_messages
-from protarrow.common import M
-from protarrow.proto_to_arrow import messages_to_table
+from protarrow.common import M, ProtarrowConfig
+from protarrow.proto_to_arrow import (
+    NestedIterable,
+    _repeated_proto_to_array,
+    messages_to_table,
+)
 from protarrow_protos.simple_pb2 import NestedTestMessage, TestMessage
 from tests.random_generator import generate_messages, random_date
 
 MESSAGES = [TestMessage, NestedTestMessage]
+CONFIGS = [
+    ProtarrowConfig(),
+    ProtarrowConfig(pa.binary()),
+    ProtarrowConfig(pa.string()),
+]
 
 
 def read_proto_jsonl(path: pathlib.Path, message_type: Type[M]) -> list[M]:
@@ -31,28 +40,37 @@ def read_proto_jsonl(path: pathlib.Path, message_type: Type[M]) -> list[M]:
         ]
 
 
-@pytest.mark.parametrize("message_type", [TestMessage, NestedTestMessage])
-def test_arrow_to_proto_empty(message_type: GeneratedProtocolMessageType):
-    table = messages_to_table([], message_type)
+@pytest.mark.parametrize("message_type", MESSAGES)
+@pytest.mark.parametrize("config", CONFIGS)
+def test_arrow_to_proto_empty(
+    message_type: GeneratedProtocolMessageType, config: ProtarrowConfig
+):
+    table = messages_to_table([], message_type, config)
     messages = table_to_messages(table, message_type)
     assert messages == []
 
 
 @pytest.mark.parametrize("message_type", MESSAGES)
-def test_with_random(message_type: GeneratedProtocolMessageType):
+@pytest.mark.parametrize("config", CONFIGS)
+def test_with_random(
+    message_type: GeneratedProtocolMessageType, config: ProtarrowConfig
+):
     source_messages = generate_messages(message_type, 10)
-    table = messages_to_table(source_messages, message_type)
+    table = messages_to_table(source_messages, message_type, config)
     messages_back = table_to_messages(table, message_type)
     assert source_messages == messages_back
 
 
 @pytest.mark.parametrize("message_type", MESSAGES)
-def test_with_sample_data(message_type: GeneratedProtocolMessageType):
+@pytest.mark.parametrize("config", CONFIGS)
+def test_with_sample_data(
+    message_type: GeneratedProtocolMessageType, config: ProtarrowConfig
+):
     source_file = (
         pathlib.Path(__file__).parent / "data" / f"{message_type.DESCRIPTOR.name}.jsonl"
     )
     source_messages = read_proto_jsonl(source_file, message_type)
-    table = messages_to_table(source_messages, message_type)
+    table = messages_to_table(source_messages, message_type, config)
     messages_back = table_to_messages(table, message_type)
     assert source_messages == messages_back
 
@@ -148,3 +166,63 @@ def test_generate_random():
         with open(file_name, "w") as fp:
             for message in messages:
                 json.dump(MessageToDict(message, preserving_proto_field_name=True), fp)
+
+
+def test_enum_values_as_int():
+    records = [
+        TestMessage(enum_values=[0, 1, 0]),
+        TestMessage(enum_values=[]),
+        TestMessage(),
+    ]
+
+    array = _repeated_proto_to_array(
+        NestedIterable(records, lambda x: x.enum_values),
+        TestMessage.DESCRIPTOR.fields_by_name["enum_values"],
+        ProtarrowConfig(),
+    )
+    assert array.to_pylist() == [[0, 1, 0], [], []]
+
+
+@pytest.mark.parametrize(
+    ["config", "expected"],
+    [
+        (ProtarrowConfig(), [[0, 1, 0], [], []]),
+        (
+            ProtarrowConfig(enum_type=pa.string()),
+            [
+                ["UNKNOWN_TEST_ENUM", "TEST_ENUM_1", "UNKNOWN_TEST_ENUM"],
+                [],
+                [],
+            ],
+        ),
+        (
+            ProtarrowConfig(enum_type=pa.dictionary(pa.int32(), pa.string())),
+            [
+                ["UNKNOWN_TEST_ENUM", "TEST_ENUM_1", "UNKNOWN_TEST_ENUM"],
+                [],
+                [],
+            ],
+        ),
+        (
+            ProtarrowConfig(enum_type=pa.binary()),
+            [
+                [b"UNKNOWN_TEST_ENUM", b"TEST_ENUM_1", b"UNKNOWN_TEST_ENUM"],
+                [],
+                [],
+            ],
+        ),
+    ],
+)
+def test_repeated_enum_values_as_string(config: ProtarrowConfig, expected: list):
+    records = [
+        TestMessage(enum_values=[0, 1, 0]),
+        TestMessage(enum_values=[]),
+        TestMessage(),
+    ]
+
+    array = _repeated_proto_to_array(
+        NestedIterable(records, lambda x: x.enum_values),
+        TestMessage.DESCRIPTOR.fields_by_name["enum_values"],
+        config,
+    )
+    assert array.to_pylist() == expected

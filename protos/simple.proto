@@ -7,7 +7,7 @@ import "google/type/date.proto";
 import "google/type/timeofday.proto";
 
 
-package protarrow_protos;
+package protarrow.protos;
 
 
 enum TestEnum {
