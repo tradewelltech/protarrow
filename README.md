@@ -2,9 +2,15 @@
 
 A library for converting from protobuf to arrow and back 
 
-# TLDR;
+# Installation
 
-Take a protobuf message:
+```shell
+pip install protarrow
+```
+
+# Usage
+
+## Convert from proto to arrow
 
 ```protobuf
 message MyProto {
@@ -13,19 +19,38 @@ message MyProto {
 }
 ```
 
-And convert from `google.protobuf.message.Message`s to `arrow.Table`, or vice versa
 ```python
-
-from protarrow import messages_to_table, table_to_messages
-from example_pb2 import MyProto
+import protarrow
 
 my_protos = [
     MyProto(name="foo", values=[1, 2, 4]),
     MyProto(name="bar", values=[1, 2, 4]),
 ]
 
-table = messages_to_table(my_protos, MyProto)
-protos_from_table = table_to_messages(table, MyProto)
+schema = protarrow.message_type_to_schema(MyProto)
+record_batch = protarrow.messages_to_record_batch(my_protos, MyProto)
+table = protarrow.messages_to_table(my_protos, MyProto)
+```
+
+| name   | values   |
+|:-------|:---------|
+| foo    | [1 2 4]  |
+| bar    | [3 4 5]  |
+
+
+## Convert from arrow to proto
+
+```python
+protos_from_record_batch = protarrow.table_to_messages(record_batch, MyProto)
+protos_from_table = protarrow.table_to_messages(table, MyProto)
+```
+
+## Customize arrow type
+
+The arrow type for enum can be configured:
+
+```python
+config = protarrow.ProtarrowConfig(enum_type=pa.int32())
 ```
 
 # Type Mapping
@@ -72,8 +97,6 @@ protos_from_table = table_to_messages(table, MyProto)
 | google.protobuf.UInt64Value | uint64                 |                         |
 | google.type.Date            | date32()               |                         |
 | google.type.TimeOfDay       | time64("ns")           |                         |
-
-
 
 
 # Development

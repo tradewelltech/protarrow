@@ -8,6 +8,7 @@ import pytest
 from google.protobuf.json_format import MessageToDict, Parse
 from google.protobuf.reflection import GeneratedProtocolMessageType
 
+import protarrow
 from protarrow.arrow_to_proto import table_to_messages
 from protarrow.common import M, ProtarrowConfig
 from protarrow.proto_to_arrow import (
@@ -235,3 +236,7 @@ def test_nested_list_can_be_null():
     field_index = record_batch["test_message"].type.get_field_index("double_values")
     double_values = record_batch["test_message"].field(field_index)
     assert double_values.is_valid().to_pylist() == [False, True]
+
+
+def test_init_sorted():
+    assert protarrow.__all__ == sorted(protarrow.__all__)

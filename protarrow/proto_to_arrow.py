@@ -396,3 +396,7 @@ def messages_to_table(
     assert isinstance(config, ProtarrowConfig), config
     record_batch = messages_to_record_batch(records, message_type, config=config)
     return pa.Table.from_batches([record_batch])
+
+
+def message_type_to_schema(message_type: Type[M]) -> pa.Schema:
+    return messages_to_record_batch([], message_type).schema

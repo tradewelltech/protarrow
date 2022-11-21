@@ -18,7 +18,6 @@ SUPPORTED_ENUM_TYPES = (
 @dataclasses.dataclass(frozen=True)
 class ProtarrowConfig:
     enum_type: pa.DataType = pa.int32()
-    fill_null_with_default: bool = False
 
     def __post_init__(self):
         assert self.enum_type in SUPPORTED_ENUM_TYPES
