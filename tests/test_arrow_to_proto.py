@@ -6,6 +6,7 @@ import pyarrow as pa
 import pytest
 from google.protobuf.json_format import Parse
 from google.protobuf.reflection import GeneratedProtocolMessageType
+from google.protobuf.timestamp_pb2 import Timestamp
 
 import protarrow
 from protarrow.arrow_to_proto import table_to_messages
@@ -13,26 +14,31 @@ from protarrow.common import M, ProtarrowConfig
 from protarrow.proto_to_arrow import (
     NestedIterable,
     _repeated_proto_to_array,
+    message_type_to_schema,
     messages_to_record_batch,
     messages_to_table,
 )
 from protarrow_protos.simple_pb2 import NestedTestMessage, TestMessage
-from tests.random_generator import generate_messages, random_date
+from tests.random_generator import generate_messages, random_date, truncate_timestamps
 
 MESSAGES = [TestMessage, NestedTestMessage]
 CONFIGS = [
     ProtarrowConfig(),
-    ProtarrowConfig(pa.binary()),
-    ProtarrowConfig(pa.string()),
+    ProtarrowConfig(enum_type=pa.binary()),
+    ProtarrowConfig(enum_type=pa.string()),
+    ProtarrowConfig(timestamp_type=pa.timestamp("s")),
+    ProtarrowConfig(timestamp_type=pa.timestamp("ms")),
+    ProtarrowConfig(timestamp_type=pa.timestamp("us")),
+    ProtarrowConfig(timestamp_type=pa.timestamp("ns")),
+    ProtarrowConfig(timestamp_type=pa.timestamp("s", "UTC")),
+    ProtarrowConfig(timestamp_type=pa.timestamp("ms", "UTC")),
+    ProtarrowConfig(timestamp_type=pa.timestamp("us", "UTC")),
+    ProtarrowConfig(timestamp_type=pa.timestamp("ns", "UTC")),
+    ProtarrowConfig(timestamp_type=pa.timestamp("ns", "America/New_York")),
 ]
 
 
 def read_proto_jsonl(path: pathlib.Path, message_type: Type[M]) -> list[M]:
-    """
-    Reads a jsonl file into a list of protobuf messages.
-    Pass in "s3://tradewell-<env>/foo/bar" for files on S3.
-    Empty lines and comment lines starting with '#' are ignored.
-    """
     with path.open() as fp:
         return [
             Parse(line.strip(), message_type())
@@ -56,7 +62,11 @@ def test_arrow_to_proto_empty(
 def test_with_random(
     message_type: GeneratedProtocolMessageType, config: ProtarrowConfig
 ):
-    source_messages = generate_messages(message_type, 10)
+    source_messages = [
+        truncate_timestamps(m, config.timestamp_type.unit)
+        for m in generate_messages(message_type, 10)
+    ]
+
     table = messages_to_table(source_messages, message_type, config)
     messages_back = table_to_messages(table, message_type)
     assert source_messages == messages_back
@@ -70,7 +80,10 @@ def test_with_sample_data(
     source_file = (
         pathlib.Path(__file__).parent / "data" / f"{message_type.DESCRIPTOR.name}.jsonl"
     )
-    source_messages = read_proto_jsonl(source_file, message_type)
+    source_messages = [
+        truncate_timestamps(m, config.timestamp_type.unit)
+        for m in read_proto_jsonl(source_file, message_type)
+    ]
     table = messages_to_table(source_messages, message_type, config)
     messages_back = table_to_messages(table, message_type)
     assert source_messages == messages_back
@@ -229,3 +242,49 @@ def test_nested_list_can_be_null():
 
 def test_init_sorted():
     assert protarrow.__all__ == sorted(protarrow.__all__)
+
+
+def test_truncate_timestamps():
+
+    assert truncate_timestamps(
+        Timestamp(seconds=10, nanos=123456789), "s"
+    ) == Timestamp(seconds=10)
+
+    assert truncate_timestamps(
+        Timestamp(seconds=10, nanos=123456789), "ms"
+    ) == Timestamp(seconds=10, nanos=123000000)
+
+    assert truncate_timestamps(
+        Timestamp(seconds=10, nanos=123456789), "us"
+    ) == Timestamp(seconds=10, nanos=123456000)
+
+    assert truncate_timestamps(
+        Timestamp(seconds=10, nanos=123456789), "ns"
+    ) == Timestamp(seconds=10, nanos=123456789)
+
+
+def test_truncate_nested_timestamps():
+    assert truncate_timestamps(
+        TestMessage(
+            timestamp=Timestamp(seconds=10, nanos=123456789),
+            timestamp_map={"foo": Timestamp(seconds=10, nanos=123456789)},
+        ),
+        "us",
+    ) == TestMessage(
+        timestamp=Timestamp(seconds=10, nanos=123456000),
+        timestamp_map={"foo": Timestamp(seconds=10, nanos=123456000)},
+    )
+
+
+def test_nullability():
+    schema = message_type_to_schema(TestMessage)
+    assert not schema.field("double_value").nullable
+    assert not schema.field("double_values").nullable
+    assert schema.field("wrapped_double").nullable
+
+    nested_schema = pa.schema(
+        list(message_type_to_schema(NestedTestMessage).field("test_message").type)
+    )
+    assert nested_schema.field("double_value").nullable
+    assert nested_schema.field("double_values").nullable
+    assert nested_schema.field("wrapped_double").nullable

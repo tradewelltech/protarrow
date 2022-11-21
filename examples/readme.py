@@ -22,3 +22,7 @@ protos_from_table = protarrow.table_to_messages(table, MyProto)
 
 
 config = protarrow.ProtarrowConfig(enum_type=pa.int32())
+
+config = protarrow.ProtarrowConfig(
+    timestamp_type=pa.timestamp("ms", "America/New_York")
+)

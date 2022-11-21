@@ -47,10 +47,13 @@ protos_from_table = protarrow.table_to_messages(table, MyProto)
 
 ## Customize arrow type
 
-The arrow type for enum can be configured:
+The arrow type for enum and timestamps can be configured:
 
 ```python
 config = protarrow.ProtarrowConfig(enum_type=pa.int32())
+config = protarrow.ProtarrowConfig(
+    timestamp_type=pa.timestamp("ms", "America/New_York")
+)
 ```
 
 # Type Mapping
@@ -80,28 +83,27 @@ config = protarrow.ProtarrowConfig(enum_type=pa.int32())
 ## Other types
 
 
-| Proto                       | Pyarrow                | Note                    |
-|-----------------------------|------------------------|-------------------------|
-| repeated                    | list_                  |                         |
-| map                         | map_                   |                         |
-| google.protobuf.BoolValue   | bool_                  |                         |
-| google.protobuf.BytesValue  | binary                 |                         |
-| google.protobuf.DoubleValue | float64                |                         |
-| google.protobuf.FloatValue  | float32                |                         |
-| google.protobuf.Int32Value  | int32                  |                         |
-| google.protobuf.Int64Value  | int64                  |                         |
-| google.protobuf.StringValue | string                 |                         |
-| google.protobuf.Timestamp   | timestamp("ns", "UTC") | To be made configurable |
-| google.protobuf.UInt32Value | uint32                 |                         |
-| google.protobuf.UInt64Value | uint64                 |                         |
-| google.type.Date            | date32()               |                         |
-| google.type.TimeOfDay       | time64("ns")           |                         |
+| Proto                       | Pyarrow                | Note                               |
+|-----------------------------|------------------------|------------------------------------|
+| repeated                    | list_                  |                                    |
+| map                         | map_                   |                                    |
+| google.protobuf.BoolValue   | bool_                  |                                    |
+| google.protobuf.BytesValue  | binary                 |                                    |
+| google.protobuf.DoubleValue | float64                |                                    |
+| google.protobuf.FloatValue  | float32                |                                    |
+| google.protobuf.Int32Value  | int32                  |                                    |
+| google.protobuf.Int64Value  | int64                  |                                    |
+| google.protobuf.StringValue | string                 |                                    |
+| google.protobuf.Timestamp   | timestamp("ns", "UTC") | Unit and timezone are configurable |
+| google.protobuf.UInt32Value | uint32                 |                                    |
+| google.protobuf.UInt64Value | uint64                 |                                    |
+| google.type.Date            | date32()               |                                    |
+| google.type.TimeOfDay       | time64("ns")           |                                    |
 
 ## Nullability
 
-* Top level native types are marked as non-nullable.
-* Native types belonging to nested message are marked as nullable.
-* List elements and map keys/values are marked as non nullable
+* Top level native field, list and maps are marked as non-nullable.
+* Any nested message and their children are nullable
 
 # Development
 
@@ -120,6 +122,6 @@ This library relies on property based testing.
 Tests convert randomly generated data from protobuf to arrow and back, making sure the end result is the same as the input.
 
 ```shell
-coverage run --include "*/protarrow/*" -m pytest tests
+coverage run --branch --include "*/protarrow/*" -m pytest tests
 coverage report
 ```

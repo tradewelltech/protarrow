@@ -41,14 +41,10 @@ from google.type.timeofday_pb2 import TimeOfDay
 
 from protarrow.common import M, ProtarrowConfig
 
-_PA_TIMESTAMP_TYPE = pa.timestamp("ns", "UTC")
 _PA_TIME_TYPE = pa.time64("ns")
-# Mapping from protobuf message type descriptors to pyarrow types.
-# Any message types that do not appear here explicitly will be
-# converted to pyarrow structs
+
 _PROTO_DESCRIPTOR_TO_PYARROW = {
     Date.DESCRIPTOR: pa.date32(),
-    Timestamp.DESCRIPTOR: _PA_TIMESTAMP_TYPE,
     TimeOfDay.DESCRIPTOR: _PA_TIME_TYPE,
     BoolValue.DESCRIPTOR: pa.bool_(),
     BytesValue.DESCRIPTOR: pa.binary(),
@@ -61,9 +57,6 @@ _PROTO_DESCRIPTOR_TO_PYARROW = {
     UInt64Value.DESCRIPTOR: pa.uint64(),
 }
 
-# Mapping from protobuf primitive field types to pyarrow types.
-# Not all available protobuf primitives are mapped. If you require a
-# primitive type that is missing then you should add it here.
 _PROTO_PRIMITIVE_TYPE_TO_PYARROW = {
     FieldDescriptorProto.TYPE_DOUBLE: pa.float64(),
     FieldDescriptorProto.TYPE_FLOAT: pa.float32(),
@@ -90,14 +83,11 @@ def _time_of_day_to_nanos(time_of_day: TimeOfDay) -> int:
     ) * 1_000_000_000 + time_of_day.nanos
 
 
-# Mapping from protobuf message descriptors to conversion functions used
-# for translating protobuf messages to types suitable for pyarrow.
 _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER = {
     # TODO: remove this special case
     Date.DESCRIPTOR: lambda x: None
     if x.year == 0
     else datetime.date(x.year, x.month, x.day),
-    Timestamp.DESCRIPTOR: lambda x: x.ToNanoseconds(),
     TimeOfDay.DESCRIPTOR: _time_of_day_to_nanos,
     BoolValue.DESCRIPTOR: lambda x: x.value,
     BytesValue.DESCRIPTOR: lambda x: x.value,
@@ -108,6 +98,13 @@ _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER = {
     StringValue.DESCRIPTOR: lambda x: x.value,
     UInt32Value.DESCRIPTOR: lambda x: x.value,
     UInt64Value.DESCRIPTOR: lambda x: x.value,
+}
+
+TIMESTAMP_CONVERTERS = {
+    "s": Timestamp.ToSeconds,
+    "ms": Timestamp.ToMilliseconds,
+    "us": Timestamp.ToMicroseconds,
+    "ns": Timestamp.ToNanoseconds,
 }
 
 
@@ -201,17 +198,30 @@ def get_enum_converter(
         raise TypeError(data_type)
 
 
+def get_timestamp_converter(
+    timestamp_type: pa.TimestampType,
+) -> Callable[[Timestamp], Any]:
+    return TIMESTAMP_CONVERTERS[timestamp_type.unit]
+
+
 def _proto_field_to_array(
     records: Iterable[Message],
     field: FieldDescriptor,
     validity_mask: Optional[Iterable[bool]],
     config: ProtarrowConfig,
 ) -> pa.Array:
-    if field.type == FieldDescriptorProto.TYPE_MESSAGE:
+    if field.message_type == Timestamp.DESCRIPTOR:
+        pa_type = config.timestamp_type
+        converter = TIMESTAMP_CONVERTERS[config.timestamp_type.unit]
+    elif field.type == FieldDescriptorProto.TYPE_MESSAGE:
         converter = _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER.get(field.message_type)
         if converter is None:
             return _message_to_array(
-                records, field.message_type, validity_mask=validity_mask, config=config
+                records,
+                field.message_type,
+                validity_mask=validity_mask,
+                config=config,
+                is_nested=True,
             )
         else:
             pa_type = _PROTO_DESCRIPTOR_TO_PYARROW[field.message_type]
@@ -309,10 +319,14 @@ def _proto_map_to_array(
     return pa.MapArray.from_arrays(offsets, keys, values)
 
 
-def _proto_field_nullable(field: FieldDescriptor, is_struct: bool) -> bool:
-    return field.type == FieldDescriptorProto.TYPE_MESSAGE or (
-        is_struct and field.label == FieldDescriptorProto.LABEL_REPEATED
-    )
+def _proto_field_nullable(field: FieldDescriptor, is_nested: bool) -> bool:
+    if is_nested:
+        return True
+    else:
+        return (
+            field.type == FieldDescriptorProto.TYPE_MESSAGE
+            and field.label != FieldDescriptorProto.LABEL_REPEATED
+        )
 
 
 def _proto_field_validity_mask(
@@ -338,6 +352,7 @@ def _message_to_array(
     descriptor: Descriptor,
     validity_mask: Optional[Sequence[bool]],
     config: ProtarrowConfig,
+    is_nested: bool,
 ) -> pa.StructArray:
     arrays = []
     fields = []
@@ -365,7 +380,7 @@ def _message_to_array(
             pa.field(
                 field.name,
                 array.type,
-                nullable=_proto_field_nullable(field, is_struct=True),
+                nullable=_proto_field_nullable(field, is_nested=is_nested),
             )
         )
     return pa.StructArray.from_arrays(
@@ -382,7 +397,11 @@ def messages_to_record_batch(
 ):
     return pa.RecordBatch.from_struct_array(
         _message_to_array(
-            records, message_type.DESCRIPTOR, validity_mask=None, config=config
+            records,
+            message_type.DESCRIPTOR,
+            validity_mask=None,
+            config=config,
+            is_nested=False,
         )
     )
 

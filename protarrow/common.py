@@ -18,6 +18,7 @@ SUPPORTED_ENUM_TYPES = (
 @dataclasses.dataclass(frozen=True)
 class ProtarrowConfig:
     enum_type: pa.DataType = pa.int32()
+    timestamp_type: pa.TimestampType = pa.timestamp("ns", "UTC")
 
     def __post_init__(self):
         assert self.enum_type in SUPPORTED_ENUM_TYPES

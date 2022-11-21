@@ -13,6 +13,8 @@ from protarrow.common import M
 
 EPOCH_RATIO = 24 * 60 * 60
 
+UNIT_IN_NANOS = {"s": 1_000_000_000, "ms": 1_000_000, "us": 1_000, "ns": 1}
+
 
 def random_string(count: int) -> str:
     return secrets.token_urlsafe(random.randint(0, count))
@@ -125,3 +127,31 @@ def _generate_data(field: FieldDescriptor, count: int) -> typing.Any:
 
 def _generate_enum(enum: EnumDescriptor) -> int:
     return random.choice(enum.values).index
+
+
+def truncate_timestamps(message: Message, unit: str):
+    if message.DESCRIPTOR == Timestamp.DESCRIPTOR:
+        message.nanos = (message.nanos // UNIT_IN_NANOS[unit]) * UNIT_IN_NANOS[unit]
+    else:
+        for field in message.DESCRIPTOR.fields:
+            if field.type == FieldDescriptor.TYPE_MESSAGE:
+                if field.label == FieldDescriptor.LABEL_REPEATED:
+                    field_value = getattr(message, field.name)
+                    if (
+                        field.message_type is not None
+                        and field.message_type.GetOptions().map_entry
+                    ):
+                        if (
+                            field.message_type.fields_by_name["value"].type
+                            == FieldDescriptor.TYPE_MESSAGE
+                        ):
+                            for key, value in field_value.items():
+                                truncate_timestamps(value, unit)
+
+                    else:
+                        for item in field_value:
+                            truncate_timestamps(item, unit)
+                else:
+                    message.HasField(field.name)
+                    truncate_timestamps(getattr(message, field.name), unit)
+    return message
