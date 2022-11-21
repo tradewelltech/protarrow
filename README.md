@@ -66,7 +66,6 @@ config = protarrow.ProtarrowConfig(enum_type=pa.int32())
 | fixed32  | int32                   |              |
 | fixed64  | int64                   |              |
 | float    | float32                 |              |
-| group    |                         | No supported |
 | int32    | int32                   |              |
 | int64    | int64                   |              |
 | message  | struct                  |              |
@@ -98,6 +97,11 @@ config = protarrow.ProtarrowConfig(enum_type=pa.int32())
 | google.type.Date            | date32()               |                         |
 | google.type.TimeOfDay       | time64("ns")           |                         |
 
+## Nullability
+
+* Top level native types are marked as non-nullable.
+* Native types belonging to nested message are marked as nullable.
+* List elements and map keys/values are marked as non nullable
 
 # Development
 
