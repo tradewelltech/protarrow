@@ -1,16 +1,17 @@
 
 [tool.poetry]
 name = "protarrow"
-version = "0.1.0"
+version = "0.0.0"
 description = ""
 authors = ["0x26res <0x26res@gmail.com>"]
 packages = [
     { include = "protarrow" }
 ]
+readme = "README.md"
 
 [tool.poetry.dependencies]
 googleapis-common-protos = "^1.53.0"
-pyarrow = "^10.0.0"
+pyarrow = "^8.0.0"
 protobuf = "^3.20.1"
 python = "^3.8"
 
@@ -24,8 +25,8 @@ pytest = "^7.2.0"
 pytest-benchmark = "^4.0.0"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0",  "poetry-dynamic-versioning"]
+build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.black]
   target-version =  ['py39']
@@ -37,3 +38,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.bandit]
 skips = ["B101", "B311"]
+
+[tool.poetry-dynamic-versioning]
+enable = true
