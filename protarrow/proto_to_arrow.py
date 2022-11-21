@@ -41,11 +41,8 @@ from google.type.timeofday_pb2 import TimeOfDay
 
 from protarrow.common import M, ProtarrowConfig
 
-_PA_TIME_TYPE = pa.time64("ns")
-
 _PROTO_DESCRIPTOR_TO_PYARROW = {
     Date.DESCRIPTOR: pa.date32(),
-    TimeOfDay.DESCRIPTOR: _PA_TIME_TYPE,
     BoolValue.DESCRIPTOR: pa.bool_(),
     BytesValue.DESCRIPTOR: pa.binary(),
     DoubleValue.DESCRIPTOR: pa.float64(),
@@ -83,6 +80,22 @@ def _time_of_day_to_nanos(time_of_day: TimeOfDay) -> int:
     ) * 1_000_000_000 + time_of_day.nanos
 
 
+def _time_of_day_to_micros(time_of_day: TimeOfDay) -> int:
+    return (
+        (time_of_day.hours * 60 + time_of_day.minutes) * 60 + time_of_day.seconds
+    ) * 1_000_000 + time_of_day.nanos // 1_000
+
+
+def _time_of_day_to_millis(time_of_day: TimeOfDay) -> int:
+    return (
+        (time_of_day.hours * 60 + time_of_day.minutes) * 60 + time_of_day.seconds
+    ) * 1_000 + time_of_day.nanos // 1_000_000
+
+
+def _time_of_day_to_seconds(time_of_day: TimeOfDay) -> int:
+    return (time_of_day.hours * 60 + time_of_day.minutes) * 60 + time_of_day.seconds
+
+
 _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER = {
     # TODO: remove this special case
     Date.DESCRIPTOR: lambda x: None
@@ -100,11 +113,18 @@ _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER = {
     UInt64Value.DESCRIPTOR: lambda x: x.value,
 }
 
-TIMESTAMP_CONVERTERS = {
+_TIMESTAMP_CONVERTERS = {
     "s": Timestamp.ToSeconds,
     "ms": Timestamp.ToMilliseconds,
     "us": Timestamp.ToMicroseconds,
     "ns": Timestamp.ToNanoseconds,
+}
+
+_TIME_OF_DAY_CONVERTERS = {
+    "s": _time_of_day_to_seconds,
+    "ms": _time_of_day_to_millis,
+    "us": _time_of_day_to_micros,
+    "ns": _time_of_day_to_nanos,
 }
 
 
@@ -198,12 +218,6 @@ def get_enum_converter(
         raise TypeError(data_type)
 
 
-def get_timestamp_converter(
-    timestamp_type: pa.TimestampType,
-) -> Callable[[Timestamp], Any]:
-    return TIMESTAMP_CONVERTERS[timestamp_type.unit]
-
-
 def _proto_field_to_array(
     records: Iterable[Message],
     field: FieldDescriptor,
@@ -212,7 +226,10 @@ def _proto_field_to_array(
 ) -> pa.Array:
     if field.message_type == Timestamp.DESCRIPTOR:
         pa_type = config.timestamp_type
-        converter = TIMESTAMP_CONVERTERS[config.timestamp_type.unit]
+        converter = _TIMESTAMP_CONVERTERS[config.timestamp_type.unit]
+    elif field.message_type == TimeOfDay.DESCRIPTOR:
+        pa_type = config.time_of_day_type
+        converter = _TIME_OF_DAY_CONVERTERS[config.time_of_day_type.unit]
     elif field.type == FieldDescriptorProto.TYPE_MESSAGE:
         converter = _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER.get(field.message_type)
         if converter is None:
@@ -417,5 +434,7 @@ def messages_to_table(
     return pa.Table.from_batches([record_batch])
 
 
-def message_type_to_schema(message_type: Type[M]) -> pa.Schema:
-    return messages_to_record_batch([], message_type).schema
+def message_type_to_schema(
+    message_type: Type[M], config: ProtarrowConfig = ProtarrowConfig()
+) -> pa.Schema:
+    return messages_to_record_batch([], message_type, config).schema

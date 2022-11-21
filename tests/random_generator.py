@@ -129,9 +129,15 @@ def _generate_enum(enum: EnumDescriptor) -> int:
     return random.choice(enum.values).index
 
 
-def truncate_timestamps(message: Message, unit: str):
+def truncate_nanos(message: Message, timestamp_unit: str, time_unit: str) -> Message:
     if message.DESCRIPTOR == Timestamp.DESCRIPTOR:
-        message.nanos = (message.nanos // UNIT_IN_NANOS[unit]) * UNIT_IN_NANOS[unit]
+        message.nanos = (
+            message.nanos // UNIT_IN_NANOS[timestamp_unit]
+        ) * UNIT_IN_NANOS[timestamp_unit]
+    elif message.DESCRIPTOR == TimeOfDay.DESCRIPTOR:
+        message.nanos = (message.nanos // UNIT_IN_NANOS[time_unit]) * UNIT_IN_NANOS[
+            time_unit
+        ]
     else:
         for field in message.DESCRIPTOR.fields:
             if field.type == FieldDescriptor.TYPE_MESSAGE:
@@ -146,12 +152,14 @@ def truncate_timestamps(message: Message, unit: str):
                             == FieldDescriptor.TYPE_MESSAGE
                         ):
                             for key, value in field_value.items():
-                                truncate_timestamps(value, unit)
+                                truncate_nanos(value, timestamp_unit, time_unit)
 
                     else:
                         for item in field_value:
-                            truncate_timestamps(item, unit)
+                            truncate_nanos(item, timestamp_unit, time_unit)
                 else:
                     message.HasField(field.name)
-                    truncate_timestamps(getattr(message, field.name), unit)
+                    truncate_nanos(
+                        getattr(message, field.name), timestamp_unit, time_unit
+                    )
     return message

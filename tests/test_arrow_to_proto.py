@@ -7,6 +7,7 @@ import pytest
 from google.protobuf.json_format import Parse
 from google.protobuf.reflection import GeneratedProtocolMessageType
 from google.protobuf.timestamp_pb2 import Timestamp
+from google.type.timeofday_pb2 import TimeOfDay
 
 import protarrow
 from protarrow.arrow_to_proto import table_to_messages
@@ -19,7 +20,7 @@ from protarrow.proto_to_arrow import (
     messages_to_table,
 )
 from protarrow_protos.simple_pb2 import NestedTestMessage, TestMessage
-from tests.random_generator import generate_messages, random_date, truncate_timestamps
+from tests.random_generator import generate_messages, random_date, truncate_nanos
 
 MESSAGES = [TestMessage, NestedTestMessage]
 CONFIGS = [
@@ -35,6 +36,8 @@ CONFIGS = [
     ProtarrowConfig(timestamp_type=pa.timestamp("us", "UTC")),
     ProtarrowConfig(timestamp_type=pa.timestamp("ns", "UTC")),
     ProtarrowConfig(timestamp_type=pa.timestamp("ns", "America/New_York")),
+    ProtarrowConfig(time_of_day_type=pa.time64("ns")),
+    ProtarrowConfig(time_of_day_type=pa.time64("us")),
 ]
 
 
@@ -63,7 +66,7 @@ def test_with_random(
     message_type: GeneratedProtocolMessageType, config: ProtarrowConfig
 ):
     source_messages = [
-        truncate_timestamps(m, config.timestamp_type.unit)
+        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
         for m in generate_messages(message_type, 10)
     ]
 
@@ -81,7 +84,7 @@ def test_with_sample_data(
         pathlib.Path(__file__).parent / "data" / f"{message_type.DESCRIPTOR.name}.jsonl"
     )
     source_messages = [
-        truncate_timestamps(m, config.timestamp_type.unit)
+        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
         for m in read_proto_jsonl(source_file, message_type)
     ]
     table = messages_to_table(source_messages, message_type, config)
@@ -240,39 +243,63 @@ def test_nested_list_can_be_null():
     assert double_values.is_valid().to_pylist() == [False, True]
 
 
-def test_init_sorted():
+def test_unit_for_time_of_day():
+    for type in [
+        pa.time64("ns"),
+        pa.time64("us"),
+        pa.time32("ms"),
+        pa.time32("s"),
+    ]:
+        assert (
+            message_type_to_schema(TestMessage, ProtarrowConfig(time_of_day_type=type))
+            .field("time_of_day")
+            .type
+            == type
+        )
+
+
+def test_check_init_sorted():
     assert protarrow.__all__ == sorted(protarrow.__all__)
 
 
-def test_truncate_timestamps():
+def test_truncate_nanos():
 
-    assert truncate_timestamps(
-        Timestamp(seconds=10, nanos=123456789), "s"
+    assert truncate_nanos(
+        Timestamp(seconds=10, nanos=123456789),
+        "s",
+        "us",
     ) == Timestamp(seconds=10)
 
-    assert truncate_timestamps(
-        Timestamp(seconds=10, nanos=123456789), "ms"
+    assert truncate_nanos(
+        Timestamp(seconds=10, nanos=123456789), "ms", "us"
     ) == Timestamp(seconds=10, nanos=123000000)
 
-    assert truncate_timestamps(
-        Timestamp(seconds=10, nanos=123456789), "us"
+    assert truncate_nanos(
+        Timestamp(seconds=10, nanos=123456789), "us", "us"
     ) == Timestamp(seconds=10, nanos=123456000)
 
-    assert truncate_timestamps(
-        Timestamp(seconds=10, nanos=123456789), "ns"
+    assert truncate_nanos(
+        Timestamp(seconds=10, nanos=123456789), "ns", "us"
     ) == Timestamp(seconds=10, nanos=123456789)
 
+    assert truncate_nanos(
+        TimeOfDay(seconds=10, nanos=123456789), "ns", "us"
+    ) == TimeOfDay(seconds=10, nanos=123456000)
 
-def test_truncate_nested_timestamps():
-    assert truncate_timestamps(
+
+def test_truncate_nested():
+    assert truncate_nanos(
         TestMessage(
-            timestamp=Timestamp(seconds=10, nanos=123456789),
-            timestamp_map={"foo": Timestamp(seconds=10, nanos=123456789)},
+            timestamp=Timestamp(seconds=10, nanos=123_456_789),
+            timestamp_map={"foo": Timestamp(seconds=10, nanos=123_456_789)},
+            time_of_day=TimeOfDay(hours=1, nanos=123_456_789),
         ),
         "us",
+        "ms",
     ) == TestMessage(
-        timestamp=Timestamp(seconds=10, nanos=123456000),
-        timestamp_map={"foo": Timestamp(seconds=10, nanos=123456000)},
+        timestamp=Timestamp(seconds=10, nanos=123_456_000),
+        timestamp_map={"foo": Timestamp(seconds=10, nanos=123_456_000)},
+        time_of_day=TimeOfDay(hours=1, nanos=123_000_000),
     )
 
 

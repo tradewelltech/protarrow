@@ -98,7 +98,7 @@ config = protarrow.ProtarrowConfig(
 | google.protobuf.UInt32Value | uint32                 |                                    |
 | google.protobuf.UInt64Value | uint64                 |                                    |
 | google.type.Date            | date32()               |                                    |
-| google.type.TimeOfDay       | time64("ns")           |                                    |
+| google.type.TimeOfDay       | **time64**/time32      | Unit and type are configurable     |
 
 ## Nullability
 
