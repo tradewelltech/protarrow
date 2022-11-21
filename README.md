@@ -13,11 +13,11 @@ message MyProto {
 }
 ```
 
-And convert them to from `google.protobuf.message.Message`s to `arrow.Table`, or vice versa
+And convert from `google.protobuf.message.Message`s to `arrow.Table`, or vice versa
 ```python
 
 from protarrow import messages_to_table, table_to_messages
-from protarrow_protos.example_pb2 import MyProto
+from example_pb2 import MyProto
 
 my_protos = [
     MyProto(name="foo", values=[1, 2, 4]),
@@ -86,22 +86,3 @@ source venv/bin/activate
 poetry install
 python ./scripts/protoc.py
 ```
-
-## TODO:
-
-* [ ] add pydoc to the 4 main functions + config
-* [ ] save benchmark results
-* [ ] explain the implementation
-* [ ] add tests with imported messages
-* [ ] have test automatically read all messages in protobuf descriptor
-* [ ] make Timestamp unit configurable
-* [ ] make TimeOfDay unit configurable
-* [x] make protobuf enum configurable
-* [ ] make random data configurable and reproducible
-* [ ] support oneof
-* [ ] add mypy and other linter
-* [ ] publish library
-* [ ] add test coverage
-* [ ] run tests in github action
-* [ ] use automatic versioning
-* [ ] publish doc
