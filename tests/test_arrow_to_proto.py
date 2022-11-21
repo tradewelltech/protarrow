@@ -1,11 +1,10 @@
 import datetime
-import json
 import pathlib
 from typing import Type
 
 import pyarrow as pa
 import pytest
-from google.protobuf.json_format import MessageToDict, Parse
+from google.protobuf.json_format import Parse
 from google.protobuf.reflection import GeneratedProtocolMessageType
 
 import protarrow
@@ -158,16 +157,6 @@ def test_arrow_bug_18264():
         match=r"'pyarrow.lib.Time64Scalar' object has no attribute 'value'",
     ):
         scalar.value
-
-
-def test_generate_random():
-    for message_type in MESSAGES:
-        messages = generate_messages(message_type, 20)
-        file_name = message_type.DESCRIPTOR.name + ".jsonl"
-        print(file_name)
-        with open(file_name, "w") as fp:
-            for message in messages:
-                json.dump(MessageToDict(message, preserving_proto_field_name=True), fp)
 
 
 def test_enum_values_as_int():

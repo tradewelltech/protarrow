@@ -113,3 +113,13 @@ source venv/bin/activate
 poetry install
 python ./scripts/protoc.py
 ```
+
+## Testing
+
+This library relies on property based testing. 
+Tests convert randomly generated data from protobuf to arrow and back, making sure the end result is the same as the input.
+
+```shell
+coverage run --include "*/protarrow/*" -m pytest tests
+coverage report
+```
