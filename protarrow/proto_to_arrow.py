@@ -113,42 +113,59 @@ _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER = {
 
 @dataclasses.dataclass(frozen=True)
 class FlattenedIterable(collections.abc.Iterable):
-    parents: Iterable[Iterable[Any]]
+    parents: Iterable[Iterable[Optional[Any]]]
 
     def __iter__(self) -> Iterator[Any]:
         for parent in self.parents:
-            for child in parent:
-                yield child
+            if parent is not None:
+                for child in parent:
+                    yield child
 
 
 @dataclasses.dataclass(frozen=True)
 class NestedIterable(collections.abc.Iterable):
-    parents: Iterable[Message]
+    parents: Iterable[Optional[Message]]
     getter: Callable[[Message], Any]
 
-    def __iter__(self) -> Iterator[Any]:
+    def __iter__(self) -> Iterator[Optional[Any]]:
         for parent in self.parents:
-            yield self.getter(parent)
+            if parent is not None:
+                yield self.getter(parent)
+            else:
+                yield None
+
+
+@dataclasses.dataclass(frozen=True)
+class NestedMessageGetter:
+    name: str
+
+    def __call__(self, message: Message) -> Optional[Message]:
+        if message.HasField(self.name):
+            return getattr(message, self.name)
+        else:
+            return None
 
 
 @dataclasses.dataclass(frozen=True)
 class MapKeyIterable(collections.abc.Iterable):
-    scalar_map: Iterable[ScalarMapContainer]
+    scalar_map: Iterable[Optional[ScalarMapContainer]]
 
     def __iter__(self) -> Iterator[Any]:
         for scalar_map in self.scalar_map:
-            for key in scalar_map.keys():
-                yield key
+            if scalar_map is not None:
+                for key in scalar_map.keys():
+                    yield key
 
 
 @dataclasses.dataclass(frozen=True)
 class MapValueIterable(collections.abc.Iterable):
-    scalar_map: Iterable[ScalarMapContainer]
+    scalar_map: Iterable[Optional[ScalarMapContainer]]
 
     def __iter__(self) -> Iterator[Any]:
         for scalar_map in self.scalar_map:
-            for value in scalar_map.values():
-                yield value
+            if scalar_map is not None:
+                for value in scalar_map.values():
+                    yield value
 
 
 def get_enum_converter(
@@ -326,7 +343,13 @@ def _message_to_array(
     fields = []
 
     for field in descriptor.fields:
-        field_values = NestedIterable(records, operator.attrgetter(field.name))
+        if (
+            field.type == FieldDescriptor.TYPE_MESSAGE
+            and field.label != FieldDescriptor.LABEL_REPEATED
+        ):
+            field_values = NestedIterable(records, NestedMessageGetter(field.name))
+        else:
+            field_values = NestedIterable(records, operator.attrgetter(field.name))
         if field.message_type and field.message_type.GetOptions().map_entry:
             array = _proto_map_to_array(field_values, field, config)
         elif field.label == FieldDescriptorProto.LABEL_REPEATED:

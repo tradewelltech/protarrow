@@ -13,6 +13,7 @@ from protarrow.common import M, ProtarrowConfig
 from protarrow.proto_to_arrow import (
     NestedIterable,
     _repeated_proto_to_array,
+    messages_to_record_batch,
     messages_to_table,
 )
 from protarrow_protos.simple_pb2 import NestedTestMessage, TestMessage
@@ -226,3 +227,11 @@ def test_repeated_enum_values_as_string(config: ProtarrowConfig, expected: list)
         config,
     )
     assert array.to_pylist() == expected
+
+
+def test_nested_list_can_be_null():
+    messages = [NestedTestMessage(), NestedTestMessage(test_message=TestMessage())]
+    record_batch = messages_to_record_batch(messages, NestedTestMessage)
+    field_index = record_batch["test_message"].type.get_field_index("double_values")
+    double_values = record_batch["test_message"].field(field_index)
+    assert double_values.is_valid().to_pylist() == [False, True]
