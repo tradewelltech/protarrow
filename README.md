@@ -47,13 +47,15 @@ protos_from_table = protarrow.table_to_messages(table, MyProto)
 
 ## Customize arrow type
 
-The arrow type for enum and timestamps can be configured:
+The arrow type for `Enum`, `Timestamp` and `TimeOfDay` can be configured:
 
 ```python
-config = protarrow.ProtarrowConfig(enum_type=pa.int32())
 config = protarrow.ProtarrowConfig(
-    timestamp_type=pa.timestamp("ms", "America/New_York")
+    enum_type=pa.int32(),
+    timestamp_type=pa.timestamp("ms", "America/New_York"),
+    time_of_day_type=pa.time32("ms"),
 )
+record_batch = protarrow.messages_to_record_batch(my_protos, MyProto, config)
 ```
 
 # Type Mapping
