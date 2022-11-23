@@ -21,8 +21,9 @@ protos_from_record_batch = protarrow.record_batch_to_messages(record_batch, MyPr
 protos_from_table = protarrow.table_to_messages(table, MyProto)
 
 
-config = protarrow.ProtarrowConfig(enum_type=pa.int32())
-
 config = protarrow.ProtarrowConfig(
-    timestamp_type=pa.timestamp("ms", "America/New_York")
+    enum_type=pa.int32(),
+    timestamp_type=pa.timestamp("ms", "America/New_York"),
+    time_of_day_type=pa.time32("ms"),
 )
+record_batch = protarrow.messages_to_record_batch(my_protos, MyProto, config)

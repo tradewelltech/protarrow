@@ -1,6 +1,6 @@
 import datetime
 import pathlib
-from typing import Type
+from typing import List, Type
 
 import pyarrow as pa
 import pytest
@@ -41,7 +41,7 @@ CONFIGS = [
 ]
 
 
-def read_proto_jsonl(path: pathlib.Path, message_type: Type[M]) -> list[M]:
+def read_proto_jsonl(path: pathlib.Path, message_type: Type[M]) -> List[M]:
     with path.open() as fp:
         return [
             Parse(line.strip(), message_type())
