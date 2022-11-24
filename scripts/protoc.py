@@ -1,5 +1,4 @@
 import pathlib
-import subprocess  # nosec B404
 
 import google.type.date_pb2
 import grpc_tools
@@ -25,7 +24,7 @@ def main():
         "--python_out={}".format(_OUT_DIR),
     ] + proto_files
     print(" ".join(proto_args))
-    subprocess.run(proto_args, check=True)  # nosec B603
+    grpc_tools.protoc(proto_args)
     (_OUT_DIR / "__init__.py").touch()
 
 
