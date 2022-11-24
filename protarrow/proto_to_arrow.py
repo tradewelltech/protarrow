@@ -22,8 +22,8 @@ import pyarrow as pa
 import pyarrow.compute as pc
 from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
 from google.protobuf.descriptor_pb2 import FieldDescriptorProto
+from google.protobuf.internal.containers import MessageMap, RepeatedScalarFieldContainer
 from google.protobuf.message import Message
-from google.protobuf.pyext._message import RepeatedScalarContainer, ScalarMapContainer
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.protobuf.wrappers_pb2 import (
     BoolValue,
@@ -165,7 +165,7 @@ class NestedMessageGetter:
 
 @dataclasses.dataclass(frozen=True)
 class MapKeyIterable(collections.abc.Iterable):
-    scalar_map: Iterable[Optional[ScalarMapContainer]]
+    scalar_map: Iterable[Optional[MessageMap]]
 
     def __iter__(self) -> Iterator[Any]:
         for scalar_map in self.scalar_map:
@@ -176,7 +176,7 @@ class MapKeyIterable(collections.abc.Iterable):
 
 @dataclasses.dataclass(frozen=True)
 class MapValueIterable(collections.abc.Iterable):
-    scalar_map: Iterable[Optional[ScalarMapContainer]]
+    scalar_map: Iterable[Optional[MessageMap]]
 
     def __iter__(self) -> Iterator[Any]:
         for scalar_map in self.scalar_map:
@@ -272,7 +272,7 @@ def _proto_field_to_array(
 
 
 def _get_offsets(
-    records: Iterable[Union[RepeatedScalarContainer, ScalarMapContainer]]
+    records: Iterable[Union[RepeatedScalarFieldContainer, MessageMap]]
 ) -> List[int]:
     last_offset = 0
     offsets = []
@@ -287,7 +287,7 @@ def _get_offsets(
 
 
 def _repeated_proto_to_array(
-    records: Iterable[RepeatedScalarContainer],
+    records: Iterable[RepeatedScalarFieldContainer],
     field: FieldDescriptor,
     config: ProtarrowConfig,
 ) -> pa.ListArray:
@@ -309,7 +309,7 @@ def _repeated_proto_to_array(
 
 
 def _proto_map_to_array(
-    records: Iterable[ScalarMapContainer],
+    records: Iterable[MessageMap],
     field: FieldDescriptor,
     config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.MapArray:

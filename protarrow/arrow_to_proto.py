@@ -5,8 +5,8 @@ from typing import Any, Callable, Iterable, Iterator, List, Optional, Type, Unio
 import pyarrow as pa
 import pyarrow.compute as pc
 from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
+from google.protobuf.internal.containers import MessageMap
 from google.protobuf.message import Message
-from google.protobuf.pyext._message import ScalarMapContainer
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.protobuf.wrappers_pb2 import (
     BoolValue,
@@ -145,9 +145,22 @@ def create_enum_converter(enum_descriptor: EnumDescriptor):
     def convert_enum(scalar: pa.Scalar) -> int:
         if pa.types.is_integer(scalar.type):
             return scalar.as_py()
-        elif pa.types.is_binary(scalar.type) or pa.types.is_string(scalar.type):
+        elif pa.types.is_binary(scalar.type) or (
+            pa.types.is_dictionary(scalar.type)
+            and pa.types.is_binary(scalar.type.value_type)
+        ):
+            enum_value = enum_descriptor.values_by_name.get(
+                scalar.as_py().decode("utf-8"), None
+            )
+            return enum_value.number if enum_value else 0
+        elif pa.types.is_string(scalar.type) or (
+            pa.types.is_dictionary(scalar.type)
+            and pa.types.is_string(scalar.type.value_type)
+        ):
             enum_value = enum_descriptor.values_by_name.get(scalar.as_py(), None)
             return enum_value.number if enum_value else 0
+        else:
+            raise TypeError()
 
     return convert_enum
 
@@ -247,11 +260,11 @@ class MapKeyAssigner(collections.abc.Iterable):
         return self.attribute[self.converter(scalar)]
 
 
-def _direct_assign_map(attribute: ScalarMapContainer, key: Any, value: Any):
+def _direct_assign_map(attribute: MessageMap, key: Any, value: Any):
     attribute[key] = value
 
 
-def _merge_assign_map(attribute: ScalarMapContainer, key: Any, value: Any):
+def _merge_assign_map(attribute: MessageMap, key: Any, value: Any):
     if value is None:
         attribute[key]
     else:
@@ -265,10 +278,8 @@ class MapItemAssigner(collections.abc.Iterable):
     offsets: Iterable[int]
     key_converter: Callable[[pa.Scalar], Any] = dataclasses.field(init=False)
     value_converter: Callable[[pa.Scalar], Any] = dataclasses.field(init=False)
-    assigner: Callable[[ScalarMapContainer, Any, Any], None] = dataclasses.field(
-        init=False
-    )
-    attribute: Optional[ScalarMapContainer] = None
+    assigner: Callable[[MessageMap, Any, Any], None] = dataclasses.field(init=False)
+    attribute: Optional[MessageMap] = None
 
     def __post_init__(self):
         assert self.field_descriptor.label == FieldDescriptor.LABEL_REPEATED

@@ -1,0 +1,11 @@
+[flake8]
+exclude =
+  .git
+  .tox
+  __pycache__
+  venv
+  protarrow_protos
+
+max-line-length = 88
+
+# extend-ignore = R1705

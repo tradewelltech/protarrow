@@ -1,10 +1,11 @@
 import datetime
 import pathlib
-from typing import List, Type
+from typing import Iterable, List, Type
 
 import pyarrow as pa
 import pytest
 from google.protobuf.json_format import Parse
+from google.protobuf.message import Message
 from google.protobuf.reflection import GeneratedProtocolMessageType
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.type.timeofday_pb2 import TimeOfDay
@@ -27,6 +28,8 @@ CONFIGS = [
     ProtarrowConfig(),
     ProtarrowConfig(enum_type=pa.binary()),
     ProtarrowConfig(enum_type=pa.string()),
+    ProtarrowConfig(enum_type=pa.dictionary(pa.int32(), pa.binary())),
+    ProtarrowConfig(enum_type=pa.dictionary(pa.int32(), pa.string())),
     ProtarrowConfig(timestamp_type=pa.timestamp("s")),
     ProtarrowConfig(timestamp_type=pa.timestamp("ms")),
     ProtarrowConfig(timestamp_type=pa.timestamp("us")),
@@ -72,7 +75,7 @@ def test_with_random(
 
     table = messages_to_table(source_messages, message_type, config)
     messages_back = table_to_messages(table, message_type)
-    assert source_messages == messages_back
+    _check_messages_same(source_messages, messages_back)
 
 
 @pytest.mark.parametrize("message_type", MESSAGES)
@@ -89,7 +92,7 @@ def test_with_sample_data(
     ]
     table = messages_to_table(source_messages, message_type, config)
     messages_back = table_to_messages(table, message_type)
-    assert source_messages == messages_back
+    _check_messages_same(source_messages, messages_back)
 
 
 def test_wrapped_type_nullable():
@@ -315,3 +318,39 @@ def test_nullability():
     assert nested_schema.field("double_value").nullable
     assert nested_schema.field("double_values").nullable
     assert nested_schema.field("wrapped_double").nullable
+
+
+@pytest.mark.parametrize(
+    "enum_type", [pa.binary(), pa.dictionary(pa.int32(), pa.binary())]
+)
+def test_binary_enums(enum_type):
+    message = TestMessage(enum_value=2)
+    table = protarrow.messages_to_table(
+        [message], TestMessage, protarrow.ProtarrowConfig(enum_type=enum_type)
+    )
+    assert table["enum_value"].to_pylist() == [b"TEST_ENUM_2"]
+    assert table["enum_value"].type == enum_type
+
+    message_back = protarrow.table_to_messages(table, TestMessage)[0]
+    assert message == message_back
+
+
+@pytest.mark.parametrize(
+    "enum_type", [pa.string(), pa.dictionary(pa.int32(), pa.string())]
+)
+def test_string_enums(enum_type):
+    message = TestMessage(enum_value=2)
+    table = protarrow.messages_to_table(
+        [message], TestMessage, protarrow.ProtarrowConfig(enum_type=enum_type)
+    )
+    assert table["enum_value"].to_pylist() == ["TEST_ENUM_2"]
+    assert table["enum_value"].type == enum_type
+
+    message_back = protarrow.table_to_messages(table, TestMessage)[0]
+    assert message == message_back
+
+
+def _check_messages_same(actual: Iterable[Message], expected: Iterable[Message]):
+    for left, right in zip(actual, expected):
+        assert left == right
+    assert actual == expected

@@ -116,6 +116,7 @@ python3 -m venv --clear venv
 source venv/bin/activate
 poetry install
 python ./scripts/protoc.py
+pre-commit install
 ```
 
 ## Testing
