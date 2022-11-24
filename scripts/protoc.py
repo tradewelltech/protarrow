@@ -2,6 +2,7 @@ import pathlib
 
 import google.type.date_pb2
 import grpc_tools
+import grpc_tools.protoc
 
 _ROOT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 _GOOGLE_COMMON_PROTOS_ROOT_DIR = pathlib.Path(
