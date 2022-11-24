@@ -1,4 +1,5 @@
 import pathlib
+import sys
 
 import google.type.date_pb2
 import grpc_tools
@@ -20,13 +21,16 @@ def main():
     proto_args = [
         "protoc",
         "--proto_path={}".format(_GOOGLE_COMMON_PROTOS_ROOT_DIR),
-        # "--proto_path={}".format(_GRPC_PROTOS_INCLUDE),
+        "--proto_path={}".format(_GRPC_PROTOS_INCLUDE),
         "--proto_path={}".format(_SRC_DIR),
         "--python_out={}".format(_OUT_DIR),
     ] + proto_files
     print(" ".join(proto_args))
-    grpc_tools.protoc.main(proto_args)
-    (_OUT_DIR / "__init__.py").touch()
+    return_code = grpc_tools.protoc.main(proto_args)
+    if return_code != 0:
+        sys.exit(return_code)
+    else:
+        (_OUT_DIR / "__init__.py").touch()
 
 
 if __name__ == "__main__":
