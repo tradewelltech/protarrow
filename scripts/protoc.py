@@ -1,5 +1,6 @@
 import pathlib
 import warnings
+from typing import List
 
 import google.type.date_pb2
 import grpc_tools
@@ -13,7 +14,7 @@ _SRC_DIR = _ROOT_DIR / "protos"
 _OUT_DIR = _ROOT_DIR / "protarrow_protos"
 
 
-def run_protoc(arguments: list[str]):
+def run_protoc(arguments: List[str]):
     try:
         import grpc_tools.protoc
 
