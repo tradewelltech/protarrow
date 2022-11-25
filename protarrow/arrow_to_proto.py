@@ -141,34 +141,31 @@ def convert_scalar(scalar: pa.Scalar) -> Any:
     return scalar.as_py()
 
 
-def create_enum_converter(enum_descriptor: EnumDescriptor):
-    def convert_enum(scalar: pa.Scalar) -> int:
-        if pa.types.is_integer(scalar.type):
-            return scalar.as_py()
-        elif pa.types.is_binary(scalar.type) or (
-            pa.types.is_dictionary(scalar.type)
-            and pa.types.is_binary(scalar.type.value_type)
-        ):
-            enum_value = enum_descriptor.values_by_name.get(
-                scalar.as_py().decode("utf-8"), None
-            )
-            return enum_value.number if enum_value else 0
-        elif pa.types.is_string(scalar.type) or (
-            pa.types.is_dictionary(scalar.type)
-            and pa.types.is_string(scalar.type.value_type)
-        ):
-            enum_value = enum_descriptor.values_by_name.get(scalar.as_py(), None)
-            return enum_value.number if enum_value else 0
-        else:
-            raise TypeError()
-
-    return convert_enum
+def create_enum_converter(
+    enum_descriptor: EnumDescriptor, arrow_type: pa.DataType
+) -> Callable[[pa.Scalar], int]:
+    if pa.types.is_integer(arrow_type):
+        return lambda x: x.as_py()
+    elif pa.types.is_binary(arrow_type) or (
+        pa.types.is_dictionary(arrow_type) and pa.types.is_binary(arrow_type.value_type)
+    ):
+        mapping = {v.name.encode("utf-8"): v.number for v in enum_descriptor.values}
+        return lambda x: mapping.get(x.as_py(), 0)
+    elif pa.types.is_string(arrow_type) or (
+        pa.types.is_dictionary(arrow_type) and pa.types.is_string(arrow_type.value_type)
+    ):
+        mapping = {v.name: v.number for v in enum_descriptor.values}
+        return lambda x: mapping.get(x.as_py(), 0)
+    else:
+        raise TypeError(arrow_type)
 
 
-def get_converter(field_descriptor: FieldDescriptor) -> Callable[[pa.Scalar], Any]:
+def get_converter(
+    field_descriptor: FieldDescriptor, arrow_type: pa.DataType
+) -> Callable[[pa.Scalar], Any]:
     if field_descriptor.type == FieldDescriptor.TYPE_ENUM:
         enum_descriptor: EnumDescriptor = field_descriptor.enum_type
-        return create_enum_converter(enum_descriptor)
+        return create_enum_converter(enum_descriptor, arrow_type)
     elif field_descriptor.type == FieldDescriptor.TYPE_MESSAGE:
         if field_descriptor.message_type in NULLABLE_TYPES:
             return convert_scalar
@@ -182,10 +179,15 @@ def get_converter(field_descriptor: FieldDescriptor) -> Callable[[pa.Scalar], An
 
 
 class PlainAssigner(collections.abc.Iterable):
-    def __init__(self, messages: Iterable[Message], field_descriptor: FieldDescriptor):
+    def __init__(
+        self,
+        messages: Iterable[Message],
+        field_descriptor: FieldDescriptor,
+        arrow_type: pa.DataType,
+    ):
         self.messages = messages
         self.field_descriptor = field_descriptor
-        self.converter = get_converter(field_descriptor)
+        self.converter = get_converter(field_descriptor, arrow_type)
         self.nullable = self.field_descriptor.message_type in NULLABLE_TYPES
         self.message = None
 
@@ -237,15 +239,16 @@ class AppendAssigner(collections.abc.Iterable):
 class MapKeyAssigner(collections.abc.Iterable):
     messages: Iterable[Message]
     field_descriptor: FieldDescriptor
+    key_arrow_type: dataclasses.InitVar[pa.DataType]
     offsets: Iterable[int]
     converter: Callable[[pa.Scalar], Any] = dataclasses.field(init=False)
     attribute: Any = None
 
-    def __post_init__(self):
+    def __post_init__(self, key_arrow_type: pa.DataType):
         assert self.field_descriptor.label == FieldDescriptor.LABEL_REPEATED
         assert self.field_descriptor.message_type.GetOptions().map_entry
         self.converter = get_converter(
-            self.field_descriptor.message_type.fields_by_name["key"]
+            self.field_descriptor.message_type.fields_by_name["key"], key_arrow_type
         )
 
     def __iter__(self) -> Iterator[Callable[[pa.Scalar], Message]]:
@@ -275,20 +278,22 @@ def _merge_assign_map(attribute: MessageMap, key: Any, value: Any):
 class MapItemAssigner(collections.abc.Iterable):
     messages: Iterable[Message]
     field_descriptor: FieldDescriptor
+    key_arrow_type: dataclasses.InitVar[pa.DataType]
+    value_arrow_type: dataclasses.InitVar[pa.DataType]
     offsets: Iterable[int]
     key_converter: Callable[[pa.Scalar], Any] = dataclasses.field(init=False)
     value_converter: Callable[[pa.Scalar], Any] = dataclasses.field(init=False)
     assigner: Callable[[MessageMap, Any, Any], None] = dataclasses.field(init=False)
     attribute: Optional[MessageMap] = None
 
-    def __post_init__(self):
+    def __post_init__(self, key_arrow_type: pa.DataType, value_arrow_type: pa.DataType):
         assert self.field_descriptor.label == FieldDescriptor.LABEL_REPEATED
         assert self.field_descriptor.message_type.GetOptions().map_entry
         self.key_converter = get_converter(
-            self.field_descriptor.message_type.fields_by_name["key"]
+            self.field_descriptor.message_type.fields_by_name["key"], key_arrow_type
         )
         value_descriptor = self.field_descriptor.message_type.fields_by_name["value"]
-        self.value_converter = get_converter(value_descriptor)
+        self.value_converter = get_converter(value_descriptor, value_arrow_type)
         self.assigner = (
             _merge_assign_map
             if (value_descriptor.type == FieldDescriptor.TYPE_MESSAGE)
@@ -326,14 +331,19 @@ def _extract_map_field(
     messages: Iterable[Message],
 ) -> None:
     assert pa.types.is_map(array.type), array.type
-    value_type = field_descriptor.message_type.fields_by_name["value"]
+    value_descriptor = field_descriptor.message_type.fields_by_name["value"]
 
-    if is_custom_field(value_type):
+    if is_custom_field(value_descriptor):
         # Because protobuf doesn't warranty orders of map,
         # we have to make a copy of the list of values here
         values = []
         for assigner, key in zip(
-            MapKeyAssigner(messages, field_descriptor, OffsetToSize(array.offsets)),
+            MapKeyAssigner(
+                messages,
+                field_descriptor,
+                array.type.key_type,
+                OffsetToSize(array.offsets),
+            ),
             array.keys,
         ):
             values.append(assigner(key))
@@ -342,7 +352,7 @@ def _extract_map_field(
         item_type: pa.StructType = array.type.item_type
         assert isinstance(item_type, pa.StructType)
 
-        for field_descriptor in value_type.message_type.fields:
+        for field_descriptor in value_descriptor.message_type.fields:
             field_index = item_type.get_field_index(field_descriptor.name)
             if field_index != -1:
                 _extract_field(
@@ -353,7 +363,13 @@ def _extract_map_field(
 
     else:
         for assigner, key, value in zip(
-            MapItemAssigner(messages, field_descriptor, OffsetToSize(array.offsets)),
+            MapItemAssigner(
+                messages,
+                field_descriptor,
+                array.type.key_type,
+                array.type.item_type,
+                OffsetToSize(array.offsets),
+            ),
             array.keys,
             _prepare_array(array.values.field(1)),
         ):
@@ -381,7 +397,7 @@ def _extract_repeated_primitive(
         messages=messages,
         field_descriptor=field_descriptor,
         sizes=OffsetToSize(array.offsets),
-        converter=get_converter(field_descriptor),
+        converter=get_converter(field_descriptor, array.type.value_type),
     )
 
     for each_assigner, value in zip(assigner, _prepare_array(array.values)):
@@ -428,7 +444,7 @@ def _extract_field(
     ):
         _extract_struct_field(array, field_descriptor, messages)
     else:
-        plain_assigner = PlainAssigner(messages, field_descriptor)
+        plain_assigner = PlainAssigner(messages, field_descriptor, array.type)
         for plain_assigner, value in zip(plain_assigner, array):
             if value.is_valid:
                 plain_assigner(value)
