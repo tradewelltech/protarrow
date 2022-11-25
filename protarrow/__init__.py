@@ -6,6 +6,7 @@ from protarrow.proto_to_arrow import (
     messages_to_table,
 )
 
+__version__ = "0.0.0"
 __all__ = [
     "ProtarrowConfig",
     "message_type_to_schema",
