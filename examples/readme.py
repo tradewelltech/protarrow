@@ -5,8 +5,8 @@ from example_pb2 import MyProto
 import protarrow
 
 my_protos = [
-    MyProto(name="foo", values=[1, 2, 4]),
-    MyProto(name="bar", values=[3, 4, 5]),
+    MyProto(name="foo", id=1, values=[1, 2, 4]),
+    MyProto(name="bar", id=2, values=[3, 4, 5]),
 ]
 
 schema = protarrow.message_type_to_schema(MyProto)

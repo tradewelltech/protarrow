@@ -1,5 +1,12 @@
 
+
+[![PyPI Version][pypi-image]][pypi-url]
+[![][versions-image]][versions-url]
+[![][stars-image]][stars-url]
 [![codecov](https://codecov.io/gh/0x26res/protarrow/branch/master/graph/badge.svg?token=XMFH27IL70)](https://codecov.io/gh/0x26res/protarrow)
+[![Build Status][build-image]][build-url]
+
+
 
 # Protarrow
 
@@ -18,7 +25,8 @@ pip install protarrow
 ```protobuf
 message MyProto {
   string name = 1;
-  repeated int32 values = 2;
+  int32 id = 2;
+  repeated int32 values = 3;
 }
 ```
 
@@ -26,19 +34,18 @@ message MyProto {
 import protarrow
 
 my_protos = [
-    MyProto(name="foo", values=[1, 2, 4]),
-    MyProto(name="bar", values=[1, 2, 4]),
+    MyProto(name="foo", id=1, values=[1, 2, 4]),
+    MyProto(name="bar", id=2, values=[3, 4, 5]),
 ]
 
 schema = protarrow.message_type_to_schema(MyProto)
 record_batch = protarrow.messages_to_record_batch(my_protos, MyProto)
 table = protarrow.messages_to_table(my_protos, MyProto)
 ```
-
-| name   | values   |
-|:-------|:---------|
-| foo    | [1 2 4]  |
-| bar    | [3 4 5]  |
+| name   |   id | values   |
+|:-------|-----:|:---------|
+| foo    |    1 | [1 2 4]  |
+| bar    |    2 | [3 4 5]  |
 
 
 ## Convert from arrow to proto
@@ -132,3 +139,15 @@ Tests convert randomly generated data from protobuf to arrow and back, making su
 coverage run --branch --include "*/protarrow/*" -m pytest tests
 coverage report
 ```
+
+
+<!-- Badges: -->
+
+[pypi-image]: https://img.shields.io/pypi/v/protarrow
+[pypi-url]: https://pypi.org/project/protarrow/
+[build-image]: https://github.com/tradewelltech/protarrow/actions/workflows/build.yaml/badge.svg
+[build-url]: https://github.com/tradewelltech/protarrow/actions/workflows/build.yaml
+[stars-image]: https://img.shields.io/github/stars/tradewelltech/protarrow
+[stars-url]: https://github.com/tradewelltech/protarrow
+[versions-image]: https://img.shields.io/pypi/pyversions/protarrow
+[versions-url]: https://pypi.org/project/protarrow/

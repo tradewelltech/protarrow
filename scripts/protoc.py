@@ -1,9 +1,9 @@
 import pathlib
-import sys
+import warnings
+from typing import List
 
 import google.type.date_pb2
 import grpc_tools
-import grpc_tools.protoc
 
 _ROOT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 _GOOGLE_COMMON_PROTOS_ROOT_DIR = pathlib.Path(
@@ -12,6 +12,21 @@ _GOOGLE_COMMON_PROTOS_ROOT_DIR = pathlib.Path(
 _GRPC_PROTOS_INCLUDE = pathlib.Path(grpc_tools.__file__).parent.absolute() / "_proto"
 _SRC_DIR = _ROOT_DIR / "protos"
 _OUT_DIR = _ROOT_DIR / "protarrow_protos"
+
+
+def run_protoc(arguments: List[str]):
+    try:
+        import grpc_tools.protoc
+
+        return_code = grpc_tools.protoc.main(arguments)
+        if return_code != 0:
+            raise RuntimeError("Could not generate proto")
+
+    except ImportError:
+        warnings.warn("Using system version of protoc")
+        import subprocess  # nosec B404
+
+        subprocess.run(arguments, check=True)  # nosec B603
 
 
 def main():
@@ -26,11 +41,8 @@ def main():
         "--python_out={}".format(_OUT_DIR),
     ] + proto_files
     print(" ".join(proto_args))
-    return_code = grpc_tools.protoc.main(proto_args)
-    if return_code != 0:
-        sys.exit(return_code)
-    else:
-        (_OUT_DIR / "__init__.py").touch()
+    run_protoc(proto_args)
+    (_OUT_DIR / "__init__.py").touch()
 
 
 if __name__ == "__main__":

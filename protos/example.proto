@@ -4,5 +4,6 @@ package protarrow.protos;
 
 message MyProto {
   string name = 1;
-  repeated int32 values = 2;
+  int32 id = 2;
+  repeated int32 values = 3;
 }
