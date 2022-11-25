@@ -114,6 +114,7 @@ record_batch = protarrow.messages_to_record_batch(my_protos, MyProto, config)
 ```shell
 python3 -m venv --clear venv
 source venv/bin/activate
+poetry self add "poetry-dynamic-versioning[plugin]"
 poetry install
 python ./scripts/protoc.py
 pre-commit install

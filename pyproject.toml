@@ -58,3 +58,7 @@ skips = ["B101", "B311"]
 
 [tool.poetry-dynamic-versioning]
 enable = true
+
+[tool.poetry-dynamic-versioning.substitution]
+files = ["*/__init__.py"]
+folders = [ {path = "protarrow"}]
