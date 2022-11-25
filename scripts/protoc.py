@@ -1,8 +1,9 @@
 import pathlib
-import subprocess  # nosec B404
+import sys
 
 import google.type.date_pb2
 import grpc_tools
+import grpc_tools.protoc
 
 _ROOT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 _GOOGLE_COMMON_PROTOS_ROOT_DIR = pathlib.Path(
@@ -25,8 +26,11 @@ def main():
         "--python_out={}".format(_OUT_DIR),
     ] + proto_files
     print(" ".join(proto_args))
-    subprocess.run(proto_args, check=True)  # nosec B603
-    (_OUT_DIR / "__init__.py").touch()
+    return_code = grpc_tools.protoc.main(proto_args)
+    if return_code != 0:
+        sys.exit(return_code)
+    else:
+        (_OUT_DIR / "__init__.py").touch()
 
 
 if __name__ == "__main__":

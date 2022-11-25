@@ -1,3 +1,6 @@
+
+[![codecov](https://codecov.io/gh/0x26res/protarrow/branch/master/graph/badge.svg?token=XMFH27IL70)](https://codecov.io/gh/0x26res/protarrow)
+
 # Protarrow
 
 A library for converting from protobuf to arrow and back 
