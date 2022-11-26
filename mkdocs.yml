@@ -1,0 +1,6 @@
+site_name: Protarrow
+site_url: https://protarrow.readthedocs.io/en/latest/
+nav:
+  - Home: index.md
+  - Usage: usage.md
+  - Types: types.md
