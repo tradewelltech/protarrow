@@ -4,3 +4,4 @@ nav:
   - Home: index.md
   - Usage: usage.md
   - Types: types.md
+  - Development: development.md

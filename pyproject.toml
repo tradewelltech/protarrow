@@ -10,6 +10,7 @@ packages = [
 readme = "README.md"
 license = "Apache-2.0"
 repository = "https://github.com/tradewelltech/protarrow"
+documentation = "https://protarrow.readthedocs.io/en/latest/"
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: Apache Software License",
@@ -40,18 +41,18 @@ pylint = "^2.15.0"
 coverage = "^6.5.0"
 
 [build-system]
-requires = ["poetry-core>=1.0.0",  "poetry-dynamic-versioning"]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
 build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.black]
-  target-version =  ['py39']
-  exclude = "venv/|tox/|protarrow_protos/.*"
+target-version =  ['py39']
+exclude = "venv/|tox/|protarrow_protos/.*"
 
 [tool.isort]
-  profile = "black"
-  src_paths = ["protarrow", "tests"]
-  known_first_party = ["protarrow", "protarrow_protos" ]
-  skip = [".gitignore"]
+profile = "black"
+src_paths = ["protarrow", "tests"]
+known_first_party = ["protarrow", "protarrow_protos" ]
+skip = [".gitignore"]
 
 [tool.bandit]
 skips = ["B101", "B311"]
