@@ -1,4 +1,4 @@
-"""Example from the README.md"""
+"""Example from the documentation"""
 import pyarrow as pa
 from example_pb2 import MyProto
 
