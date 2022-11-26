@@ -42,7 +42,7 @@ table = protarrow.messages_to_table(my_protos, MyProto)
 ## Convert from arrow to proto
 
 ```python
-protos_from_record_batch = protarrow.table_to_messages(record_batch, MyProto)
+protos_from_record_batch = protarrow.record_batch_to_messages(record_batch, MyProto)
 protos_from_table = protarrow.table_to_messages(table, MyProto)
 ```
 
