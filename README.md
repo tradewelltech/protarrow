@@ -1,7 +1,7 @@
 [![PyPI Version][pypi-image]][pypi-url]
 [![][versions-image]][versions-url]
 [![][stars-image]][stars-url]
-[![codecov](https://codecov.io/gh/0x26res/protarrow/branch/master/graph/badge.svg?token=XMFH27IL70)](https://codecov.io/gh/0x26res/protarrow)
+[![codecov](https://codecov.io/gh/tradewelltech/protarrow/branch/master/graph/badge.svg?token=XMFH27IL70)](https://codecov.io/gh/tradewelltech/protarrow)
 [![Build Status][build-image]][build-url]
 
 
