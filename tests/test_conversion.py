@@ -306,20 +306,6 @@ def test_truncate_nested():
     )
 
 
-def test_nullability():
-    schema = message_type_to_schema(TestMessage)
-    assert not schema.field("double_value").nullable
-    assert not schema.field("double_values").nullable
-    assert schema.field("wrapped_double").nullable
-
-    nested_schema = pa.schema(
-        list(message_type_to_schema(NestedTestMessage).field("test_message").type)
-    )
-    assert nested_schema.field("double_value").nullable
-    assert nested_schema.field("double_values").nullable
-    assert nested_schema.field("wrapped_double").nullable
-
-
 @pytest.mark.parametrize(
     "enum_type", [pa.binary(), pa.dictionary(pa.int32(), pa.binary())]
 )
@@ -356,20 +342,11 @@ def _check_messages_same(actual: Iterable[Message], expected: Iterable[Message])
     assert actual == expected
 
 
-def test_nullable():
-    schema = protarrow.message_type_to_schema(TestMessage)
-    assert schema.field(1).name == "float_value"
-    assert not schema.field(1).nullable
-
-    nested_schema = protarrow.message_type_to_schema(NestedTestMessage)
-    assert nested_schema.field("test_message").type.field(1).name == "float_value"
-    assert nested_schema.field("test_message").type.field(1).nullable
-
-
-def test_nest_field_not_null():
-
+def test_nested_field_values_not_null_when_message_missing():
     messages = [NestedTestMessage()]
     record_batch = protarrow.messages_to_record_batch(messages, NestedTestMessage)
+    assert record_batch["test_message"].null_count == 1
+    assert record_batch["test_message"].to_pylist() == [None]
     assert record_batch["test_message"].field(0).null_count == 0
     assert record_batch["test_message"].field(0).to_pylist() == [0.0]
     assert record_batch["test_message"].type.field(0).name == "double_value"
