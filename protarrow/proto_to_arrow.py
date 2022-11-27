@@ -96,11 +96,17 @@ def _time_of_day_to_seconds(time_of_day: TimeOfDay) -> int:
     return (time_of_day.hours * 60 + time_of_day.minutes) * 60 + time_of_day.seconds
 
 
+def _proto_date_to_py_date(proto_date: Date) -> datetime.date:
+    # TODO: fix when
+    x: datetime.date.min
+    if proto_date.year == 0:
+        return datetime.date.min
+    else:
+        return datetime.date(proto_date.year, proto_date.month, proto_date.day)
+
+
 _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER = {
-    # TODO: remove this special case
-    Date.DESCRIPTOR: lambda x: None
-    if x.year == 0
-    else datetime.date(x.year, x.month, x.day),
+    Date.DESCRIPTOR: _proto_date_to_py_date,
     TimeOfDay.DESCRIPTOR: _time_of_day_to_nanos,
     BoolValue.DESCRIPTOR: lambda x: x.value,
     BytesValue.DESCRIPTOR: lambda x: x.value,
@@ -238,7 +244,6 @@ def _proto_field_to_array(
                 field.message_type,
                 validity_mask=validity_mask,
                 config=config,
-                is_nested=True,
             )
         else:
             pa_type = _PROTO_DESCRIPTOR_TO_PYARROW[field.message_type]
@@ -300,11 +305,7 @@ def _repeated_proto_to_array(
     return pa.ListArray.from_arrays(
         offsets,
         array,
-        pa.list_(
-            pa.field(
-                "item", array.type, nullable=field.type == FieldDescriptor.TYPE_MESSAGE
-            )
-        ),
+        pa.list_(pa.field("item", array.type, nullable=False)),
     )
 
 
@@ -332,18 +333,16 @@ def _proto_map_to_array(
         validity_mask=None,
         config=config,
     )
+    return pa.MapArray.from_arrays(offsets, keys, values).cast(
+        pa.map_(keys.type, pa.field("item", values.type, nullable=False))
+    )
 
-    return pa.MapArray.from_arrays(offsets, keys, values)
 
-
-def _proto_field_nullable(field: FieldDescriptor, is_nested: bool) -> bool:
-    if is_nested:
-        return True
-    else:
-        return (
-            field.type == FieldDescriptorProto.TYPE_MESSAGE
-            and field.label != FieldDescriptorProto.LABEL_REPEATED
-        )
+def _proto_field_nullable(field: FieldDescriptor) -> bool:
+    return (
+        field.type == FieldDescriptorProto.TYPE_MESSAGE
+        and field.label != FieldDescriptorProto.LABEL_REPEATED
+    )
 
 
 def _proto_field_validity_mask(
@@ -369,7 +368,6 @@ def _message_to_array(
     descriptor: Descriptor,
     validity_mask: Optional[Sequence[bool]],
     config: ProtarrowConfig,
-    is_nested: bool,
 ) -> pa.StructArray:
     arrays = []
     fields = []
@@ -397,7 +395,7 @@ def _message_to_array(
             pa.field(
                 field.name,
                 array.type,
-                nullable=_proto_field_nullable(field, is_nested=is_nested),
+                nullable=_proto_field_nullable(field),
             )
         )
     return pa.StructArray.from_arrays(
@@ -418,7 +416,6 @@ def messages_to_record_batch(
             message_type.DESCRIPTOR,
             validity_mask=None,
             config=config,
-            is_nested=False,
         )
     )
 
