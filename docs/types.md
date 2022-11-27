@@ -44,5 +44,5 @@
 
 ## Nullability
 
-* Top level native field, list and maps are marked as non-nullable.
-* Any nested message and their children are nullable
+* Native field, list values, maps keys and values are marked as non-nullable.
+* The only nullable fields are nested message
