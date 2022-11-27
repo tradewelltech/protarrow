@@ -354,3 +354,22 @@ def _check_messages_same(actual: Iterable[Message], expected: Iterable[Message])
     for left, right in zip(actual, expected):
         assert left == right
     assert actual == expected
+
+
+def test_nullable():
+    schema = protarrow.message_type_to_schema(TestMessage)
+    assert schema.field(1).name == "float_value"
+    assert not schema.field(1).nullable
+
+    nested_schema = protarrow.message_type_to_schema(NestedTestMessage)
+    assert nested_schema.field("test_message").type.field(1).name == "float_value"
+    assert nested_schema.field("test_message").type.field(1).nullable
+
+
+def test_nest_field_not_null():
+
+    messages = [NestedTestMessage()]
+    record_batch = protarrow.messages_to_record_batch(messages, NestedTestMessage)
+    assert record_batch["test_message"].field(0).null_count == 0
+    assert record_batch["test_message"].field(0).to_pylist() == [0.0]
+    assert record_batch["test_message"].type.field(0).name == "double_value"
