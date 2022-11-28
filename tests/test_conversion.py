@@ -350,3 +350,13 @@ def test_nested_field_values_not_null_when_message_missing():
     assert record_batch["test_message"].field(0).null_count == 0
     assert record_batch["test_message"].field(0).to_pylist() == [0.0]
     assert record_batch["test_message"].type.field(0).name == "double_value"
+
+
+def test_nested_enums():
+    messages = [NestedTestMessage()]
+    record_batch = protarrow.messages_to_record_batch(
+        messages, NestedTestMessage, protarrow.ProtarrowConfig(enum_type=pa.binary())
+    )
+    assert record_batch["test_message"].field(
+        record_batch["test_message"].type.get_field_index("enum_value")
+    ).to_pylist() == [b"UNKNOWN_TEST_ENUM"]

@@ -14,6 +14,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Tuple,
     Type,
     Union,
 )
@@ -108,15 +109,15 @@ def _proto_date_to_py_date(proto_date: Date) -> datetime.date:
 _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER = {
     Date.DESCRIPTOR: _proto_date_to_py_date,
     TimeOfDay.DESCRIPTOR: _time_of_day_to_nanos,
-    BoolValue.DESCRIPTOR: lambda x: x.value,
-    BytesValue.DESCRIPTOR: lambda x: x.value,
-    DoubleValue.DESCRIPTOR: lambda x: x.value,
-    FloatValue.DESCRIPTOR: lambda x: x.value,
-    Int32Value.DESCRIPTOR: lambda x: x.value,
-    Int64Value.DESCRIPTOR: lambda x: x.value,
-    StringValue.DESCRIPTOR: lambda x: x.value,
-    UInt32Value.DESCRIPTOR: lambda x: x.value,
-    UInt64Value.DESCRIPTOR: lambda x: x.value,
+    BoolValue.DESCRIPTOR: operator.attrgetter("value"),
+    BytesValue.DESCRIPTOR: operator.attrgetter("value"),
+    DoubleValue.DESCRIPTOR: operator.attrgetter("value"),
+    FloatValue.DESCRIPTOR: operator.attrgetter("value"),
+    Int32Value.DESCRIPTOR: operator.attrgetter("value"),
+    Int64Value.DESCRIPTOR: operator.attrgetter("value"),
+    StringValue.DESCRIPTOR: operator.attrgetter("value"),
+    UInt32Value.DESCRIPTOR: operator.attrgetter("value"),
+    UInt64Value.DESCRIPTOR: operator.attrgetter("value"),
 }
 
 _TIMESTAMP_CONVERTERS = {
@@ -224,56 +225,81 @@ def get_enum_converter(
         raise TypeError(data_type)
 
 
+def _get_converter_and_type(
+    field_descriptor: FieldDescriptor,
+    config: ProtarrowConfig,
+) -> Optional[Tuple[pa.DataType, Callable[[Any], Any]]]:
+    if field_descriptor.message_type == Timestamp.DESCRIPTOR:
+        return config.timestamp_type, _TIMESTAMP_CONVERTERS[config.timestamp_type.unit]
+    elif field_descriptor.message_type == TimeOfDay.DESCRIPTOR:
+        return (
+            config.time_of_day_type,
+            _TIME_OF_DAY_CONVERTERS[config.time_of_day_type.unit],
+        )
+    elif field_descriptor.type == FieldDescriptorProto.TYPE_MESSAGE:
+        converter = _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER.get(
+            field_descriptor.message_type
+        )
+        if converter is None:
+            return None
+        else:
+            return (
+                _PROTO_DESCRIPTOR_TO_PYARROW[field_descriptor.message_type],
+                converter,
+            )
+    elif field_descriptor.type == FieldDescriptorProto.TYPE_ENUM:
+        return config.enum_type, get_enum_converter(
+            config.enum_type, field_descriptor.enum_type
+        )
+    elif field_descriptor.type in _PROTO_PRIMITIVE_TYPE_TO_PYARROW:
+
+        def converter(x: Any) -> Any:
+            return x
+
+        return _PROTO_PRIMITIVE_TYPE_TO_PYARROW.get(field_descriptor.type), converter
+    else:
+        raise TypeError(
+            f"Unsupported field type "
+            f"{FieldDescriptorProto.Type.Name(field_descriptor.type)} "
+            f"for {field_descriptor.name}"
+        )
+
+
 def _proto_field_to_array(
     records: Iterable[Message],
     field: FieldDescriptor,
     validity_mask: Optional[Iterable[bool]],
     config: ProtarrowConfig,
 ) -> pa.Array:
-    if field.message_type == Timestamp.DESCRIPTOR:
-        pa_type = config.timestamp_type
-        converter = _TIMESTAMP_CONVERTERS[config.timestamp_type.unit]
-    elif field.message_type == TimeOfDay.DESCRIPTOR:
-        pa_type = config.time_of_day_type
-        converter = _TIME_OF_DAY_CONVERTERS[config.time_of_day_type.unit]
-    elif field.type == FieldDescriptorProto.TYPE_MESSAGE:
-        converter = _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER.get(field.message_type)
-        if converter is None:
-            return _message_to_array(
-                records,
-                field.message_type,
-                validity_mask=validity_mask,
-                config=config,
+    type_and_converter = _get_converter_and_type(field, config)
+    if type_and_converter is not None:
+        pa_type, converter = type_and_converter
+
+        null_value = (
+            None
+            if (
+                field.type == FieldDescriptor.TYPE_MESSAGE
+                # We use none for repeated field as there should not
+                # be any missing list elements, they are not nullable
+                or field.label == FieldDescriptor.LABEL_REPEATED
             )
-        else:
-            pa_type = _PROTO_DESCRIPTOR_TO_PYARROW[field.message_type]
-
-    elif field.type == FieldDescriptorProto.TYPE_ENUM:
-        pa_type = config.enum_type
-        converter = get_enum_converter(config.enum_type, field.enum_type)
-
+            else converter(field.default_value)
+        )
+        array = []
+        for i, record in enumerate(records):
+            if record is None or not (validity_mask is None or validity_mask[i]):
+                value = null_value
+            else:
+                value = converter(record)
+            array.append(value)
+        return pa.array(array, pa_type)
     else:
-        pa_type = _PROTO_PRIMITIVE_TYPE_TO_PYARROW.get(field.type)
-        if pa_type is None:
-            raise RuntimeError(
-                f"Unsupported field type {FieldDescriptorProto.Type.Name(field.type)} "
-                f"for {field.name}"
-            )
-
-        def converter(x: Any) -> Any:
-            return x
-
-    null_value = (
-        None if field.type == FieldDescriptor.TYPE_MESSAGE else field.default_value
-    )
-    array = []
-    for i, record in enumerate(records):
-        if record is None or not (validity_mask is None or validity_mask[i]):
-            value = null_value
-        else:
-            value = converter(record)
-        array.append(value)
-    return pa.array(array, pa_type)
+        return _message_to_array(
+            records,
+            field.message_type,
+            validity_mask=validity_mask,
+            config=config,
+        )
 
 
 def _get_offsets(
