@@ -109,15 +109,15 @@ def _proto_date_to_py_date(proto_date: Date) -> datetime.date:
 _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER = {
     Date.DESCRIPTOR: _proto_date_to_py_date,
     TimeOfDay.DESCRIPTOR: _time_of_day_to_nanos,
-    BoolValue.DESCRIPTOR: lambda x: x.value,
-    BytesValue.DESCRIPTOR: lambda x: x.value,
-    DoubleValue.DESCRIPTOR: lambda x: x.value,
-    FloatValue.DESCRIPTOR: lambda x: x.value,
-    Int32Value.DESCRIPTOR: lambda x: x.value,
-    Int64Value.DESCRIPTOR: lambda x: x.value,
-    StringValue.DESCRIPTOR: lambda x: x.value,
-    UInt32Value.DESCRIPTOR: lambda x: x.value,
-    UInt64Value.DESCRIPTOR: lambda x: x.value,
+    BoolValue.DESCRIPTOR: operator.attrgetter("value"),
+    BytesValue.DESCRIPTOR: operator.attrgetter("value"),
+    DoubleValue.DESCRIPTOR: operator.attrgetter("value"),
+    FloatValue.DESCRIPTOR: operator.attrgetter("value"),
+    Int32Value.DESCRIPTOR: operator.attrgetter("value"),
+    Int64Value.DESCRIPTOR: operator.attrgetter("value"),
+    StringValue.DESCRIPTOR: operator.attrgetter("value"),
+    UInt32Value.DESCRIPTOR: operator.attrgetter("value"),
+    UInt64Value.DESCRIPTOR: operator.attrgetter("value"),
 }
 
 _TIMESTAMP_CONVERTERS = {
