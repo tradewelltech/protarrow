@@ -192,6 +192,14 @@ class MapValueIterable(collections.abc.Iterable):
                     yield value
 
 
+def is_map(field_descriptor: FieldDescriptor) -> bool:
+    return (
+        field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
+        and field_descriptor.label == FieldDescriptor.LABEL_REPEATED
+        and field_descriptor.message_type.GetOptions().map_entry
+    )
+
+
 def get_enum_converter(
     data_type: pa.DataType, enum_descriptor: EnumDescriptor
 ) -> Callable[[int], Any]:
@@ -364,11 +372,13 @@ def _proto_map_to_array(
     )
 
 
-def _proto_field_nullable(field: FieldDescriptor) -> bool:
-    return (
-        field.type == FieldDescriptorProto.TYPE_MESSAGE
-        and field.label != FieldDescriptorProto.LABEL_REPEATED
-    )
+def _proto_field_nullable(field: FieldDescriptor, config: ProtarrowConfig) -> bool:
+    if is_map(field):
+        return config.map_nullable
+    elif field.label == FieldDescriptorProto.LABEL_REPEATED:
+        return config.list_nullable
+    else:
+        return field.type == FieldDescriptorProto.TYPE_MESSAGE
 
 
 def _proto_field_validity_mask(
@@ -406,7 +416,7 @@ def _message_to_array(
             field_values = NestedIterable(records, NestedMessageGetter(field.name))
         else:
             field_values = NestedIterable(records, operator.attrgetter(field.name))
-        if field.message_type and field.message_type.GetOptions().map_entry:
+        if is_map(field):
             array = _proto_map_to_array(field_values, field, config)
         elif field.label == FieldDescriptorProto.LABEL_REPEATED:
             array = _repeated_proto_to_array(field_values, field, config)
@@ -421,7 +431,7 @@ def _message_to_array(
             pa.field(
                 field.name,
                 array.type,
-                nullable=_proto_field_nullable(field),
+                nullable=_proto_field_nullable(field, config),
             )
         )
     return pa.StructArray.from_arrays(

@@ -11,7 +11,7 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from google.type.timeofday_pb2 import TimeOfDay
 
 import protarrow
-from protarrow.arrow_to_proto import table_to_messages
+from protarrow.arrow_to_proto import create_enum_converter, table_to_messages
 from protarrow.common import M, ProtarrowConfig
 from protarrow.proto_to_arrow import (
     NestedIterable,
@@ -41,6 +41,8 @@ CONFIGS = [
     ProtarrowConfig(timestamp_type=pa.timestamp("ns", "America/New_York")),
     ProtarrowConfig(time_of_day_type=pa.time64("ns")),
     ProtarrowConfig(time_of_day_type=pa.time64("us")),
+    ProtarrowConfig(list_nullable=True),
+    ProtarrowConfig(map_nullable=True),
 ]
 
 
@@ -360,3 +362,10 @@ def test_nested_enums():
     assert record_batch["test_message"].field(
         record_batch["test_message"].type.get_field_index("enum_value")
     ).to_pylist() == [b"UNKNOWN_TEST_ENUM"]
+
+
+def test_create_enum_converter_wrong_type():
+    with pytest.raises(TypeError, match=r"double"):
+        create_enum_converter(
+            TestMessage.DESCRIPTOR.fields_by_name["enum_value"].enum_type, pa.float64()
+        )
