@@ -339,7 +339,11 @@ def _repeated_proto_to_array(
     return pa.ListArray.from_arrays(
         offsets,
         array,
-        pa.list_(pa.field("item", array.type, nullable=False)),
+        pa.list_(
+            pa.field(
+                config.list_value_name, array.type, nullable=config.list_value_nullable
+            )
+        ),
     )
 
 
@@ -368,7 +372,12 @@ def _proto_map_to_array(
         config=config,
     )
     return pa.MapArray.from_arrays(offsets, keys, values).cast(
-        pa.map_(keys.type, pa.field("item", values.type, nullable=False))
+        pa.map_(
+            keys.type,
+            pa.field(
+                config.map_value_name, values.type, nullable=config.map_value_nullable
+            ),
+        )
     )
 
 
