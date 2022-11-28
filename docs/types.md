@@ -44,5 +44,14 @@
 
 ## Nullability
 
-* Native field, list values, maps keys and values are marked as non-nullable.
-* The only nullable fields are nested message
+By default, nullability follows the convention imposed by protobuf:
+* Native field, list, map, list value, map key, map value are marked as non-nullable.
+* Non-repeated messages are the only nullable fields. 
+
+
+Some of this can be configured:
+```python
+import protarrow
+
+protarrow.ProtarrowConfig(list_nullable=True, map_nullable=True)
+```

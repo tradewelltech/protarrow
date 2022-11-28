@@ -1,4 +1,5 @@
 import pyarrow as pa
+import pytest
 
 import protarrow
 from protarrow_protos.example_pb2 import NullableExample
@@ -101,3 +102,25 @@ def test_nullability():
     assert (
         schema == nested_schema
     ), "The schema of a nested message is the same as if the message wasn't nested"
+
+
+@pytest.mark.parametrize("list_nullable", [True, False])
+def test_list_nullable_config(list_nullable: bool):
+    schema = protarrow.message_type_to_schema(
+        TestMessage, protarrow.ProtarrowConfig(list_nullable=list_nullable)
+    )
+    assert schema.field("double_values").nullable == list_nullable
+
+
+@pytest.mark.parametrize("map_nullable", [True, False])
+def test_map_nullable_config(map_nullable: bool):
+    schema = protarrow.message_type_to_schema(
+        TestMessage, protarrow.ProtarrowConfig(map_nullable=map_nullable)
+    )
+    assert schema.field("double_map").nullable == map_nullable
+
+
+def test_map_nullability():
+    map_type: pa.MapType = pa.map_(pa.string(), pa.int32())
+    assert map_type.key_field.nullable is False
+    assert map_type.item_field.nullable is True
