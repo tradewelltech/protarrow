@@ -76,10 +76,10 @@ def test_nullable():
     )
 
 
-def test_field_names():
-    assert pa.list_(pa.int32()).value_field.name == "item"
-    assert pa.map_(pa.int32(), pa.string()).key_field.name == "key"
-    assert pa.map_(pa.int32(), pa.string()).item_field.name == "value"
+def test_default_field_names_match_arrow():
+    config = protarrow.ProtarrowConfig()
+    assert pa.list_(pa.int32()).value_field.name == config.list_value_name
+    assert pa.map_(pa.int32(), pa.string()).item_field.name == config.map_value_name
 
 
 def test_nullability():
@@ -124,3 +124,37 @@ def test_map_nullability():
     map_type: pa.MapType = pa.map_(pa.string(), pa.int32())
     assert map_type.key_field.nullable is False
     assert map_type.item_field.nullable is True
+
+
+@pytest.mark.parametrize("map_value_nullable", [True, False])
+def test_map_value_nullable_config(map_value_nullable: bool):
+    schema = protarrow.message_type_to_schema(
+        TestMessage, protarrow.ProtarrowConfig(map_value_nullable=map_value_nullable)
+    )
+    assert schema.field("double_map").type.item_field.nullable == map_value_nullable
+
+
+@pytest.mark.parametrize("list_value_nullable", [True, False])
+def test_list_value_nullable_config(list_value_nullable: bool):
+    schema = protarrow.message_type_to_schema(
+        TestMessage, protarrow.ProtarrowConfig(list_value_nullable=list_value_nullable)
+    )
+    assert (
+        schema.field("double_values").type.value_field.nullable == list_value_nullable
+    )
+
+
+@pytest.mark.parametrize("list_value_name", ["foo", "bar"])
+def test_list_value_name_config(list_value_name: str):
+    schema = protarrow.message_type_to_schema(
+        TestMessage, protarrow.ProtarrowConfig(list_value_name=list_value_name)
+    )
+    assert schema.field("double_values").type.value_field.name == list_value_name
+
+
+@pytest.mark.parametrize("map_value_name", ["foo", "bar"])
+def test_map_value_name_config(map_value_name: str):
+    schema = protarrow.message_type_to_schema(
+        TestMessage, protarrow.ProtarrowConfig(map_value_name=map_value_name)
+    )
+    assert schema.field("double_map").type.item_field.name == map_value_name

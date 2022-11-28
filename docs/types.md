@@ -53,5 +53,10 @@ Some of this can be configured:
 ```python
 import protarrow
 
-protarrow.ProtarrowConfig(list_nullable=True, map_nullable=True)
+protarrow.ProtarrowConfig(
+    list_nullable=True,
+    map_nullable=True,
+    list_value_nullable=True,
+    map_value_nullable=True,
+)
 ```

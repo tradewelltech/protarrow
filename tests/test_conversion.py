@@ -43,6 +43,10 @@ CONFIGS = [
     ProtarrowConfig(time_of_day_type=pa.time64("us")),
     ProtarrowConfig(list_nullable=True),
     ProtarrowConfig(map_nullable=True),
+    ProtarrowConfig(map_value_nullable=True),
+    ProtarrowConfig(list_value_nullable=True),
+    ProtarrowConfig(list_value_name="list_value"),
+    ProtarrowConfig(map_value_name="map_value"),
 ]
 
 
