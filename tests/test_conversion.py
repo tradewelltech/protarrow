@@ -67,6 +67,8 @@ def test_arrow_to_proto_empty(
     table = messages_to_table([], message_type, config)
     messages = table_to_messages(table, message_type)
     assert messages == []
+    schema = protarrow.message_type_to_schema(message_type, config)
+    assert schema == table.schema
 
 
 @pytest.mark.parametrize("message_type", MESSAGES)
