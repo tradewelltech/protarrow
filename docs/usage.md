@@ -28,6 +28,7 @@ my_protos = [
 ]
 
 schema = protarrow.message_type_to_schema(MyProto)
+struct_Type = protarrow.message_type_to_struct_type(MyProto)
 record_batch = protarrow.messages_to_record_batch(my_protos, MyProto)
 table = protarrow.messages_to_table(my_protos, MyProto)
 ```

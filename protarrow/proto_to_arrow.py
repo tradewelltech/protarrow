@@ -1,7 +1,3 @@
-"""
-Utilities for working with pyarrow.
-https://arrow.apache.org/docs/python/
-"""
 import collections.abc
 import dataclasses
 import datetime
@@ -14,7 +10,6 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Tuple,
     Type,
     Union,
 )
@@ -233,38 +228,92 @@ def get_enum_converter(
         raise TypeError(data_type)
 
 
-def _get_converter_and_type(
+def field_descriptor_to_field(
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig,
-) -> Optional[Tuple[pa.DataType, Callable[[Any], Any]]]:
+) -> pa.Field:
+    if is_map(field_descriptor):
+        key_type = field_descriptor_to_data_type(
+            field_descriptor.message_type.fields_by_name["key"], config
+        )
+        value_type = field_descriptor_to_data_type(
+            field_descriptor.message_type.fields_by_name["value"], config
+        )
+        return pa.field(
+            field_descriptor.name,
+            pa.map_(
+                key_type,
+                pa.field(config.map_value_name, value_type, config.map_value_nullable),
+            ),
+            nullable=config.map_nullable,
+        )
+    elif field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
+        return pa.field(
+            field_descriptor.name,
+            pa.list_(
+                pa.field(
+                    config.list_value_name,
+                    field_descriptor_to_data_type(field_descriptor, config),
+                    nullable=config.list_value_nullable,
+                ),
+            ),
+            nullable=config.list_nullable,
+        )
+    else:
+        return pa.field(
+            field_descriptor.name,
+            field_descriptor_to_data_type(field_descriptor, config),
+            nullable=field_descriptor.type == FieldDescriptor.TYPE_MESSAGE,
+        )
+
+
+def field_descriptor_to_data_type(
+    field_descriptor: FieldDescriptor,
+    config: ProtarrowConfig,
+) -> pa.DataType:
     if field_descriptor.message_type == Timestamp.DESCRIPTOR:
-        return config.timestamp_type, _TIMESTAMP_CONVERTERS[config.timestamp_type.unit]
+        return config.timestamp_type
     elif field_descriptor.message_type == TimeOfDay.DESCRIPTOR:
-        return (
-            config.time_of_day_type,
-            _TIME_OF_DAY_CONVERTERS[config.time_of_day_type.unit],
-        )
+        return config.time_of_day_type
     elif field_descriptor.type == FieldDescriptorProto.TYPE_MESSAGE:
-        converter = _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER.get(
-            field_descriptor.message_type
-        )
-        if converter is None:
-            return None
-        else:
-            return (
-                _PROTO_DESCRIPTOR_TO_PYARROW[field_descriptor.message_type],
-                converter,
+        try:
+            return _PROTO_DESCRIPTOR_TO_PYARROW[field_descriptor.message_type]
+        except KeyError:
+            return pa.struct(
+                [
+                    field_descriptor_to_field(child_field, config)
+                    for child_field in field_descriptor.message_type.fields
+                ]
             )
     elif field_descriptor.type == FieldDescriptorProto.TYPE_ENUM:
-        return config.enum_type, get_enum_converter(
-            config.enum_type, field_descriptor.enum_type
-        )
+        return config.enum_type
     elif field_descriptor.type in _PROTO_PRIMITIVE_TYPE_TO_PYARROW:
+        return _PROTO_PRIMITIVE_TYPE_TO_PYARROW.get(field_descriptor.type)
+    else:
+        raise TypeError(
+            f"Unsupported field type "
+            f"{FieldDescriptorProto.Type.Name(field_descriptor.type)} "
+            f"for {field_descriptor.name}"
+        )
 
-        def converter(x: Any) -> Any:
-            return x
 
-        return _PROTO_PRIMITIVE_TYPE_TO_PYARROW.get(field_descriptor.type), converter
+def _get_converter(
+    field_descriptor: FieldDescriptor,
+    config: ProtarrowConfig,
+) -> Optional[Callable[[Any], Any]]:
+    if field_descriptor.message_type == Timestamp.DESCRIPTOR:
+        return _TIMESTAMP_CONVERTERS[config.timestamp_type.unit]
+    elif field_descriptor.message_type == TimeOfDay.DESCRIPTOR:
+        return _TIME_OF_DAY_CONVERTERS[config.time_of_day_type.unit]
+    elif field_descriptor.type == FieldDescriptorProto.TYPE_MESSAGE:
+        # This may return None, in which case you need to convert
+        # each underlying field to array and put them back together
+        # in a StructArray
+        return _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER.get(field_descriptor.message_type)
+    elif field_descriptor.type == FieldDescriptorProto.TYPE_ENUM:
+        return get_enum_converter(config.enum_type, field_descriptor.enum_type)
+    elif field_descriptor.type in _PROTO_PRIMITIVE_TYPE_TO_PYARROW:
+        return lambda x: x
     else:
         raise TypeError(
             f"Unsupported field type "
@@ -274,48 +323,48 @@ def _get_converter_and_type(
 
 
 def _proto_field_to_array(
-    records: Iterable[Message],
-    field: FieldDescriptor,
-    validity_mask: Optional[Iterable[bool]],
+    proto_field_values: Iterable[Any],
+    field_descriptor: FieldDescriptor,
+    validity_mask: Optional[Sequence[bool]],
     config: ProtarrowConfig,
 ) -> pa.Array:
-    type_and_converter = _get_converter_and_type(field, config)
-    if type_and_converter is not None:
-        pa_type, converter = type_and_converter
+    converter = _get_converter(field_descriptor, config)
 
+    if converter is not None:
+        data_type = field_descriptor_to_data_type(field_descriptor, config)
         null_value = (
             None
             if (
-                field.type == FieldDescriptor.TYPE_MESSAGE
+                field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
                 # We use none for repeated field as there should not
                 # be any missing list elements, they are not nullable
-                or field.label == FieldDescriptor.LABEL_REPEATED
+                or field_descriptor.label == FieldDescriptor.LABEL_REPEATED
             )
-            else converter(field.default_value)
+            else converter(field_descriptor.default_value)
         )
         array = []
-        for i, record in enumerate(records):
+        for i, record in enumerate(proto_field_values):
             if record is None or not (validity_mask is None or validity_mask[i]):
                 value = null_value
             else:
                 value = converter(record)
             array.append(value)
-        return pa.array(array, pa_type)
+        return pa.array(array, data_type)
     else:
-        return _message_to_array(
-            records,
-            field.message_type,
+        return _messages_to_array(
+            proto_field_values,
+            field_descriptor.message_type,
             validity_mask=validity_mask,
             config=config,
         )
 
 
 def _get_offsets(
-    records: Iterable[Union[RepeatedScalarFieldContainer, MessageMap]]
+    repeated_values: Iterable[Union[RepeatedScalarFieldContainer, MessageMap]]
 ) -> List[int]:
     last_offset = 0
     offsets = []
-    for record in records:
+    for record in repeated_values:
         if record is None:
             offsets.append(None)
         else:
@@ -326,16 +375,18 @@ def _get_offsets(
 
 
 def _repeated_proto_to_array(
-    records: Iterable[RepeatedScalarFieldContainer],
-    field: FieldDescriptor,
+    repeated_values: Iterable[RepeatedScalarFieldContainer],
+    field_descriptor: FieldDescriptor,
     config: ProtarrowConfig,
 ) -> pa.ListArray:
     """
     Convert Protobuf embedded lists to a 1-dimensional PyArrow ListArray with offsets
     See PyArrow Layout format documentation on how to calculate offsets.
     """
-    offsets = _get_offsets(records)
-    array = _proto_field_to_array(FlattenedIterable(records), field, None, config)
+    offsets = _get_offsets(repeated_values)
+    array = _proto_field_to_array(
+        FlattenedIterable(repeated_values), field_descriptor, None, config
+    )
     return pa.ListArray.from_arrays(
         offsets,
         array,
@@ -348,25 +399,25 @@ def _repeated_proto_to_array(
 
 
 def _proto_map_to_array(
-    records: Iterable[MessageMap],
-    field: FieldDescriptor,
+    maps: Iterable[MessageMap],
+    field_descriptor: FieldDescriptor,
     config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.MapArray:
     """
     Convert Protobuf maps to a 1-dimensional PyArrow MapArray with offsets
     See PyArrow Layout format documentation on how to calculate offsets.
     """
-    key_field = field.message_type.fields_by_name["key"]
-    value_field = field.message_type.fields_by_name["value"]
-    offsets = _get_offsets(records)
+    key_field = field_descriptor.message_type.fields_by_name["key"]
+    value_field = field_descriptor.message_type.fields_by_name["value"]
+    offsets = _get_offsets(maps)
     keys = _proto_field_to_array(
-        MapKeyIterable(records),
+        MapKeyIterable(maps),
         key_field,
         validity_mask=None,
         config=config,
     )
     values = _proto_field_to_array(
-        MapValueIterable(records),
+        MapValueIterable(maps),
         value_field,
         validity_mask=None,
         config=config,
@@ -381,26 +432,28 @@ def _proto_map_to_array(
     )
 
 
-def _proto_field_nullable(field: FieldDescriptor, config: ProtarrowConfig) -> bool:
-    if is_map(field):
+def _proto_field_nullable(
+    field_descriptor: FieldDescriptor, config: ProtarrowConfig
+) -> bool:
+    if is_map(field_descriptor):
         return config.map_nullable
-    elif field.label == FieldDescriptorProto.LABEL_REPEATED:
+    elif field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED:
         return config.list_nullable
     else:
-        return field.type == FieldDescriptorProto.TYPE_MESSAGE
+        return field_descriptor.type == FieldDescriptorProto.TYPE_MESSAGE
 
 
 def _proto_field_validity_mask(
-    records: Iterable[Message], field: FieldDescriptor
+    messages: Iterable[Message], field_descriptor: FieldDescriptor
 ) -> Optional[List[bool]]:
     if (
-        field.type != FieldDescriptorProto.TYPE_MESSAGE
-        or field.label == FieldDescriptorProto.LABEL_REPEATED
+        field_descriptor.type != FieldDescriptorProto.TYPE_MESSAGE
+        or field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED
     ):
         return None
     mask = []
-    field_name = field.name
-    for record in records:
+    field_name = field_descriptor.name
+    for record in messages:
         if record is None:
             mask.append(False)
         else:
@@ -408,8 +461,8 @@ def _proto_field_validity_mask(
     return mask
 
 
-def _message_to_array(
-    records: Iterable[Message],
+def _messages_to_array(
+    messages: Iterable[Message],
     descriptor: Descriptor,
     validity_mask: Optional[Sequence[bool]],
     config: ProtarrowConfig,
@@ -417,30 +470,34 @@ def _message_to_array(
     arrays = []
     fields = []
 
-    for field in descriptor.fields:
+    for field_descriptor in descriptor.fields:
         if (
-            field.type == FieldDescriptor.TYPE_MESSAGE
-            and field.label != FieldDescriptor.LABEL_REPEATED
+            field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
+            and field_descriptor.label != FieldDescriptor.LABEL_REPEATED
         ):
-            field_values = NestedIterable(records, NestedMessageGetter(field.name))
+            field_values = NestedIterable(
+                messages, NestedMessageGetter(field_descriptor.name)
+            )
         else:
-            field_values = NestedIterable(records, operator.attrgetter(field.name))
-        if is_map(field):
-            array = _proto_map_to_array(field_values, field, config)
-        elif field.label == FieldDescriptorProto.LABEL_REPEATED:
-            array = _repeated_proto_to_array(field_values, field, config)
+            field_values = NestedIterable(
+                messages, operator.attrgetter(field_descriptor.name)
+            )
+        if is_map(field_descriptor):
+            array = _proto_map_to_array(field_values, field_descriptor, config)
+        elif field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED:
+            array = _repeated_proto_to_array(field_values, field_descriptor, config)
         else:
-            mask = _proto_field_validity_mask(records, field)
+            mask = _proto_field_validity_mask(messages, field_descriptor)
             array = _proto_field_to_array(
-                field_values, field, validity_mask=mask, config=config
+                field_values, field_descriptor, validity_mask=mask, config=config
             )
 
         arrays.append(array)
         fields.append(
             pa.field(
-                field.name,
+                field_descriptor.name,
                 array.type,
-                nullable=_proto_field_nullable(field, config),
+                nullable=_proto_field_nullable(field_descriptor, config),
             )
         )
     return pa.StructArray.from_arrays(
@@ -451,13 +508,13 @@ def _message_to_array(
 
 
 def messages_to_record_batch(
-    records: Iterable[M],
+    messages: Iterable[M],
     message_type: Type[M],
     config: ProtarrowConfig = ProtarrowConfig(),
 ):
     return pa.RecordBatch.from_struct_array(
-        _message_to_array(
-            records,
+        _messages_to_array(
+            messages,
             message_type.DESCRIPTOR,
             validity_mask=None,
             config=config,
@@ -466,17 +523,33 @@ def messages_to_record_batch(
 
 
 def messages_to_table(
-    records: Iterable[M],
+    messages: Iterable[M],
     message_type: Type[M],
     config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.Table:
     """Converts a list of protobuf messages to a `pa.Table`"""
     assert isinstance(config, ProtarrowConfig), config
-    record_batch = messages_to_record_batch(records, message_type, config=config)
+    record_batch = messages_to_record_batch(messages, message_type, config=config)
     return pa.Table.from_batches([record_batch])
 
 
 def message_type_to_schema(
     message_type: Type[M], config: ProtarrowConfig = ProtarrowConfig()
 ) -> pa.Schema:
-    return messages_to_record_batch([], message_type, config).schema
+    return pa.schema(
+        [
+            field_descriptor_to_field(field_descriptor, config)
+            for field_descriptor in message_type.DESCRIPTOR.fields
+        ]
+    )
+
+
+def message_type_to_struct_type(
+    message_type: Type[M], config: ProtarrowConfig = ProtarrowConfig()
+) -> pa.StructType:
+    return pa.struct(
+        [
+            field_descriptor_to_field(field_descriptor, config)
+            for field_descriptor in message_type.DESCRIPTOR.fields
+        ]
+    )
