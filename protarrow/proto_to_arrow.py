@@ -544,7 +544,7 @@ def message_type_to_schema(
     )
 
 
-def message_type_to_struct(
+def message_type_to_struct_type(
     message_type: Type[M], config: ProtarrowConfig = ProtarrowConfig()
 ) -> pa.StructType:
     return pa.struct(

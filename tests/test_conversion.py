@@ -17,6 +17,7 @@ from protarrow.proto_to_arrow import (
     NestedIterable,
     _repeated_proto_to_array,
     message_type_to_schema,
+    message_type_to_struct_type,
     messages_to_record_batch,
     messages_to_table,
 )
@@ -67,8 +68,17 @@ def test_arrow_to_proto_empty(
     table = messages_to_table([], message_type, config)
     messages = table_to_messages(table, message_type)
     assert messages == []
-    schema = protarrow.message_type_to_schema(message_type, config)
+    schema = message_type_to_schema(message_type, config)
     assert schema == table.schema
+
+
+@pytest.mark.parametrize("message_type", MESSAGES)
+@pytest.mark.parametrize("config", CONFIGS)
+def test_message_type_to_struct_type(
+    message_type: GeneratedProtocolMessageType, config: ProtarrowConfig
+):
+    struct_type = message_type_to_struct_type(message_type, config)
+    assert isinstance(struct_type, pa.StructType)
 
 
 @pytest.mark.parametrize("message_type", MESSAGES)
@@ -319,13 +329,13 @@ def test_truncate_nested():
 )
 def test_binary_enums(enum_type):
     message = TestMessage(enum_value=2)
-    table = protarrow.messages_to_table(
-        [message], TestMessage, protarrow.ProtarrowConfig(enum_type=enum_type)
+    table = messages_to_table(
+        [message], TestMessage, ProtarrowConfig(enum_type=enum_type)
     )
     assert table["enum_value"].to_pylist() == [b"TEST_ENUM_2"]
     assert table["enum_value"].type == enum_type
 
-    message_back = protarrow.table_to_messages(table, TestMessage)[0]
+    message_back = table_to_messages(table, TestMessage)[0]
     assert message == message_back
 
 
@@ -334,13 +344,13 @@ def test_binary_enums(enum_type):
 )
 def test_string_enums(enum_type):
     message = TestMessage(enum_value=2)
-    table = protarrow.messages_to_table(
-        [message], TestMessage, protarrow.ProtarrowConfig(enum_type=enum_type)
+    table = messages_to_table(
+        [message], TestMessage, ProtarrowConfig(enum_type=enum_type)
     )
     assert table["enum_value"].to_pylist() == ["TEST_ENUM_2"]
     assert table["enum_value"].type == enum_type
 
-    message_back = protarrow.table_to_messages(table, TestMessage)[0]
+    message_back = table_to_messages(table, TestMessage)[0]
     assert message == message_back
 
 
@@ -352,7 +362,7 @@ def _check_messages_same(actual: Iterable[Message], expected: Iterable[Message])
 
 def test_nested_field_values_not_null_when_message_missing():
     messages = [NestedTestMessage()]
-    record_batch = protarrow.messages_to_record_batch(messages, NestedTestMessage)
+    record_batch = messages_to_record_batch(messages, NestedTestMessage)
     assert record_batch["test_message"].null_count == 1
     assert record_batch["test_message"].to_pylist() == [None]
     assert record_batch["test_message"].field(0).null_count == 0
@@ -362,8 +372,8 @@ def test_nested_field_values_not_null_when_message_missing():
 
 def test_nested_enums():
     messages = [NestedTestMessage()]
-    record_batch = protarrow.messages_to_record_batch(
-        messages, NestedTestMessage, protarrow.ProtarrowConfig(enum_type=pa.binary())
+    record_batch = messages_to_record_batch(
+        messages, NestedTestMessage, ProtarrowConfig(enum_type=pa.binary())
     )
     assert record_batch["test_message"].field(
         record_batch["test_message"].type.get_field_index("enum_value")
