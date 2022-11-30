@@ -23,7 +23,7 @@ from google.protobuf.wrappers_pb2 import (
 from google.type.date_pb2 import Date
 from google.type.timeofday_pb2 import TimeOfDay
 
-from protarrow.common import M
+from protarrow.common import M, is_binary_enum, is_string_enum
 
 _NANOS_PER_UNIT = {"ns": 1, "us": 1_000, "ms": 1_000_000, "s": 1_000_000_000}
 _TIME_CONVERTER = {
@@ -150,14 +150,10 @@ def create_enum_converter(
 ) -> Callable[[pa.Scalar], int]:
     if pa.types.is_integer(arrow_type):
         return lambda x: x.as_py()
-    elif pa.types.is_binary(arrow_type) or (
-        pa.types.is_dictionary(arrow_type) and pa.types.is_binary(arrow_type.value_type)
-    ):
+    elif is_binary_enum(arrow_type):
         mapping = {v.name.encode("utf-8"): v.number for v in enum_descriptor.values}
         return lambda x: mapping.get(x.as_py(), 0)
-    elif pa.types.is_string(arrow_type) or (
-        pa.types.is_dictionary(arrow_type) and pa.types.is_string(arrow_type.value_type)
-    ):
+    elif is_string_enum(arrow_type):
         mapping = {v.name: v.number for v in enum_descriptor.values}
         return lambda x: mapping.get(x.as_py(), 0)
     else:

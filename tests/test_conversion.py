@@ -12,6 +12,7 @@ from google.type.timeofday_pb2 import TimeOfDay
 
 import protarrow
 from protarrow.arrow_to_proto import create_enum_converter, table_to_messages
+from protarrow.cast_to_proto import cast_table, get_arrow_default_value
 from protarrow.common import M, ProtarrowConfig
 from protarrow.proto_to_arrow import (
     NestedIterable,
@@ -354,6 +355,34 @@ def test_string_enums(enum_type):
     assert message == message_back
 
 
+@pytest.mark.parametrize(
+    ["enum_type", "expected"],
+    [
+        (pa.int32(), 0),
+        (pa.binary(), b"UNKNOWN_TEST_ENUM"),
+        (pa.dictionary(pa.int32(), pa.binary()), b"UNKNOWN_TEST_ENUM"),
+        (pa.string(), "UNKNOWN_TEST_ENUM"),
+        (pa.dictionary(pa.int32(), pa.string()), "UNKNOWN_TEST_ENUM"),
+    ],
+)
+def test_get_arrow_default_value(enum_type, expected):
+
+    assert (
+        get_arrow_default_value(
+            TestMessage.DESCRIPTOR.fields_by_name["enum_value"],
+            ProtarrowConfig(enum_type=enum_type),
+        )
+        == expected
+    )
+    assert (
+        get_arrow_default_value(
+            TestMessage.DESCRIPTOR.fields_by_name["enum_values"],
+            ProtarrowConfig(enum_type=enum_type),
+        )
+        == expected
+    )
+
+
 def _check_messages_same(actual: Iterable[Message], expected: Iterable[Message]):
     for left, right in zip(actual, expected):
         assert left == right
@@ -385,3 +414,24 @@ def test_create_enum_converter_wrong_type():
         create_enum_converter(
             TestMessage.DESCRIPTOR.fields_by_name["enum_value"].enum_type, pa.float64()
         )
+
+
+@pytest.mark.parametrize("message_type", MESSAGES)
+@pytest.mark.parametrize("config", CONFIGS)
+def test_cast_empty(message_type, config):
+    table = pa.table({"nulls": pa.nulls(10, pa.null())})
+    casted_table = cast_table(table, message_type, config)
+    assert len(table) == len(casted_table)
+    assert casted_table.schema == message_type_to_schema(message_type, config)
+
+
+@pytest.mark.parametrize("message_type", MESSAGES)
+@pytest.mark.parametrize("config", CONFIGS)
+def test_cast_same(message_type, config):
+    source_messages = [
+        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
+        for m in generate_messages(message_type, 10)
+    ]
+    table = messages_to_table(source_messages, message_type, config)
+    casted_table = cast_table(table, message_type, config)
+    assert table == casted_table

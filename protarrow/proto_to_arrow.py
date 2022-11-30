@@ -20,6 +20,7 @@ from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescript
 from google.protobuf.descriptor_pb2 import FieldDescriptorProto
 from google.protobuf.internal.containers import MessageMap, RepeatedScalarFieldContainer
 from google.protobuf.message import Message
+from google.protobuf.reflection import GeneratedProtocolMessageType
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.protobuf.wrappers_pb2 import (
     BoolValue,
@@ -35,7 +36,7 @@ from google.protobuf.wrappers_pb2 import (
 from google.type.date_pb2 import Date
 from google.type.timeofday_pb2 import TimeOfDay
 
-from protarrow.common import M, ProtarrowConfig
+from protarrow.common import M, ProtarrowConfig, is_binary_enum, is_string_enum
 
 _PROTO_DESCRIPTOR_TO_PYARROW = {
     Date.DESCRIPTOR: pa.date32(),
@@ -62,7 +63,6 @@ _PROTO_PRIMITIVE_TYPE_TO_PYARROW = {
     FieldDescriptorProto.TYPE_STRING: pa.string(),
     FieldDescriptorProto.TYPE_BYTES: pa.binary(),
     FieldDescriptorProto.TYPE_UINT32: pa.uint32(),
-    FieldDescriptorProto.TYPE_ENUM: pa.binary(),
     FieldDescriptorProto.TYPE_SFIXED32: pa.int32(),
     FieldDescriptorProto.TYPE_SFIXED64: pa.int64(),
     FieldDescriptorProto.TYPE_SINT32: pa.int32(),
@@ -201,9 +201,7 @@ def get_enum_converter(
     if data_type == pa.int32():
         return lambda x: x
 
-    elif data_type == pa.binary() or data_type == pa.dictionary(
-        pa.int32(), pa.binary()
-    ):
+    elif is_binary_enum(data_type):
         values_by_number = {
             k: bytes(v.name, encoding="UTF-8")
             for k, v in enum_descriptor.values_by_number.items()
@@ -213,9 +211,7 @@ def get_enum_converter(
             return values_by_number[x]
 
         return converter
-    elif data_type == pa.string() or data_type == pa.dictionary(
-        pa.int32(), pa.string()
-    ):
+    elif is_string_enum(data_type):
         values_by_number = {
             k: v.name for k, v in enum_descriptor.values_by_number.items()
         }
@@ -534,7 +530,8 @@ def messages_to_table(
 
 
 def message_type_to_schema(
-    message_type: Type[M], config: ProtarrowConfig = ProtarrowConfig()
+    message_type: GeneratedProtocolMessageType,
+    config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.Schema:
     return pa.schema(
         [

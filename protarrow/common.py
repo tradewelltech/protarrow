@@ -29,3 +29,15 @@ class ProtarrowConfig:
 
     def __post_init__(self):
         assert self.enum_type in SUPPORTED_ENUM_TYPES
+
+
+def is_binary_enum(data_type: pa.DataType) -> bool:
+    return pa.types.is_binary(data_type) or (
+        pa.types.is_dictionary(data_type) and pa.types.is_binary(data_type.value_type)
+    )
+
+
+def is_string_enum(data_type: pa.DataType) -> bool:
+    return pa.types.is_string(data_type) or (
+        pa.types.is_dictionary(data_type) and pa.types.is_string(data_type.value_type)
+    )
