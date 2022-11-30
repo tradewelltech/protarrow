@@ -6,8 +6,8 @@ from google.protobuf.reflection import GeneratedProtocolMessageType
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.type.timeofday_pb2 import TimeOfDay
 
-from protarrow import ProtarrowConfig
 from protarrow.arrow_to_proto import is_binary_enum, is_string_enum
+from protarrow.common import ProtarrowConfig
 from protarrow.proto_to_arrow import (
     _PROTO_DESCRIPTOR_TO_PYARROW,
     _PROTO_PRIMITIVE_TYPE_TO_PYARROW,
