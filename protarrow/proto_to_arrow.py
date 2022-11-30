@@ -20,7 +20,6 @@ from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescript
 from google.protobuf.descriptor_pb2 import FieldDescriptorProto
 from google.protobuf.internal.containers import MessageMap, RepeatedScalarFieldContainer
 from google.protobuf.message import Message
-from google.protobuf.reflection import GeneratedProtocolMessageType
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.protobuf.wrappers_pb2 import (
     BoolValue,
@@ -530,7 +529,7 @@ def messages_to_table(
 
 
 def message_type_to_schema(
-    message_type: GeneratedProtocolMessageType,
+    message_type: Type[Message],
     config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.Schema:
     return pa.schema(
@@ -542,7 +541,7 @@ def message_type_to_schema(
 
 
 def message_type_to_struct_type(
-    message_type: Type[M], config: ProtarrowConfig = ProtarrowConfig()
+    message_type: Type[Message], config: ProtarrowConfig = ProtarrowConfig()
 ) -> pa.StructType:
     return pa.struct(
         [

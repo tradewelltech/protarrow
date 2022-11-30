@@ -1,8 +1,8 @@
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Type
 
 import pyarrow as pa
 from google.protobuf.descriptor import Descriptor, FieldDescriptor
-from google.protobuf.reflection import GeneratedProtocolMessageType
+from google.protobuf.message import Message
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.type.timeofday_pb2 import TimeOfDay
 
@@ -144,7 +144,7 @@ def get_casted_array(
 
 def cast_record_batch(
     record_batch: pa.RecordBatch,
-    message_type: GeneratedProtocolMessageType,
+    message_type: Type[Message],
     config: ProtarrowConfig,
 ) -> pa.RecordBatch:
     arrays = []
@@ -185,7 +185,7 @@ def cast_struct_array(
 
 
 def cast_table(
-    table: pa.Table, message_type: GeneratedProtocolMessageType, config: ProtarrowConfig
+    table: pa.Table, message_type: Type[Message], config: ProtarrowConfig
 ) -> pa.Table:
     proto_schema = message_type_to_schema(message_type, config)
     record_batches = []

@@ -1,12 +1,11 @@
 import datetime
 import pathlib
-from typing import Iterable, List, Type
+from typing import Any, Iterable, List, Type
 
 import pyarrow as pa
 import pytest
 from google.protobuf.json_format import Parse
 from google.protobuf.message import Message
-from google.protobuf.reflection import GeneratedProtocolMessageType
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.type.timeofday_pb2 import TimeOfDay
 
@@ -63,9 +62,7 @@ def read_proto_jsonl(path: pathlib.Path, message_type: Type[M]) -> List[M]:
 
 @pytest.mark.parametrize("message_type", MESSAGES)
 @pytest.mark.parametrize("config", CONFIGS)
-def test_arrow_to_proto_empty(
-    message_type: GeneratedProtocolMessageType, config: ProtarrowConfig
-):
+def test_arrow_to_proto_empty(message_type: Type[Message], config: ProtarrowConfig):
     table = messages_to_table([], message_type, config)
     messages = table_to_messages(table, message_type)
     assert messages == []
@@ -76,7 +73,7 @@ def test_arrow_to_proto_empty(
 @pytest.mark.parametrize("message_type", MESSAGES)
 @pytest.mark.parametrize("config", CONFIGS)
 def test_message_type_to_struct_type(
-    message_type: GeneratedProtocolMessageType, config: ProtarrowConfig
+    message_type: Type[Message], config: ProtarrowConfig
 ):
     struct_type = message_type_to_struct_type(message_type, config)
     assert isinstance(struct_type, pa.StructType)
@@ -84,9 +81,7 @@ def test_message_type_to_struct_type(
 
 @pytest.mark.parametrize("message_type", MESSAGES)
 @pytest.mark.parametrize("config", CONFIGS)
-def test_with_random(
-    message_type: GeneratedProtocolMessageType, config: ProtarrowConfig
-):
+def test_with_random(message_type: Type[Message], config: ProtarrowConfig):
     source_messages = [
         truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
         for m in generate_messages(message_type, 10)
@@ -99,9 +94,7 @@ def test_with_random(
 
 @pytest.mark.parametrize("message_type", MESSAGES)
 @pytest.mark.parametrize("config", CONFIGS)
-def test_with_sample_data(
-    message_type: GeneratedProtocolMessageType, config: ProtarrowConfig
-):
+def test_with_sample_data(message_type: Type[Message], config: ProtarrowConfig):
     source_file = (
         pathlib.Path(__file__).parent / "data" / f"{message_type.DESCRIPTOR.name}.jsonl"
     )
@@ -328,7 +321,7 @@ def test_truncate_nested():
 @pytest.mark.parametrize(
     "enum_type", [pa.binary(), pa.dictionary(pa.int32(), pa.binary())]
 )
-def test_binary_enums(enum_type):
+def test_binary_enums(enum_type: pa.DataType):
     message = TestMessage(enum_value=2)
     table = messages_to_table(
         [message], TestMessage, ProtarrowConfig(enum_type=enum_type)
@@ -343,7 +336,7 @@ def test_binary_enums(enum_type):
 @pytest.mark.parametrize(
     "enum_type", [pa.string(), pa.dictionary(pa.int32(), pa.string())]
 )
-def test_string_enums(enum_type):
+def test_string_enums(enum_type: pa.DataType):
     message = TestMessage(enum_value=2)
     table = messages_to_table(
         [message], TestMessage, ProtarrowConfig(enum_type=enum_type)
@@ -365,7 +358,7 @@ def test_string_enums(enum_type):
         (pa.dictionary(pa.int32(), pa.string()), "UNKNOWN_TEST_ENUM"),
     ],
 )
-def test_get_arrow_default_value(enum_type, expected):
+def test_get_arrow_default_value(enum_type: pa.DataType, expected: Any):
 
     assert (
         get_arrow_default_value(
@@ -418,7 +411,7 @@ def test_create_enum_converter_wrong_type():
 
 @pytest.mark.parametrize("message_type", MESSAGES)
 @pytest.mark.parametrize("config", CONFIGS)
-def test_cast_empty(message_type, config):
+def test_cast_empty(message_type: Type[Message], config: ProtarrowConfig):
     table = pa.table({"nulls": pa.nulls(10, pa.null())})
     casted_table = cast_table(table, message_type, config)
     assert len(table) == len(casted_table)
@@ -427,7 +420,7 @@ def test_cast_empty(message_type, config):
 
 @pytest.mark.parametrize("message_type", MESSAGES)
 @pytest.mark.parametrize("config", CONFIGS)
-def test_cast_same(message_type, config):
+def test_cast_same(message_type: Type[Message], config: ProtarrowConfig):
     source_messages = [
         truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
         for m in generate_messages(message_type, 10)
