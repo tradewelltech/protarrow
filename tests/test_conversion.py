@@ -11,12 +11,13 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from google.type.timeofday_pb2 import TimeOfDay
 
 import protarrow
-from protarrow.arrow_to_proto import table_to_messages
+from protarrow.arrow_to_proto import create_enum_converter, table_to_messages
 from protarrow.common import M, ProtarrowConfig
 from protarrow.proto_to_arrow import (
     NestedIterable,
     _repeated_proto_to_array,
     message_type_to_schema,
+    message_type_to_struct_type,
     messages_to_record_batch,
     messages_to_table,
 )
@@ -41,6 +42,12 @@ CONFIGS = [
     ProtarrowConfig(timestamp_type=pa.timestamp("ns", "America/New_York")),
     ProtarrowConfig(time_of_day_type=pa.time64("ns")),
     ProtarrowConfig(time_of_day_type=pa.time64("us")),
+    ProtarrowConfig(list_nullable=True),
+    ProtarrowConfig(map_nullable=True),
+    ProtarrowConfig(map_value_nullable=True),
+    ProtarrowConfig(list_value_nullable=True),
+    ProtarrowConfig(list_value_name="list_value"),
+    ProtarrowConfig(map_value_name="map_value"),
 ]
 
 
@@ -61,6 +68,17 @@ def test_arrow_to_proto_empty(
     table = messages_to_table([], message_type, config)
     messages = table_to_messages(table, message_type)
     assert messages == []
+    schema = message_type_to_schema(message_type, config)
+    assert schema == table.schema
+
+
+@pytest.mark.parametrize("message_type", MESSAGES)
+@pytest.mark.parametrize("config", CONFIGS)
+def test_message_type_to_struct_type(
+    message_type: GeneratedProtocolMessageType, config: ProtarrowConfig
+):
+    struct_type = message_type_to_struct_type(message_type, config)
+    assert isinstance(struct_type, pa.StructType)
 
 
 @pytest.mark.parametrize("message_type", MESSAGES)
@@ -306,32 +324,18 @@ def test_truncate_nested():
     )
 
 
-def test_nullability():
-    schema = message_type_to_schema(TestMessage)
-    assert not schema.field("double_value").nullable
-    assert not schema.field("double_values").nullable
-    assert schema.field("wrapped_double").nullable
-
-    nested_schema = pa.schema(
-        list(message_type_to_schema(NestedTestMessage).field("test_message").type)
-    )
-    assert nested_schema.field("double_value").nullable
-    assert nested_schema.field("double_values").nullable
-    assert nested_schema.field("wrapped_double").nullable
-
-
 @pytest.mark.parametrize(
     "enum_type", [pa.binary(), pa.dictionary(pa.int32(), pa.binary())]
 )
 def test_binary_enums(enum_type):
     message = TestMessage(enum_value=2)
-    table = protarrow.messages_to_table(
-        [message], TestMessage, protarrow.ProtarrowConfig(enum_type=enum_type)
+    table = messages_to_table(
+        [message], TestMessage, ProtarrowConfig(enum_type=enum_type)
     )
     assert table["enum_value"].to_pylist() == [b"TEST_ENUM_2"]
     assert table["enum_value"].type == enum_type
 
-    message_back = protarrow.table_to_messages(table, TestMessage)[0]
+    message_back = table_to_messages(table, TestMessage)[0]
     assert message == message_back
 
 
@@ -340,13 +344,13 @@ def test_binary_enums(enum_type):
 )
 def test_string_enums(enum_type):
     message = TestMessage(enum_value=2)
-    table = protarrow.messages_to_table(
-        [message], TestMessage, protarrow.ProtarrowConfig(enum_type=enum_type)
+    table = messages_to_table(
+        [message], TestMessage, ProtarrowConfig(enum_type=enum_type)
     )
     assert table["enum_value"].to_pylist() == ["TEST_ENUM_2"]
     assert table["enum_value"].type == enum_type
 
-    message_back = protarrow.table_to_messages(table, TestMessage)[0]
+    message_back = table_to_messages(table, TestMessage)[0]
     assert message == message_back
 
 
@@ -354,3 +358,30 @@ def _check_messages_same(actual: Iterable[Message], expected: Iterable[Message])
     for left, right in zip(actual, expected):
         assert left == right
     assert actual == expected
+
+
+def test_nested_field_values_not_null_when_message_missing():
+    messages = [NestedTestMessage()]
+    record_batch = messages_to_record_batch(messages, NestedTestMessage)
+    assert record_batch["test_message"].null_count == 1
+    assert record_batch["test_message"].to_pylist() == [None]
+    assert record_batch["test_message"].field(0).null_count == 0
+    assert record_batch["test_message"].field(0).to_pylist() == [0.0]
+    assert record_batch["test_message"].type.field(0).name == "double_value"
+
+
+def test_nested_enums():
+    messages = [NestedTestMessage()]
+    record_batch = messages_to_record_batch(
+        messages, NestedTestMessage, ProtarrowConfig(enum_type=pa.binary())
+    )
+    assert record_batch["test_message"].field(
+        record_batch["test_message"].type.get_field_index("enum_value")
+    ).to_pylist() == [b"UNKNOWN_TEST_ENUM"]
+
+
+def test_create_enum_converter_wrong_type():
+    with pytest.raises(TypeError, match=r"double"):
+        create_enum_converter(
+            TestMessage.DESCRIPTOR.fields_by_name["enum_value"].enum_type, pa.float64()
+        )

@@ -3,6 +3,7 @@
 [![][stars-image]][stars-url]
 [![codecov](https://codecov.io/gh/tradewelltech/protarrow/branch/master/graph/badge.svg?token=XMFH27IL70)](https://codecov.io/gh/tradewelltech/protarrow)
 [![Build Status][build-image]][build-url]
+[![Documentation][doc-image]][doc-url]
 
 
 # Protarrow
@@ -20,10 +21,6 @@ pip install protarrow
 See the [documentation](https://protarrow.readthedocs.io/en/latest/)
 
 
-```shell
-pip install protarrow
-```
-
 <!-- Badges: -->
 
 [pypi-image]: https://img.shields.io/pypi/v/protarrow
@@ -34,3 +31,5 @@ pip install protarrow
 [stars-url]: https://github.com/tradewelltech/protarrow
 [versions-image]: https://img.shields.io/pypi/pyversions/protarrow
 [versions-url]: https://pypi.org/project/protarrow/
+[doc-image]: https://readthedocs.org/projects/protarrow/badge/?version=latest
+[doc-url]: https://protarrow.readthedocs.io/en/latest/?badge=latest

@@ -1,5 +1,6 @@
 import collections.abc
 import dataclasses
+import datetime
 from typing import Any, Callable, Iterable, Iterator, List, Optional, Type, Union
 
 import pyarrow as pa
@@ -51,8 +52,11 @@ def _prepare_array(array: pa.Array) -> pa.Array:
 
 
 def _date_scalar_to_proto(scalar: pa.Scalar) -> Date:
-    date = scalar.as_py()
-    return Date(year=date.year, month=date.month, day=date.day)
+    date: datetime.date = scalar.as_py()
+    if date == datetime.date.min:
+        return Date()
+    else:
+        return Date(year=date.year, month=date.month, day=date.day)
 
 
 def _time_of_day_scalar_to_proto(scalar: pa.Scalar) -> TimeOfDay:
