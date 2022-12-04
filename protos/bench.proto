@@ -1,0 +1,150 @@
+// Proto message test bench
+
+syntax = "proto3";
+
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "google/type/date.proto";
+import "google/type/timeofday.proto";
+
+
+package protarrow.protos;
+
+
+enum ExampleEnum {
+  UNKNOWN_EXAMPLE_ENUM = 0;
+  EXAMPLE_ENUM_1 = 1;
+  EXAMPLE_ENUM_2 = 2;
+}
+
+
+message ExampleMessage {
+  // Single Values
+  double double_value = 1;
+  float float_value = 2;
+  int32 int32_value = 3;
+  int64 int64_value = 4;
+  uint32 uint32_value = 5;
+  uint64 uint64_value = 6;
+  sint32 sint32_value = 7;
+  sint64 sint64_value = 8;
+  fixed32 fixed32_value = 9;
+  fixed64 fixed64_value = 10;
+  sfixed32 sfixed32_value = 11;
+  sfixed64 sfixed64_value = 12;
+  bool bool_value = 13;
+  string string_value = 14;
+  bytes bytes_value = 15;
+  google.protobuf.DoubleValue wrapped_double_value = 16;
+  google.protobuf.FloatValue wrapped_float_value = 17;
+  google.protobuf.Int32Value wrapped_int32_value = 18;
+  google.protobuf.Int64Value wrapped_int64_value = 19;
+  google.protobuf.UInt32Value wrapped_uint32_value = 20;
+  google.protobuf.UInt64Value wrapped_uint64_value = 21;
+  google.protobuf.BoolValue wrapped_bool_value = 22;
+  google.protobuf.StringValue wrapped_string_value = 23;
+  google.protobuf.BytesValue wrapped_bytes_value = 24;
+  ExampleEnum example_enum_value = 25;
+  google.protobuf.Timestamp timestamp_value = 26;
+  google.type.Date date_value = 27;
+  google.type.TimeOfDay time_of_day_value = 28;
+  // Repeated values
+  repeated double double_values = 29;
+  repeated float float_values = 30;
+  repeated int32 int32_values = 31;
+  repeated int64 int64_values = 32;
+  repeated uint32 uint32_values = 33;
+  repeated uint64 uint64_values = 34;
+  repeated sint32 sint32_values = 35;
+  repeated sint64 sint64_values = 36;
+  repeated fixed32 fixed32_values = 37;
+  repeated fixed64 fixed64_values = 38;
+  repeated sfixed32 sfixed32_values = 39;
+  repeated sfixed64 sfixed64_values = 40;
+  repeated bool bool_values = 41;
+  repeated string string_values = 42;
+  repeated bytes bytes_values = 43;
+  repeated google.protobuf.DoubleValue wrapped_double_values = 44;
+  repeated google.protobuf.FloatValue wrapped_float_values = 45;
+  repeated google.protobuf.Int32Value wrapped_int32_values = 46;
+  repeated google.protobuf.Int64Value wrapped_int64_values = 47;
+  repeated google.protobuf.UInt32Value wrapped_uint32_values = 48;
+  repeated google.protobuf.UInt64Value wrapped_uint64_values = 49;
+  repeated google.protobuf.BoolValue wrapped_bool_values = 50;
+  repeated google.protobuf.StringValue wrapped_string_values = 51;
+  repeated google.protobuf.BytesValue wrapped_bytes_values = 52;
+  repeated ExampleEnum example_enum_values = 53;
+  repeated google.protobuf.Timestamp timestamp_values = 54;
+  repeated google.type.Date date_values = 55;
+  repeated google.type.TimeOfDay time_of_day_values = 56;
+  
+  
+  // Map with int32 keys
+  map<int32, double> double_int32_map = 85;
+  map<int32, float> float_int32_map = 86;
+  map<int32, int32> int32_int32_map = 87;
+  map<int32, int64> int64_int32_map = 88;
+  map<int32, uint32> uint32_int32_map = 89;
+  map<int32, uint64> uint64_int32_map = 90;
+  map<int32, sint32> sint32_int32_map = 91;
+  map<int32, sint64> sint64_int32_map = 92;
+  map<int32, fixed32> fixed32_int32_map = 93;
+  map<int32, fixed64> fixed64_int32_map = 94;
+  map<int32, sfixed32> sfixed32_int32_map = 95;
+  map<int32, sfixed64> sfixed64_int32_map = 96;
+  map<int32, bool> bool_int32_map = 97;
+  map<int32, string> string_int32_map = 98;
+  map<int32, bytes> bytes_int32_map = 99;
+  map<int32, google.protobuf.DoubleValue> wrapped_double_int32_map = 100;
+  map<int32, google.protobuf.FloatValue> wrapped_float_int32_map = 101;
+  map<int32, google.protobuf.Int32Value> wrapped_int32_int32_map = 102;
+  map<int32, google.protobuf.Int64Value> wrapped_int64_int32_map = 103;
+  map<int32, google.protobuf.UInt32Value> wrapped_uint32_int32_map = 104;
+  map<int32, google.protobuf.UInt64Value> wrapped_uint64_int32_map = 105;
+  map<int32, google.protobuf.BoolValue> wrapped_bool_int32_map = 106;
+  map<int32, google.protobuf.StringValue> wrapped_string_int32_map = 107;
+  map<int32, google.protobuf.BytesValue> wrapped_bytes_int32_map = 108;
+  map<int32, ExampleEnum> example_enum_int32_map = 109;
+  map<int32, google.protobuf.Timestamp> timestamp_int32_map = 110;
+  map<int32, google.type.Date> date_int32_map = 111;
+  map<int32, google.type.TimeOfDay> time_of_day_int32_map = 112;
+  
+  // Map with string keys
+  map<string, double> double_string_map = 113;
+  map<string, float> float_string_map = 114;
+  map<string, int32> int32_string_map = 115;
+  map<string, int64> int64_string_map = 116;
+  map<string, uint32> uint32_string_map = 117;
+  map<string, uint64> uint64_string_map = 118;
+  map<string, sint32> sint32_string_map = 119;
+  map<string, sint64> sint64_string_map = 120;
+  map<string, fixed32> fixed32_string_map = 121;
+  map<string, fixed64> fixed64_string_map = 122;
+  map<string, sfixed32> sfixed32_string_map = 123;
+  map<string, sfixed64> sfixed64_string_map = 124;
+  map<string, bool> bool_string_map = 125;
+  map<string, string> string_string_map = 126;
+  map<string, bytes> bytes_string_map = 127;
+  map<string, google.protobuf.DoubleValue> wrapped_double_string_map = 128;
+  map<string, google.protobuf.FloatValue> wrapped_float_string_map = 129;
+  map<string, google.protobuf.Int32Value> wrapped_int32_string_map = 130;
+  map<string, google.protobuf.Int64Value> wrapped_int64_string_map = 131;
+  map<string, google.protobuf.UInt32Value> wrapped_uint32_string_map = 132;
+  map<string, google.protobuf.UInt64Value> wrapped_uint64_string_map = 133;
+  map<string, google.protobuf.BoolValue> wrapped_bool_string_map = 134;
+  map<string, google.protobuf.StringValue> wrapped_string_string_map = 135;
+  map<string, google.protobuf.BytesValue> wrapped_bytes_string_map = 136;
+  map<string, ExampleEnum> example_enum_string_map = 137;
+  map<string, google.protobuf.Timestamp> timestamp_string_map = 138;
+  map<string, google.type.Date> date_string_map = 139;
+  map<string, google.type.TimeOfDay> time_of_day_string_map = 140;
+  }
+
+message NestedExampleMessage {
+  ExampleMessage example_message = 1;
+  repeated ExampleMessage repeated_example_message = 2;
+  map<int32, ExampleMessage> example_message_int32_map = 4;
+  map<string, ExampleMessage> example_message_string_map = 5;
+  
+}
