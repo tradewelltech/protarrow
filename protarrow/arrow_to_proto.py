@@ -385,7 +385,6 @@ def _extract_repeated_field(
 ) -> None:
     if is_custom_field(field_descriptor):
         if field_descriptor.message_type.GetOptions().map_entry:
-            print(field_descriptor.name)
             _extract_map_field(array, field_descriptor, messages)
         else:
             _extract_repeated_message(array, field_descriptor, messages)
