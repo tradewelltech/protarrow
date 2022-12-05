@@ -2,8 +2,8 @@ import pyarrow as pa
 import pytest
 
 import protarrow
+from protarrow_protos.bench_pb2 import ExampleMessage, NestedExampleMessage
 from protarrow_protos.example_pb2 import NullableExample
-from protarrow_protos.simple_pb2 import NestedTestMessage, TestMessage
 
 
 def test_nullable():
@@ -83,21 +83,21 @@ def test_default_field_names_match_arrow():
 
 
 def test_nullability():
-    schema = protarrow.message_type_to_schema(TestMessage)
+    schema = protarrow.message_type_to_schema(ExampleMessage)
     assert not schema.field("double_value").nullable
     assert not schema.field("double_values").nullable
-    assert schema.field("wrapped_double").nullable
+    assert schema.field("wrapped_double_value").nullable
 
     nested_schema = pa.schema(
         list(
-            protarrow.message_type_to_schema(NestedTestMessage)
-            .field("test_message")
+            protarrow.message_type_to_schema(NestedExampleMessage)
+            .field("example_message")
             .type
         )
     )
     assert not nested_schema.field("double_value").nullable
     assert not nested_schema.field("double_values").nullable
-    assert nested_schema.field("wrapped_double").nullable
+    assert nested_schema.field("wrapped_double_value").nullable
 
     assert (
         schema == nested_schema
@@ -107,7 +107,7 @@ def test_nullability():
 @pytest.mark.parametrize("list_nullable", [True, False])
 def test_list_nullable_config(list_nullable: bool):
     schema = protarrow.message_type_to_schema(
-        TestMessage, protarrow.ProtarrowConfig(list_nullable=list_nullable)
+        ExampleMessage, protarrow.ProtarrowConfig(list_nullable=list_nullable)
     )
     assert schema.field("double_values").nullable == list_nullable
 
@@ -115,9 +115,9 @@ def test_list_nullable_config(list_nullable: bool):
 @pytest.mark.parametrize("map_nullable", [True, False])
 def test_map_nullable_config(map_nullable: bool):
     schema = protarrow.message_type_to_schema(
-        TestMessage, protarrow.ProtarrowConfig(map_nullable=map_nullable)
+        ExampleMessage, protarrow.ProtarrowConfig(map_nullable=map_nullable)
     )
-    assert schema.field("double_map").nullable == map_nullable
+    assert schema.field("double_string_map").nullable == map_nullable
 
 
 def test_map_nullability():
@@ -129,15 +129,18 @@ def test_map_nullability():
 @pytest.mark.parametrize("map_value_nullable", [True, False])
 def test_map_value_nullable_config(map_value_nullable: bool):
     schema = protarrow.message_type_to_schema(
-        TestMessage, protarrow.ProtarrowConfig(map_value_nullable=map_value_nullable)
+        ExampleMessage, protarrow.ProtarrowConfig(map_value_nullable=map_value_nullable)
     )
-    assert schema.field("double_map").type.item_field.nullable == map_value_nullable
+    assert (
+        schema.field("double_string_map").type.item_field.nullable == map_value_nullable
+    )
 
 
 @pytest.mark.parametrize("list_value_nullable", [True, False])
 def test_list_value_nullable_config(list_value_nullable: bool):
     schema = protarrow.message_type_to_schema(
-        TestMessage, protarrow.ProtarrowConfig(list_value_nullable=list_value_nullable)
+        ExampleMessage,
+        protarrow.ProtarrowConfig(list_value_nullable=list_value_nullable),
     )
     assert (
         schema.field("double_values").type.value_field.nullable == list_value_nullable
@@ -147,7 +150,7 @@ def test_list_value_nullable_config(list_value_nullable: bool):
 @pytest.mark.parametrize("list_value_name", ["foo", "bar"])
 def test_list_value_name_config(list_value_name: str):
     schema = protarrow.message_type_to_schema(
-        TestMessage, protarrow.ProtarrowConfig(list_value_name=list_value_name)
+        ExampleMessage, protarrow.ProtarrowConfig(list_value_name=list_value_name)
     )
     assert schema.field("double_values").type.value_field.name == list_value_name
 
@@ -155,6 +158,6 @@ def test_list_value_name_config(list_value_name: str):
 @pytest.mark.parametrize("map_value_name", ["foo", "bar"])
 def test_map_value_name_config(map_value_name: str):
     schema = protarrow.message_type_to_schema(
-        TestMessage, protarrow.ProtarrowConfig(map_value_name=map_value_name)
+        ExampleMessage, protarrow.ProtarrowConfig(map_value_name=map_value_name)
     )
-    assert schema.field("double_map").type.item_field.name == map_value_name
+    assert schema.field("double_string_map").type.item_field.name == map_value_name

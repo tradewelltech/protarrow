@@ -1,0 +1,50 @@
+// Proto message test bench
+
+syntax = "proto3";
+
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "google/type/date.proto";
+import "google/type/timeofday.proto";
+
+
+package protarrow.protos;
+
+
+enum ExampleEnum {
+  UNKNOWN_EXAMPLE_ENUM = 0;
+  EXAMPLE_ENUM_1 = 1;
+  EXAMPLE_ENUM_2 = 2;
+}
+
+
+message ExampleMessage {
+  // Single Values
+  {% for dtype in types -%}
+  {{ dtype.protobuf_type }} {{ dtype.name }}_value = {{ loop.index }};
+  {% endfor -%}
+
+  // Repeated values
+  {% for dtype in types -%}
+  repeated {{ dtype.protobuf_type }} {{ dtype.name }}_values = {{ loop.index + loop.length }};
+  {% endfor -%}
+
+  {% set key_count = [0] %}
+  {% for map_key in map_keys -%}
+  {% if key_count.append(key_count.pop() + 1) %}{% endif %}
+  // Map with {{map_key}} keys
+  {% for dtype in types -%}
+  map<{{map_key}}, {{ dtype.protobuf_type }}> {{ dtype.name }}_{{map_key}}_map = {{ loop.index + loop.length * (2 + key_count[0]) }};
+  {% endfor -%}
+  {% endfor -%}
+
+}
+
+message NestedExampleMessage {
+  ExampleMessage example_message = 1;
+  repeated ExampleMessage repeated_example_message = 2;
+  {% for map_key in map_keys -%}
+  map<{{map_key}}, ExampleMessage> example_message_{{map_key}}_map = {{ 3 + loop.index}};
+  {% endfor %}
+}

@@ -293,7 +293,9 @@ class MapItemAssigner(collections.abc.Iterable):
             self.field_descriptor.message_type.fields_by_name["key"], key_arrow_type
         )
         value_descriptor = self.field_descriptor.message_type.fields_by_name["value"]
-        self.value_converter = get_converter(value_descriptor, value_arrow_type)
+        self.value_converter = WrappedValueConverterAdapter.maybe_wrap(
+            get_converter(value_descriptor, value_arrow_type), value_descriptor
+        )
         self.assigner = (
             _merge_assign_map
             if (value_descriptor.type == FieldDescriptor.TYPE_MESSAGE)
@@ -383,6 +385,7 @@ def _extract_repeated_field(
 ) -> None:
     if is_custom_field(field_descriptor):
         if field_descriptor.message_type.GetOptions().map_entry:
+            print(field_descriptor.name)
             _extract_map_field(array, field_descriptor, messages)
         else:
             _extract_repeated_message(array, field_descriptor, messages)
@@ -390,14 +393,37 @@ def _extract_repeated_field(
         _extract_repeated_primitive(array, field_descriptor, messages)
 
 
+@dataclasses.dataclass(frozen=True)
+class WrappedValueConverterAdapter:
+    converter: Callable[[pa.Scalar], Any]
+    wrapped_type: type
+
+    def __call__(self, scalar: pa.Scalar):
+        return self.wrapped_type(value=self.converter(scalar))
+
+    @staticmethod
+    def maybe_wrap(
+        converter: Callable[[pa.Scalar], Any], field_descriptor: FieldDescriptor
+    ) -> Callable[[pa.Scalar], Any]:
+        if field_descriptor.message_type in NULLABLE_TYPES:
+            return WrappedValueConverterAdapter(
+                converter, field_descriptor.message_type._concrete_class
+            )
+        else:
+            return converter
+
+
 def _extract_repeated_primitive(
     array: pa.Array, field_descriptor: FieldDescriptor, messages: Iterable[Message]
 ) -> None:
+    converter = WrappedValueConverterAdapter.maybe_wrap(
+        get_converter(field_descriptor, array.type.value_type), field_descriptor
+    )
     assigner = AppendAssigner(
         messages=messages,
         field_descriptor=field_descriptor,
         sizes=OffsetToSize(array.offsets),
-        converter=get_converter(field_descriptor, array.type.value_type),
+        converter=converter,
     )
 
     for each_assigner, value in zip(assigner, _prepare_array(array.values)):
