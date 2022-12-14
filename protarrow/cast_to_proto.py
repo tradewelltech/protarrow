@@ -1,6 +1,7 @@
 from typing import Any, Optional, Tuple, Type
 
 import pyarrow as pa
+import pyarrow.compute as pc
 from google.protobuf.descriptor import Descriptor, FieldDescriptor
 from google.protobuf.message import Message
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -58,11 +59,18 @@ def _cast_flat_array(
             assert isinstance(array, pa.StructArray), field_descriptor.message_type
             return cast_struct_array(array, field_descriptor.message_type, config)
     else:
-        results = array.cast(
-            config.enum_type
-            if field_descriptor.type == FieldDescriptor.TYPE_ENUM
-            else _PROTO_PRIMITIVE_TYPE_TO_PYARROW[field_descriptor.type]
-        )
+        if field_descriptor.type == FieldDescriptor.TYPE_ENUM:
+            if pa.types.is_dictionary(config.enum_type) and not pa.types.is_dictionary(
+                array.type
+            ):
+                results = pc.dictionary_encode(array.cast(config.enum_type.value_type))
+                assert results.type == config.enum_type
+            else:
+                results = array.cast(config.enum_type)
+        else:
+            results = array.cast(
+                _PROTO_PRIMITIVE_TYPE_TO_PYARROW[field_descriptor.type]
+            )
         if results.null_count > 0:
             return results.fill_null(get_arrow_default_value(field_descriptor, config))
         else:

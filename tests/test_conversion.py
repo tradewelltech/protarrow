@@ -447,3 +447,22 @@ def test_is_custom_field():
     assert not is_custom_field(
         ExampleMessage.DESCRIPTOR.fields_by_name["wrapped_double_values"]
     )
+
+
+@pytest.mark.parametrize("message_type", MESSAGES)
+@pytest.mark.parametrize("enum_value_type", [pa.string(), pa.binary()])
+def test_can_cast_enum_to_dictionary_and_back(
+    message_type: Type[Message], enum_value_type: pa.DataType
+):
+    plain_config = ProtarrowConfig(enum_type=pa.string())
+    dict_config = ProtarrowConfig(enum_type=pa.dictionary(pa.int32(), pa.string()))
+
+    source_messages = generate_messages(message_type, 10)
+
+    plain_table = messages_to_table(source_messages, message_type, plain_config)
+    dict_table = messages_to_table(source_messages, message_type, dict_config)
+    plain_table_as_dict = cast_table(plain_table, message_type, dict_config)
+
+    assert dict_table == plain_table_as_dict
+    plain_table_back = cast_table(plain_table_as_dict, message_type, plain_config)
+    assert plain_table_back == plain_table
