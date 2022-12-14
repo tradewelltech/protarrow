@@ -59,3 +59,19 @@ config = protarrow.ProtarrowConfig(
 )
 record_batch = protarrow.messages_to_record_batch(my_protos, MyProto, config)
 ```
+
+## Cast existing table to proto schema
+
+You can use this library to cast existing table to the expected proto schema. 
+
+For example, if you have a table with missing columns:
+```python
+source_table = pa.table({"name": ["hello"]})
+casted_table = protarrow.cast_table(source_table, MyProto, config)
+```
+
+This will fill the gaps with missing values:
+
+| name   |   id | values   |
+|:-------|-----:|:---------|
+| hello  |    0 | []       |

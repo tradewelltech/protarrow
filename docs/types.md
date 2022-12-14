@@ -45,8 +45,8 @@
 ## Nullability
 
 By default, nullability follows the convention imposed by protobuf:
-* Native field, list, map, list value, map key, map value are marked as non-nullable.
-* Non-repeated messages are the only nullable fields. 
+- Native field, list, map, list value, map key, map value are marked as non-nullable.
+- Non-repeated messages are the only nullable fields. 
 
 
 Some of this can be configured:
@@ -60,3 +60,19 @@ protarrow.ProtarrowConfig(
     map_value_nullable=True,
 )
 ```
+
+## Map/List values fields names
+
+You can also customize the name of the `pa.list_` and `pa.map_` items names.
+This doesn't semantically change the schema of the table, but may change its string representation.
+
+```python
+import protarrow
+
+protarrow.ProtarrowConfig(
+    list_value_name="array",
+    map_value_name="map_value",
+)
+```
+
+For example this will change a `repated int32` field's arrow type from `ListType(list<item: int32>)` to `ListType(list<array: int32>)`. 

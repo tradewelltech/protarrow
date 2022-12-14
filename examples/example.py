@@ -27,3 +27,9 @@ config = protarrow.ProtarrowConfig(
     time_of_day_type=pa.time32("ms"),
 )
 record_batch = protarrow.messages_to_record_batch(my_protos, MyProto, config)
+
+
+source_table = pa.table({"name": ["hello"]})
+casted_table = protarrow.cast_table(source_table, MyProto, config)
+
+# print(casted_table.to_pandas().to_markdown(index=False))
