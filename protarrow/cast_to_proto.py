@@ -13,6 +13,7 @@ from protarrow.proto_to_arrow import (
     _PROTO_DESCRIPTOR_TO_PYARROW,
     _PROTO_PRIMITIVE_TYPE_TO_PYARROW,
     field_descriptor_to_field,
+    get_map_descriptors,
     is_map,
     message_type_to_schema,
 )
@@ -84,8 +85,7 @@ def _cast_array(
 ) -> pa.Array:
     if is_map(field_descriptor):
         assert isinstance(array, pa.MapArray)
-        key_field = field_descriptor.message_type.fields_by_name["key"]
-        value_field = field_descriptor.message_type.fields_by_name["value"]
+        key_field, value_field = get_map_descriptors(field_descriptor)
         map_array = pa.MapArray.from_arrays(
             array.offsets,
             _cast_array(array.keys, key_field, config),

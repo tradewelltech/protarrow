@@ -33,3 +33,7 @@ source_table = pa.table({"name": ["hello"]})
 casted_table = protarrow.cast_table(source_table, MyProto, config)
 
 # print(casted_table.to_pandas().to_markdown(index=False))
+
+message_extractor = protarrow.MessageExtractor(table.schema, MyProto)
+my_proto_0 = message_extractor.read_table_row(table, 0)
+my_proto_1 = message_extractor.read_table_row(table, 1)

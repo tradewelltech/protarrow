@@ -40,11 +40,19 @@ table = protarrow.messages_to_table(my_protos, MyProto)
 | bar    |    2 | [3 4 5]  |
 
 
-## Convert from arrow to proto
+## Convert from arrow to proto in batch
 
 ```python
 protos_from_record_batch = protarrow.record_batch_to_messages(record_batch, MyProto)
 protos_from_table = protarrow.table_to_messages(table, MyProto)
+```
+
+## Convert from arrow to proto row by row
+
+```python
+message_extractor = protarrow.MessageExtractor(table.schema, MyProto)
+my_proto_0 = message_extractor.read_table_row(table, 0)
+my_proto_1 = message_extractor.read_table_row(table, 1)
 ```
 
 ## Customize arrow type

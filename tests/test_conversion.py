@@ -17,6 +17,7 @@ from protarrow.arrow_to_proto import (
 )
 from protarrow.cast_to_proto import cast_table, get_arrow_default_value
 from protarrow.common import M, ProtarrowConfig
+from protarrow.message_extractor import MessageExtractor
 from protarrow.proto_to_arrow import (
     NestedIterable,
     _repeated_proto_to_array,
@@ -46,6 +47,8 @@ CONFIGS = [
     ProtarrowConfig(timestamp_type=pa.timestamp("ns", "America/New_York")),
     ProtarrowConfig(time_of_day_type=pa.time64("ns")),
     ProtarrowConfig(time_of_day_type=pa.time64("us")),
+    ProtarrowConfig(time_of_day_type=pa.time32("ms")),
+    ProtarrowConfig(time_of_day_type=pa.time32("s")),
     ProtarrowConfig(list_nullable=True),
     ProtarrowConfig(map_nullable=True),
     ProtarrowConfig(map_value_nullable=True),
@@ -287,7 +290,6 @@ def test_check_init_sorted():
 
 
 def test_truncate_nanos():
-
     assert truncate_nanos(
         Timestamp(seconds=10, nanos=123456789),
         "s",
@@ -368,7 +370,6 @@ def test_string_enums(enum_type: pa.DataType):
     ],
 )
 def test_get_arrow_default_value(enum_type: pa.DataType, expected: Any):
-
     assert (
         get_arrow_default_value(
             ExampleMessage.DESCRIPTOR.fields_by_name["example_enum_value"],
@@ -466,3 +467,19 @@ def test_can_cast_enum_to_dictionary_and_back(
     assert dict_table == plain_table_as_dict
     plain_table_back = cast_table(plain_table_as_dict, message_type, plain_config)
     assert plain_table_back == plain_table
+
+
+@pytest.mark.parametrize("message_type", MESSAGES)
+@pytest.mark.parametrize("config", CONFIGS)
+def test_extractor(message_type: Type[Message], config: ProtarrowConfig):
+    source_messages = [
+        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
+        for m in generate_messages(message_type, 10)
+    ]
+
+    table = messages_to_table(source_messages, message_type, config)
+    message_extractor = MessageExtractor(table.schema, message_type)
+    messages_back = [
+        message_extractor.read_table_row(table, row) for row in range(len(table))
+    ]
+    _check_messages_same(source_messages, messages_back)

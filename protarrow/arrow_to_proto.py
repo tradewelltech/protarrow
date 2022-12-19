@@ -1,10 +1,9 @@
 import collections.abc
 import dataclasses
 import datetime
-from typing import Any, Callable, Iterable, Iterator, List, Optional, Type, Union
+from typing import Any, Callable, Iterable, Iterator, List, Optional, Type
 
 import pyarrow as pa
-import pyarrow.compute as pc
 from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
 from google.protobuf.internal.containers import MessageMap
 from google.protobuf.message import Message
@@ -34,24 +33,31 @@ _TIME_CONVERTER = {
 }
 
 
-def _timestamp_scalar_to_proto(scalar: pa.Scalar) -> Timestamp:
+def _timestamp_ns_scalar_to_proto(scalar: pa.TimestampScalar) -> Timestamp:
     timestamp = Timestamp()
-    value = scalar.value * _NANOS_PER_UNIT[scalar.type.unit]
-    timestamp.FromNanoseconds(value)
+    timestamp.FromNanoseconds(scalar.value)
     return timestamp
 
 
-def _prepare_array(array: pa.Array) -> pa.Array:
-    try:
-        # TODO: handle units correctly when this is fixed
-        #  https://issues.apache.org/jira/browse/ARROW-18257
-        ratio = _TIME_CONVERTER[array.type]
-        return pc.multiply(array.cast(pa.int64()), pa.scalar(ratio, pa.int64()))
-    except KeyError:
-        return array
+def _timestamp_us_scalar_to_proto(scalar: pa.TimestampScalar) -> Timestamp:
+    timestamp = Timestamp()
+    timestamp.FromMicroseconds(scalar.value)
+    return timestamp
 
 
-def _date_scalar_to_proto(scalar: pa.Scalar) -> Date:
+def _timestamp_ms_scalar_to_proto(scalar: pa.TimestampScalar) -> Timestamp:
+    timestamp = Timestamp()
+    timestamp.FromMilliseconds(scalar.value)
+    return timestamp
+
+
+def _timestamp_s_scalar_to_proto(scalar: pa.TimestampScalar) -> Timestamp:
+    timestamp = Timestamp()
+    timestamp.FromSeconds(scalar.value)
+    return timestamp
+
+
+def _date_scalar_to_proto(scalar: pa.Date32Scalar) -> Date:
     date: datetime.date = scalar.as_py()
     if date == datetime.date.min:
         return Date()
@@ -59,8 +65,8 @@ def _date_scalar_to_proto(scalar: pa.Scalar) -> Date:
         return Date(year=date.year, month=date.month, day=date.day)
 
 
-def _time_of_day_scalar_to_proto(scalar: pa.Scalar) -> TimeOfDay:
-    total_nanos = scalar.as_py()
+def _time_64_ns_scalar_to_proto(scalar: pa.Time64Scalar) -> TimeOfDay:
+    total_nanos = scalar.cast(pa.int64()).as_py()
     return TimeOfDay(
         nanos=total_nanos % 1_000_000_000,
         seconds=(total_nanos // 1_000_000_000) % 60,
@@ -69,10 +75,54 @@ def _time_of_day_scalar_to_proto(scalar: pa.Scalar) -> TimeOfDay:
     )
 
 
-SPECIAL_TYPES = {
-    Timestamp.DESCRIPTOR: _timestamp_scalar_to_proto,
-    Date.DESCRIPTOR: _date_scalar_to_proto,
-    TimeOfDay.DESCRIPTOR: _time_of_day_scalar_to_proto,
+def _time_64_us_scalar_to_proto(scalar: pa.Time64Scalar) -> TimeOfDay:
+    total_us = scalar.cast(pa.int64()).as_py()
+    return TimeOfDay(
+        nanos=(total_us % 1_000_000) * 1_000,
+        seconds=(total_us // 1_000_000) % 60,
+        minutes=(total_us // 60_000_000) % 60,
+        hours=(total_us // 3600_000_000),
+    )
+
+
+def _time_32_ms_scalar_to_proto(scalar: pa.Time32Scalar) -> TimeOfDay:
+    total_ms = scalar.cast(pa.int32()).as_py()
+    return TimeOfDay(
+        nanos=(total_ms % 1_000) * 1_000_000,
+        seconds=(total_ms // 1_000) % 60,
+        minutes=(total_ms // 60_000) % 60,
+        hours=(total_ms // 3600_000),
+    )
+
+
+def _time_32_s_scalar_to_proto(scalar: pa.Time32Scalar) -> TimeOfDay:
+    total_s = scalar.cast(pa.int32()).as_py()
+    return TimeOfDay(
+        nanos=0,
+        seconds=(total_s // 1) % 60,
+        minutes=(total_s // 60) % 60,
+        hours=(total_s // 3600),
+    )
+
+
+TIME_OF_DAY_CONVERTERS = {
+    pa.time64("ns"): _time_64_ns_scalar_to_proto,
+    pa.time64("us"): _time_64_us_scalar_to_proto,
+    pa.time32("ms"): _time_32_ms_scalar_to_proto,
+    pa.time32("s"): _time_32_s_scalar_to_proto,
+}
+
+TIMESTAMP_CONVERTERS = {
+    "ns": _timestamp_ns_scalar_to_proto,
+    "us": _timestamp_us_scalar_to_proto,
+    "ms": _timestamp_ms_scalar_to_proto,
+    "s": _timestamp_s_scalar_to_proto,
+}
+
+TEMPORAL_CONVERTERS = {
+    Timestamp.DESCRIPTOR: lambda data_type: TIMESTAMP_CONVERTERS[data_type.unit],
+    Date.DESCRIPTOR: lambda _: _date_scalar_to_proto,
+    TimeOfDay.DESCRIPTOR: TIME_OF_DAY_CONVERTERS.__getitem__,
 }
 
 NULLABLE_TYPES = (
@@ -87,18 +137,25 @@ NULLABLE_TYPES = (
     UInt64Value.DESCRIPTOR,
 )
 
+SPECIAL_CONVERTERS = {
+    **TEMPORAL_CONVERTERS,
+    **{
+        nullable_descriptor: lambda _: convert_scalar
+        for nullable_descriptor in NULLABLE_TYPES
+    },
+}
+
 
 def is_custom_field(field_descriptor: FieldDescriptor):
     return (
         field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
-        and field_descriptor.message_type not in SPECIAL_TYPES
-        and field_descriptor.message_type not in NULLABLE_TYPES
+        and field_descriptor.message_type not in SPECIAL_CONVERTERS
     )
 
 
 @dataclasses.dataclass(frozen=True)
 class OffsetToSize(collections.abc.Iterable):
-    array: Union[pa.ListArray, pa.MapArray]
+    array: pa.Array
 
     def __post_init__(self):
         assert pa.types.is_integer(self.array.type)
@@ -118,12 +175,11 @@ class OptionalNestedIterable(collections.abc.Iterable):
     validity_mask: Iterable[pa.BooleanScalar]
 
     def __iter__(self) -> Iterator[Any]:
-        fake_message = self.field_descriptor.message_type._concrete_class()
         for parent, valid in zip(self.parents, self.validity_mask):
             if valid.is_valid and valid.as_py():
                 yield getattr(parent, self.field_descriptor.name)
             else:
-                yield fake_message
+                yield self.field_descriptor.message_type._concrete_class()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -167,13 +223,7 @@ def get_converter(
         enum_descriptor: EnumDescriptor = field_descriptor.enum_type
         return create_enum_converter(enum_descriptor, arrow_type)
     elif field_descriptor.type == FieldDescriptor.TYPE_MESSAGE:
-        if field_descriptor.message_type in NULLABLE_TYPES:
-            return convert_scalar
-        else:
-            try:
-                return SPECIAL_TYPES[field_descriptor.message_type]
-            except KeyError:
-                raise KeyError(field_descriptor.full_name)
+        return SPECIAL_CONVERTERS[field_descriptor.message_type](arrow_type)
     else:
         return convert_scalar
 
@@ -240,7 +290,7 @@ class MapKeyAssigner(collections.abc.Iterable):
     messages: Iterable[Message]
     field_descriptor: FieldDescriptor
     key_arrow_type: dataclasses.InitVar[pa.DataType]
-    offsets: Iterable[int]
+    sizes: Iterable[int]
     converter: Callable[[pa.Scalar], Any] = dataclasses.field(init=False)
     attribute: Any = None
 
@@ -253,7 +303,7 @@ class MapKeyAssigner(collections.abc.Iterable):
 
     def __iter__(self) -> Iterator[Callable[[pa.Scalar], Message]]:
         assert self.attribute is None
-        for message, offset in zip(self.messages, self.offsets):
+        for message, offset in zip(self.messages, self.sizes):
             self.attribute = getattr(message, self.field_descriptor.name)
             for _ in range(offset):
                 yield self
@@ -280,7 +330,7 @@ class MapItemAssigner(collections.abc.Iterable):
     field_descriptor: FieldDescriptor
     key_arrow_type: dataclasses.InitVar[pa.DataType]
     value_arrow_type: dataclasses.InitVar[pa.DataType]
-    offsets: Iterable[int]
+    sizes: Iterable[int]
     key_converter: Callable[[pa.Scalar], Any] = dataclasses.field(init=False)
     value_converter: Callable[[pa.Scalar], Any] = dataclasses.field(init=False)
     assigner: Callable[[MessageMap, Any, Any], None] = dataclasses.field(init=False)
@@ -304,9 +354,9 @@ class MapItemAssigner(collections.abc.Iterable):
 
     def __iter__(self) -> Iterator[Callable[[pa.Scalar, pa.Scalar], Message]]:
         assert self.attribute is None
-        for message, offset in zip(self.messages, self.offsets):
+        for message, size in zip(self.messages, self.sizes):
             self.attribute = getattr(message, self.field_descriptor.name)
-            for _ in range(offset):
+            for _ in range(size):
                 yield self
         self.attribute = None
 
@@ -373,7 +423,7 @@ def _extract_map_field(
                 OffsetToSize(array.offsets),
             ),
             array.keys,
-            _prepare_array(array.values.field(1)),
+            array.values.field(1),
         ):
             assigner(key, value)
 
@@ -425,7 +475,7 @@ def _extract_repeated_primitive(
         converter=converter,
     )
 
-    for each_assigner, value in zip(assigner, _prepare_array(array.values)):
+    for each_assigner, value in zip(assigner, array.values):
         each_assigner(value)
 
 
@@ -452,11 +502,10 @@ def _extract_repeated_message(
 def _extract_field(
     array: pa.Array, field_descriptor: FieldDescriptor, messages: Iterable[Message]
 ) -> None:
-    array = _prepare_array(array)
     if field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
         _extract_repeated_field(array, field_descriptor, messages)
-    elif field_descriptor.message_type in SPECIAL_TYPES:
-        extractor = SPECIAL_TYPES[field_descriptor.message_type]
+    elif field_descriptor.message_type in TEMPORAL_CONVERTERS:
+        extractor = TEMPORAL_CONVERTERS[field_descriptor.message_type](array.type)
         for message, value in zip(messages, array):
             if value.is_valid:
                 getattr(
