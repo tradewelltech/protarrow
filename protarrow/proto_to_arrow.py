@@ -10,6 +10,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Tuple,
     Type,
     Union,
 )
@@ -194,6 +195,15 @@ def is_map(field_descriptor: FieldDescriptor) -> bool:
     )
 
 
+def get_map_descriptors(
+    field_descriptor: FieldDescriptor,
+) -> Tuple[FieldDescriptor, FieldDescriptor]:
+    return (
+        field_descriptor.message_type.fields_by_name["key"],
+        field_descriptor.message_type.fields_by_name["value"],
+    )
+
+
 def get_enum_converter(
     data_type: pa.DataType, enum_descriptor: EnumDescriptor
 ) -> Callable[[int], Any]:
@@ -228,12 +238,9 @@ def field_descriptor_to_field(
     config: ProtarrowConfig,
 ) -> pa.Field:
     if is_map(field_descriptor):
-        key_type = field_descriptor_to_data_type(
-            field_descriptor.message_type.fields_by_name["key"], config
-        )
-        value_type = field_descriptor_to_data_type(
-            field_descriptor.message_type.fields_by_name["value"], config
-        )
+        key_field, value_field = get_map_descriptors(field_descriptor)
+        key_type = field_descriptor_to_data_type(key_field, config)
+        value_type = field_descriptor_to_data_type(value_field, config)
         return pa.field(
             field_descriptor.name,
             pa.map_(
