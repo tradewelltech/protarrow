@@ -207,7 +207,7 @@ def get_map_descriptors(
 def get_enum_converter(
     data_type: pa.DataType, enum_descriptor: EnumDescriptor
 ) -> Callable[[int], Any]:
-    if data_type == pa.int32():
+    if pa.types.is_integer(data_type):
         return lambda x: x
 
     elif is_binary_enum(data_type):

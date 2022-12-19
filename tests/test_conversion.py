@@ -47,6 +47,8 @@ CONFIGS = [
     ProtarrowConfig(timestamp_type=pa.timestamp("ns", "America/New_York")),
     ProtarrowConfig(time_of_day_type=pa.time64("ns")),
     ProtarrowConfig(time_of_day_type=pa.time64("us")),
+    ProtarrowConfig(time_of_day_type=pa.time32("ms")),
+    ProtarrowConfig(time_of_day_type=pa.time32("s")),
     ProtarrowConfig(list_nullable=True),
     ProtarrowConfig(map_nullable=True),
     ProtarrowConfig(map_value_nullable=True),
@@ -288,7 +290,6 @@ def test_check_init_sorted():
 
 
 def test_truncate_nanos():
-
     assert truncate_nanos(
         Timestamp(seconds=10, nanos=123456789),
         "s",
@@ -369,7 +370,6 @@ def test_string_enums(enum_type: pa.DataType):
     ],
 )
 def test_get_arrow_default_value(enum_type: pa.DataType, expected: Any):
-
     assert (
         get_arrow_default_value(
             ExampleMessage.DESCRIPTOR.fields_by_name["example_enum_value"],

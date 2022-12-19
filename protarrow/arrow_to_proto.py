@@ -1,7 +1,7 @@
 import collections.abc
 import dataclasses
 import datetime
-from typing import Any, Callable, Iterable, Iterator, List, Optional, Type, Union
+from typing import Any, Callable, Iterable, Iterator, List, Optional, Type
 
 import pyarrow as pa
 from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
@@ -31,13 +31,6 @@ _TIME_CONVERTER = {
     pa.time32("ms"): 1_000_000,
     pa.time32("s"): 1_000_000_00,
 }
-
-
-def _timestamp_scalar_to_proto(scalar: pa.TimestampScalar) -> Timestamp:
-    timestamp = Timestamp()
-    value = scalar.value * _NANOS_PER_UNIT[scalar.type.unit]
-    timestamp.FromNanoseconds(value)
-    return timestamp
 
 
 def _timestamp_ns_scalar_to_proto(scalar: pa.TimestampScalar) -> Timestamp:
@@ -132,7 +125,6 @@ TEMPORAL_CONVERTERS = {
     TimeOfDay.DESCRIPTOR: TIME_OF_DAY_CONVERTERS.__getitem__,
 }
 
-
 NULLABLE_TYPES = (
     BoolValue.DESCRIPTOR,
     BytesValue.DESCRIPTOR,
@@ -163,7 +155,7 @@ def is_custom_field(field_descriptor: FieldDescriptor):
 
 @dataclasses.dataclass(frozen=True)
 class OffsetToSize(collections.abc.Iterable):
-    array: Union[pa.ListArray, pa.MapArray]
+    array: pa.Array
 
     def __post_init__(self):
         assert pa.types.is_integer(self.array.type)
@@ -183,12 +175,11 @@ class OptionalNestedIterable(collections.abc.Iterable):
     validity_mask: Iterable[pa.BooleanScalar]
 
     def __iter__(self) -> Iterator[Any]:
-        fake_message = self.field_descriptor.message_type._concrete_class()
         for parent, valid in zip(self.parents, self.validity_mask):
             if valid.is_valid and valid.as_py():
                 yield getattr(parent, self.field_descriptor.name)
             else:
-                yield fake_message
+                yield self.field_descriptor.message_type._concrete_class()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -299,7 +290,7 @@ class MapKeyAssigner(collections.abc.Iterable):
     messages: Iterable[Message]
     field_descriptor: FieldDescriptor
     key_arrow_type: dataclasses.InitVar[pa.DataType]
-    offsets: Iterable[int]
+    sizes: Iterable[int]
     converter: Callable[[pa.Scalar], Any] = dataclasses.field(init=False)
     attribute: Any = None
 
@@ -312,7 +303,7 @@ class MapKeyAssigner(collections.abc.Iterable):
 
     def __iter__(self) -> Iterator[Callable[[pa.Scalar], Message]]:
         assert self.attribute is None
-        for message, offset in zip(self.messages, self.offsets):
+        for message, offset in zip(self.messages, self.sizes):
             self.attribute = getattr(message, self.field_descriptor.name)
             for _ in range(offset):
                 yield self
@@ -339,7 +330,7 @@ class MapItemAssigner(collections.abc.Iterable):
     field_descriptor: FieldDescriptor
     key_arrow_type: dataclasses.InitVar[pa.DataType]
     value_arrow_type: dataclasses.InitVar[pa.DataType]
-    offsets: Iterable[int]
+    sizes: Iterable[int]
     key_converter: Callable[[pa.Scalar], Any] = dataclasses.field(init=False)
     value_converter: Callable[[pa.Scalar], Any] = dataclasses.field(init=False)
     assigner: Callable[[MessageMap, Any, Any], None] = dataclasses.field(init=False)
@@ -363,9 +354,9 @@ class MapItemAssigner(collections.abc.Iterable):
 
     def __iter__(self) -> Iterator[Callable[[pa.Scalar, pa.Scalar], Message]]:
         assert self.attribute is None
-        for message, offset in zip(self.messages, self.offsets):
+        for message, size in zip(self.messages, self.sizes):
             self.attribute = getattr(message, self.field_descriptor.name)
-            for _ in range(offset):
+            for _ in range(size):
                 yield self
         self.attribute = None
 
