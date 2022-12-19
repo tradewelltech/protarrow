@@ -73,6 +73,6 @@ See the [documentation](https://protarrow.readthedocs.io/en/latest/)
 [doc-image]: https://readthedocs.org/projects/protarrow/badge/?version=latest
 [doc-url]: https://protarrow.readthedocs.io/en/latest/?badge=latest
 [license-image]: http://img.shields.io/:license-Apache%202-blue.svg
-[license-url]: https://github.com/tradewelltech/protarrow/blob/master/LICENSE.txt
+[license-url]: https://github.com/tradewelltech/protarrow/blob/master/LICENSE
 [codecov-image]: https://codecov.io/gh/tradewelltech/protarrow/branch/master/graph/badge.svg?token=XMFH27IL70
 [codecov-url]: https://codecov.io/gh/tradewelltech/protarrow
