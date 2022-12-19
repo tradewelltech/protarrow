@@ -67,7 +67,7 @@ class MapConverterAdapter:
 
 class NullableConverterAdapter:
     def __init__(
-        self, converter: Callable[[pa.Scalar], Any], message_type: type[Message]
+        self, converter: Callable[[pa.Scalar], Any], message_type: Type[Message]
     ):
         self._converter = converter
         self._message_type = message_type
