@@ -483,3 +483,17 @@ def test_extractor(message_type: Type[Message], config: ProtarrowConfig):
         message_extractor.read_table_row(table, row) for row in range(len(table))
     ]
     _check_messages_same(source_messages, messages_back)
+
+
+@pytest.mark.parametrize("message_type", MESSAGES)
+@pytest.mark.parametrize("config", CONFIGS)
+def test_extractor_null_values(message_type: Type[Message], config: ProtarrowConfig):
+    table = protarrow.cast_table(
+        pa.table({"nulls": pa.nulls(10)}), message_type, config
+    )
+
+    message_extractor = MessageExtractor(table.schema, message_type)
+    messages = [
+        message_extractor.read_table_row(table, row) for row in range(len(table))
+    ]
+    assert messages == [message_type()] * len(table)

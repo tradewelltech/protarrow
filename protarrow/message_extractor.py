@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Type, TypeVar
+from typing import Any, Callable, Dict, Generic, List, Type, TypeVar
 
 import pyarrow as pa
 from google.protobuf.descriptor import Descriptor, FieldDescriptor
@@ -110,8 +110,8 @@ def get_field_converter(
             return get_flat_field_converter(field.type, field_descriptor)
 
 
-class MessageExtractor:
-    def __init__(self, schema: pa.Schema, message_type: Type[Message]):
+class MessageExtractor(Generic[M]):
+    def __init__(self, schema: pa.Schema, message_type: Type[M]):
         descriptor = message_type.DESCRIPTOR
         self._extractors = {
             schema.get_field_index(field_descriptor.name): get_field_converter(
@@ -122,10 +122,10 @@ class MessageExtractor:
         }
         self._message_type = message_type
 
-    def read_table_row(self, table: pa.Table, row: int) -> Message:
+    def read_table_row(self, table: pa.Table, row: int) -> M:
         results = {}
         for index, converter in self._extractors.items():
-            results[table.schema.field(index).name] = converter(
-                table.column(index)[row]
-            )
+            scalar = table.column(index)[row]
+            if scalar.is_valid:
+                results[table.schema.field(index).name] = converter(scalar)
         return self._message_type(**results)
