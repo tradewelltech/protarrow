@@ -78,7 +78,12 @@ def generate_message(message_type: typing.Type[M], repeated_count: int) -> M:
 
     for field in message_type.DESCRIPTOR.fields:
         if field.containing_oneof is None:
-            set_field(message, field, repeated_count)
+            if (
+                field.label == FieldDescriptor.LABEL_REPEATED
+                or field.type != FieldDescriptor.TYPE_MESSAGE
+                or random.getrandbits(1) == 1
+            ):
+                set_field(message, field, repeated_count)
     return message
 
 
