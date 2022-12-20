@@ -161,11 +161,12 @@ class OffsetToSize(collections.abc.Iterable):
         assert pa.types.is_integer(self.array.type)
 
     def __iter__(self) -> Iterator[int]:
-        current_offset = self.array[0].as_py()
-        for item in self.array[1:]:
-            offset = item.as_py()
-            yield offset - current_offset
-            current_offset = offset
+        if len(self.array) > 0:
+            current_offset = self.array[0].as_py()
+            for item in self.array[1:]:
+                offset = item.as_py()
+                yield offset - current_offset
+                current_offset = offset
 
 
 @dataclasses.dataclass(frozen=True)
@@ -249,13 +250,12 @@ class PlainAssigner(collections.abc.Iterable):
         self.message = None
 
     def __call__(self, scalar: pa.Scalar) -> None:
-        if scalar.is_valid:
-            value = self.converter(scalar)
-            if value is not None:
-                if self.nullable:
-                    getattr(self.message, self.field_descriptor.name).value = value
-                else:
-                    setattr(self.message, self.field_descriptor.name, value)
+        value = self.converter(scalar) if scalar.is_valid else None
+        if value is not None:
+            if self.nullable:
+                getattr(self.message, self.field_descriptor.name).value = value
+            else:
+                setattr(self.message, self.field_descriptor.name, value)
 
 
 class AppendAssigner(collections.abc.Iterable):

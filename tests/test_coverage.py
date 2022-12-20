@@ -15,6 +15,10 @@ from protarrow.arrow_to_proto import (
     MapItemAssigner,
     OffsetToSize,
     OptionalNestedIterable,
+    PlainAssigner,
+    _extract_array_messages,
+    _extract_map_field,
+    _extract_record_batch_messages,
     convert_scalar,
 )
 from protarrow.cast_to_proto import get_arrow_default_value
@@ -22,6 +26,7 @@ from protarrow.message_extractor import (
     MapConverterAdapter,
     NullableConverterAdapter,
     RepeatedConverterAdapter,
+    StructScalarConverter,
 )
 from protarrow.proto_to_arrow import (
     _get_converter,
@@ -112,6 +117,13 @@ def test_map_item_assigner():
     ]
 
 
+def test_offset_to_size():
+    assert list(OffsetToSize(pa.array([0, 5, 10]))) == [5, 5]
+    assert list(OffsetToSize(pa.array([5, 10]))) == [5]
+    assert list(OffsetToSize(pa.array([], pa.int32()))) == []
+    assert list(OffsetToSize(pa.array([1]))) == []
+
+
 def test_get_enum_converter():
     enum_descriptor = ExampleMessage.DESCRIPTOR.fields_by_name[
         "example_enum_value"
@@ -173,3 +185,106 @@ def test_get_converter():
             FakeDescriptor("foo", type=FieldDescriptor.TYPE_GROUP),
             protarrow.ProtarrowConfig(),
         )
+
+
+def test_struct_scalar_converter():
+    struct_type = pa.struct([pa.field("double_value", pa.float64())])
+    struct_scalar_converter = StructScalarConverter(
+        struct_type, ExampleMessage.DESCRIPTOR
+    )
+    assert struct_scalar_converter(
+        pa.scalar([("double_value", 1.0)], struct_type)
+    ) == ExampleMessage(double_value=1.0)
+    assert (
+        struct_scalar_converter(pa.scalar([("double_value", None)], struct_type))
+        == ExampleMessage()
+    )
+
+
+def test_plain_assigner_not_nullable():
+    messages = [ExampleMessage(), ExampleMessage()]
+    plain_assigner = PlainAssigner(
+        messages=messages,
+        field_descriptor=ExampleMessage.DESCRIPTOR.fields_by_name["double_value"],
+        arrow_type=pa.float64(),
+    )
+    for a, v in zip(plain_assigner, pa.array([1.0, None], pa.float64())):
+        a(v)
+    assert messages == [ExampleMessage(double_value=1.0), ExampleMessage()]
+
+
+def test_plain_assigner_nullable():
+    messages = [
+        ExampleMessage(),
+        ExampleMessage(),
+        ExampleMessage(),
+    ]
+    plain_assigner = PlainAssigner(
+        messages=messages,
+        field_descriptor=ExampleMessage.DESCRIPTOR.fields_by_name[
+            "wrapped_double_value"
+        ],
+        arrow_type=pa.float64(),
+    )
+    for a, v in zip(plain_assigner, pa.array([1.0, 0.0, None], pa.float64())):
+        a(v)
+    assert messages == [
+        ExampleMessage(wrapped_double_value=DoubleValue(value=1.0)),
+        ExampleMessage(wrapped_double_value=DoubleValue(value=0.0)),
+        ExampleMessage(),
+    ]
+
+
+def test_missing_column():
+    messages = [ExampleMessage(), ExampleMessage()]
+    _extract_record_batch_messages(
+        pa.table({"double_value": pa.array([1.0, 2.0])}).to_batches()[0],
+        ExampleMessage.DESCRIPTOR,
+        messages,
+    )
+    assert messages == [
+        ExampleMessage(double_value=1.0),
+        ExampleMessage(double_value=2.0),
+    ]
+
+
+def test_missing_column_in_struct():
+    messages = [ExampleMessage(), ExampleMessage()]
+    struct_type = pa.struct([pa.field("double_value", pa.float64())])
+    _extract_array_messages(
+        pa.array([[("double_value", 1.0)], [("double_value", 2.0)]], struct_type),
+        ExampleMessage.DESCRIPTOR,
+        messages,
+    )
+    assert messages == [
+        ExampleMessage(double_value=1.0),
+        ExampleMessage(double_value=2.0),
+    ]
+
+
+def test_missing_map_field():
+    messages = [NestedExampleMessage(example_message_string_map={})]
+    struct_type = pa.struct([pa.field("double_value", pa.float64())])
+
+    map_array = pa.array(
+        [
+            [
+                ("message_1", {"double_value": 1.0}),
+                ("message_2", {"double_value": 2.0}),
+            ]
+        ],
+        pa.map_(pa.string(), struct_type),
+    )
+    _extract_map_field(
+        map_array,
+        NestedExampleMessage.DESCRIPTOR.fields_by_name["example_message_string_map"],
+        messages,
+    )
+    assert messages == [
+        NestedExampleMessage(
+            example_message_string_map={
+                "message_1": ExampleMessage(double_value=1.0),
+                "message_2": ExampleMessage(double_value=2.0),
+            }
+        )
+    ]
