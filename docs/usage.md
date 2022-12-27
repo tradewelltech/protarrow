@@ -78,7 +78,7 @@ source_table = pa.table({"name": ["hello"]})
 casted_table = protarrow.cast_table(source_table, MyProto, config)
 ```
 
-This will fill the gaps with missing values:
+This will fill the missing columns with default, or `None` when supported:
 
 | name   |   id | values   |
 |:-------|-----:|:---------|
