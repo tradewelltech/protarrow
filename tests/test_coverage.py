@@ -82,7 +82,7 @@ def test_optional_nested_iterable():
     assert list(optional_nested_iterable) == [
         ExampleMessage(),
         ExampleMessage(int32_value=1),
-        ExampleMessage(),
+        None,
     ]
 
 
