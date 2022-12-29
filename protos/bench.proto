@@ -13,7 +13,7 @@ package protarrow.protos;
 
 
 enum ExampleEnum {
-  UNKNOWN_EXAMPLE_ENUM = 0;
+  EXAMPLE_ENUM_UNSPECIFIED = 0;
   EXAMPLE_ENUM_1 = 1;
   EXAMPLE_ENUM_2 = 2;
 }
