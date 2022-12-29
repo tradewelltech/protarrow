@@ -137,7 +137,8 @@ def test_get_enum_converter():
         == "EXAMPLE_ENUM_1"
     )
     assert (
-        get_enum_converter(pa.binary(), enum_descriptor)(0) == b"UNKNOWN_EXAMPLE_ENUM"
+        get_enum_converter(pa.binary(), enum_descriptor)(0)
+        == b"EXAMPLE_ENUM_UNSPECIFIED"
     )
     assert (
         get_enum_converter(pa.dictionary(pa.int32(), pa.binary()), enum_descriptor)(1)

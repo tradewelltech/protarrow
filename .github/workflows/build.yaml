@@ -35,3 +35,13 @@ jobs:
         if: "matrix.python-version == '3.9'"
         with:
           fail_ci_if_error: true
+
+      - name: "Set up buf"
+        uses: bufbuild/buf-setup-action@v1
+        if: "matrix.python-version == '3.9'"
+
+      - name: "Run buf linter"
+        uses: bufbuild/buf-lint-action@v1
+        if: "matrix.python-version == '3.9'"
+        with:
+          input: protos
