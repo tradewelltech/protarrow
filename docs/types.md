@@ -32,7 +32,7 @@
 | google.protobuf.BoolValue   | bool_                  |                                    |
 | google.protobuf.BytesValue  | binary                 |                                    |
 | google.protobuf.DoubleValue | float64                |                                    |
-| google.protobuf.FloatValue  | float32                |                                    |
+| google.protobuf.Empty       | struct([])             |                                    |
 | google.protobuf.Int32Value  | int32                  |                                    |
 | google.protobuf.Int64Value  | int64                  |                                    |
 | google.protobuf.StringValue | string                 |                                    |
