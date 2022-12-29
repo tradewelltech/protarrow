@@ -219,7 +219,11 @@ def test_enum_values_as_int():
         (
             ProtarrowConfig(enum_type=pa.string()),
             [
-                ["UNKNOWN_EXAMPLE_ENUM", "EXAMPLE_ENUM_1", "UNKNOWN_EXAMPLE_ENUM"],
+                [
+                    "EXAMPLE_ENUM_UNSPECIFIED",
+                    "EXAMPLE_ENUM_1",
+                    "EXAMPLE_ENUM_UNSPECIFIED",
+                ],
                 [],
                 [],
             ],
@@ -227,7 +231,11 @@ def test_enum_values_as_int():
         (
             ProtarrowConfig(enum_type=pa.dictionary(pa.int32(), pa.string())),
             [
-                ["UNKNOWN_EXAMPLE_ENUM", "EXAMPLE_ENUM_1", "UNKNOWN_EXAMPLE_ENUM"],
+                [
+                    "EXAMPLE_ENUM_UNSPECIFIED",
+                    "EXAMPLE_ENUM_1",
+                    "EXAMPLE_ENUM_UNSPECIFIED",
+                ],
                 [],
                 [],
             ],
@@ -235,7 +243,11 @@ def test_enum_values_as_int():
         (
             ProtarrowConfig(enum_type=pa.binary()),
             [
-                [b"UNKNOWN_EXAMPLE_ENUM", b"EXAMPLE_ENUM_1", b"UNKNOWN_EXAMPLE_ENUM"],
+                [
+                    b"EXAMPLE_ENUM_UNSPECIFIED",
+                    b"EXAMPLE_ENUM_1",
+                    b"EXAMPLE_ENUM_UNSPECIFIED",
+                ],
                 [],
                 [],
             ],
@@ -363,10 +375,10 @@ def test_string_enums(enum_type: pa.DataType):
     ["enum_type", "expected"],
     [
         (pa.int32(), 0),
-        (pa.binary(), b"UNKNOWN_EXAMPLE_ENUM"),
-        (pa.dictionary(pa.int32(), pa.binary()), b"UNKNOWN_EXAMPLE_ENUM"),
-        (pa.string(), "UNKNOWN_EXAMPLE_ENUM"),
-        (pa.dictionary(pa.int32(), pa.string()), "UNKNOWN_EXAMPLE_ENUM"),
+        (pa.binary(), b"EXAMPLE_ENUM_UNSPECIFIED"),
+        (pa.dictionary(pa.int32(), pa.binary()), b"EXAMPLE_ENUM_UNSPECIFIED"),
+        (pa.string(), "EXAMPLE_ENUM_UNSPECIFIED"),
+        (pa.dictionary(pa.int32(), pa.string()), "EXAMPLE_ENUM_UNSPECIFIED"),
     ],
 )
 def test_get_arrow_default_value(enum_type: pa.DataType, expected: Any):
@@ -409,7 +421,7 @@ def test_nested_enums():
     )
     assert record_batch["example_message"].field(
         record_batch["example_message"].type.get_field_index("example_enum_value")
-    ).to_pylist() == [b"UNKNOWN_EXAMPLE_ENUM"]
+    ).to_pylist() == [b"EXAMPLE_ENUM_UNSPECIFIED"]
 
 
 def test_create_enum_converter_wrong_type():
