@@ -140,6 +140,9 @@ class FlattenedIterable(collections.abc.Iterable):
                 for child in parent:
                     yield child
 
+    def __len__(self) -> int:
+        return sum(len(i) for i in self.parents if i)
+
 
 @dataclasses.dataclass(frozen=True)
 class NestedIterable(collections.abc.Iterable):
@@ -152,6 +155,9 @@ class NestedIterable(collections.abc.Iterable):
                 yield self.getter(parent)
             else:
                 yield None
+
+    def __len__(self) -> int:
+        return len(self.parents)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -185,6 +191,9 @@ class MapValueIterable(collections.abc.Iterable):
             if scalar_map is not None:
                 for value in scalar_map.values():
                     yield value
+
+    def __len__(self) -> int:
+        return sum(len(i) for i in self.scalar_map if i)
 
 
 def is_map(field_descriptor: FieldDescriptor) -> bool:
@@ -502,11 +511,25 @@ def _messages_to_array(
                 nullable=_proto_field_nullable(field_descriptor, config),
             )
         )
-    return pa.StructArray.from_arrays(
-        arrays=arrays,
-        fields=fields,
-        mask=pc.invert(pa.array(validity_mask, pa.bool_())) if validity_mask else None,
-    )
+    if len(arrays) == 0:
+        # TODO: remove when this is fixed
+        #  https://github.com/apache/arrow/issues/15109
+        size = len(validity_mask) if validity_mask else len(messages)
+        return pa.StructArray.from_arrays(
+            arrays=[pa.nulls(size, pa.null())],
+            fields=[pa.field("null", pa.null())],
+            mask=pc.invert(pa.array(validity_mask, pa.bool_()))
+            if validity_mask
+            else None,
+        ).cast(pa.struct([]))
+    else:
+        return pa.StructArray.from_arrays(
+            arrays=arrays,
+            fields=fields,
+            mask=pc.invert(pa.array(validity_mask, pa.bool_()))
+            if validity_mask
+            else None,
+        )
 
 
 def messages_to_record_batch(

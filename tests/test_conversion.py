@@ -27,7 +27,7 @@ from protarrow.proto_to_arrow import (
     messages_to_record_batch,
     messages_to_table,
 )
-from protarrow_protos.bench_pb2 import ExampleMessage, Foo, NestedExampleMessage
+from protarrow_protos.bench_pb2 import ExampleMessage, NestedExampleMessage
 from tests.random_generator import generate_messages, random_date, truncate_nanos
 
 MESSAGES = [ExampleMessage, NestedExampleMessage]
@@ -500,22 +500,19 @@ def test_extractor_null_values(message_type: Type[Message], config: ProtarrowCon
     assert messages == [message_type()] * len(table)
 
 
-def test_empty_struct_array():
-    pa.StructArray.from_arrays([], fields=[], mask=None)
-
-
 def test_empty():
     source_messages = [
-        Foo(empty_value=Empty()),
-        Foo(),
+        ExampleMessage(empty_value=Empty()),
+        ExampleMessage(),
     ]
 
-    table = messages_to_table(source_messages, Foo, ProtarrowConfig())
-    messages_back = table_to_messages(table, Foo)
+    table = messages_to_table(source_messages, ExampleMessage, ProtarrowConfig())
+    messages_back = table_to_messages(table, ExampleMessage)
     _check_messages_same(source_messages, messages_back)
 
 
 def test_empty_struct_not_possible():
+    # See https://github.com/apache/arrow/issues/15109
     array = pa.StructArray.from_arrays(arrays=[], names=[], mask=pa.array([True, True]))
     assert array.type == pa.struct([])
     assert len(array) == 0

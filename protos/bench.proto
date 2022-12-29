@@ -153,10 +153,3 @@ message NestedExampleMessage {
   map<string, ExampleMessage> example_message_string_map = 5;
   
 }
-
-message Foo {
-  google.protobuf.Empty empty_value = 29;
-  //map<string, google.protobuf.Empty> empty_string_map = 145;
-  repeated google.protobuf.Empty empty_values = 58;
-
-}
