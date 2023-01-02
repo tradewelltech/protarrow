@@ -4,6 +4,7 @@ from typing import Any, Iterable, List, Type
 
 import pyarrow as pa
 import pytest
+from google.protobuf.empty_pb2 import Empty
 from google.protobuf.json_format import Parse
 from google.protobuf.message import Message
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -497,3 +498,31 @@ def test_extractor_null_values(message_type: Type[Message], config: ProtarrowCon
         message_extractor.read_table_row(table, row) for row in range(len(table))
     ]
     assert messages == [message_type()] * len(table)
+
+
+def test_empty():
+    source_messages = [
+        ExampleMessage(empty_value=Empty()),
+        ExampleMessage(),
+    ]
+
+    table = messages_to_table(source_messages, ExampleMessage, ProtarrowConfig())
+    messages_back = table_to_messages(table, ExampleMessage)
+    _check_messages_same(source_messages, messages_back)
+
+
+def test_empty_struct_not_possible():
+    # See https://github.com/apache/arrow/issues/15109
+    array = pa.StructArray.from_arrays(arrays=[], names=[], mask=pa.array([True, True]))
+    assert array.type == pa.struct([])
+    assert len(array) == 0
+
+
+def test_empty_struct_workaround():
+    array = pa.StructArray.from_arrays(
+        arrays=[pa.nulls(2, pa.null())], names=["DELETE"], mask=pa.array([True, True])
+    )
+    assert len(array) == 2
+    empty_array = array.cast(pa.struct([]))
+    assert len(empty_array) == 2
+    assert empty_array.type == pa.struct([])

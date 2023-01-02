@@ -175,12 +175,20 @@ class OptionalNestedIterable(collections.abc.Iterable):
     field_descriptor: FieldDescriptor
     validity_mask: Iterable[pa.BooleanScalar]
 
-    def __iter__(self) -> Iterator[Any]:
+    def __iter__(self) -> Iterator[Optional[Any]]:
         for parent, valid in zip(self.parents, self.validity_mask):
             if valid.is_valid and valid.as_py():
                 yield getattr(parent, self.field_descriptor.name)
             else:
-                yield self.field_descriptor.message_type._concrete_class()
+                yield None
+
+    def prime(self):
+        """This needs to be called if there are no fields in the message"""
+        empty = self.field_descriptor.message_type._concrete_class()
+        for parent, valid in zip(self.parents, self.validity_mask):
+            if valid.is_valid and valid.as_py():
+                value = getattr(parent, self.field_descriptor.name)
+                value.MergeFrom(empty)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -374,6 +382,7 @@ def _extract_struct_field(
     messages: Iterable[Message],
 ) -> None:
     nested_list = OptionalNestedIterable(messages, field_descriptor, array.is_valid())
+    nested_list.prime()
     _extract_array_messages(array, field_descriptor.message_type, nested_list)
 
 
