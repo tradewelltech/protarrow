@@ -3,13 +3,15 @@
 name = "protarrow"
 version = "0.0.0"
 description = "Convert from protobuf to arrow and back"
-authors = ["0x26res <0x26res@gmail.com>"]
+authors = ["Tradewell Tech <engineering@tradewelltech.co>"]
+maintainers = ["0x26res <0x26res@gmail.com>"]
 packages = [
     { include = "protarrow" }
 ]
 readme = "README.md"
 license = "Apache-2.0"
 repository = "https://github.com/tradewelltech/protarrow"
+documentation = "https://protarrow.readthedocs.io/en/latest/"
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: Apache Software License",
@@ -18,40 +20,44 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
 ]
+keywords = ["apache-arrow", "protobuf", "data"]
 
 [tool.poetry.dependencies]
-googleapis-common-protos = "^1.53.0"
-pyarrow = "^8.0.0"
-protobuf = "^3.20.1"
-python = "^3.8"
+googleapis-common-protos = ">=1.53.0"
+protobuf = ">=3.20.1"
+pyarrow = ">=8.0.0"
+python = ">=3.8,<3.11"
 
 
 [tool.poetry.dev-dependencies]
 black = "^22.10.0"
+coverage = ">=6.5.0"
+flake8 = ">=5.0.4"
 grpcio-tools = "1.46.0"
-isort = "^5.10.1"
-pre-commit = "^2.20.0"
-pytest = "^7.2.0"
-pytest-benchmark = "^4.0.0"
-flake8 = "^5.0.4"
-pylint = "^2.15.0"
+isort = ">=5.10.1"
+mkdocs = ">=1.4.2"
+pre-commit = ">=2.20.0"
+pylint = ">=2.15.0"
+pytest = ">=7.2.0"
+pytest-benchmark = ">=4.0.0"
+Jinja2 = ">=3.1.2"
+inflection = ">=0.5.1"
+pytest-xdist = ">=3.1.0"
 
-[tool.poetry.group.dev.dependencies]
-coverage = "^6.5.0"
 
 [build-system]
-requires = ["poetry-core>=1.0.0",  "poetry-dynamic-versioning"]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
 build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.black]
-  target-version =  ['py39']
-  exclude = "venv/|tox/|protarrow_protos/.*"
+target-version =  ['py39']
+exclude = "venv/|tox/|protarrow_protos/.*"
 
 [tool.isort]
-  profile = "black"
-  src_paths = ["protarrow", "tests"]
-  known_first_party = ["protarrow", "protarrow_protos" ]
-  skip = [".gitignore"]
+profile = "black"
+src_paths = ["protarrow", "tests"]
+known_first_party = ["protarrow", "protarrow_protos" ]
+skip = [".gitignore"]
 
 [tool.bandit]
 skips = ["B101", "B311"]

@@ -1,4 +1,4 @@
-"""Example from the README.md"""
+"""Example from the documentation"""
 import pyarrow as pa
 from example_pb2 import MyProto
 
@@ -27,3 +27,13 @@ config = protarrow.ProtarrowConfig(
     time_of_day_type=pa.time32("ms"),
 )
 record_batch = protarrow.messages_to_record_batch(my_protos, MyProto, config)
+
+
+source_table = pa.table({"name": ["hello"]})
+casted_table = protarrow.cast_table(source_table, MyProto, config)
+
+# print(casted_table.to_pandas().to_markdown(index=False))
+
+message_extractor = protarrow.MessageExtractor(table.schema, MyProto)
+my_proto_0 = message_extractor.read_table_row(table, 0)
+my_proto_1 = message_extractor.read_table_row(table, 1)

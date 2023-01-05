@@ -10,6 +10,7 @@ from google.type.date_pb2 import Date
 from google.type.timeofday_pb2 import TimeOfDay
 
 from protarrow.common import M
+from protarrow.proto_to_arrow import is_map
 
 EPOCH_RATIO = 24 * 60 * 60
 
@@ -77,7 +78,12 @@ def generate_message(message_type: typing.Type[M], repeated_count: int) -> M:
 
     for field in message_type.DESCRIPTOR.fields:
         if field.containing_oneof is None:
-            set_field(message, field, repeated_count)
+            if (
+                field.label == FieldDescriptor.LABEL_REPEATED
+                or field.type != FieldDescriptor.TYPE_MESSAGE
+                or random.getrandbits(1) == 1
+            ):
+                set_field(message, field, repeated_count)
     return message
 
 
@@ -92,9 +98,16 @@ def set_field(message: Message, field: FieldDescriptor, count: int) -> None:
 
     if field.label == FieldDescriptor.LABEL_REPEATED:
         field_value = getattr(message, field.name)
-        if field.message_type is not None and field.message_type.GetOptions().map_entry:
-            for entry in data:
-                field_value[entry.key] == entry.value
+        if is_map(field):
+            if (
+                field.message_type.fields_by_name["value"].type
+                == FieldDescriptor.TYPE_MESSAGE
+            ):
+                for entry in data:
+                    field_value[entry.key].MergeFrom(entry.value)
+            else:
+                for entry in data:
+                    field_value[entry.key] = entry.value
         else:
             field_value.extend(data)
     elif field.type == FieldDescriptor.TYPE_MESSAGE:

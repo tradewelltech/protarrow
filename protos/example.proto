@@ -7,3 +7,18 @@ message MyProto {
   int32 id = 2;
   repeated int32 values = 3;
 }
+
+
+message NullableExample {
+  message NestedNullableExample {
+    int32 nested_int = 1;
+  }
+
+  int32 int_value = 1;
+  repeated int32 int_repeated = 2;
+  map<string, int32> int_map = 3;
+
+  NestedNullableExample message_value = 10;
+  repeated NestedNullableExample message_repeated = 11;
+  map<string, NestedNullableExample> message_map = 12;
+}

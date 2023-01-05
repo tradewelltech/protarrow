@@ -1,16 +1,18 @@
-
-
 [![PyPI Version][pypi-image]][pypi-url]
-[![][versions-image]][versions-url]
-[![][stars-image]][stars-url]
-[![codecov](https://codecov.io/gh/0x26res/protarrow/branch/master/graph/badge.svg?token=XMFH27IL70)](https://codecov.io/gh/0x26res/protarrow)
+[![Python Version][versions-image]][versions-url]
+[![Github Stars][stars-image]][stars-url]
+[![codecov][codecov-image]][codecov-url]
 [![Build Status][build-image]][build-url]
-
-
+[![Documentation][doc-image]][doc-url]
+[![License][license-image]][license-url]
 
 # Protarrow
 
-A library for converting from protobuf to arrow and back 
+**Protarrow** is a python library for converting from protobuf to arrow and back.
+
+It is used at [Tradewell Technologies](https://www.tradewelltech.co/), 
+to share date between transactional and analytical applications,
+with little boilerplate code and zero data loss.
 
 # Installation
 
@@ -20,7 +22,7 @@ pip install protarrow
 
 # Usage
 
-## Convert from proto to arrow
+Taking a simple protobuf:
 
 ```protobuf
 message MyProto {
@@ -30,6 +32,8 @@ message MyProto {
 }
 ```
 
+It can be converted to a `pyarrow.Table`:
+
 ```python
 import protarrow
 
@@ -38,107 +42,22 @@ my_protos = [
     MyProto(name="bar", id=2, values=[3, 4, 5]),
 ]
 
-schema = protarrow.message_type_to_schema(MyProto)
-record_batch = protarrow.messages_to_record_batch(my_protos, MyProto)
 table = protarrow.messages_to_table(my_protos, MyProto)
 ```
+
+
 | name   |   id | values   |
 |:-------|-----:|:---------|
 | foo    |    1 | [1 2 4]  |
 | bar    |    2 | [3 4 5]  |
 
-
-## Convert from arrow to proto
+And the table can be converted back to proto:
 
 ```python
-protos_from_record_batch = protarrow.table_to_messages(record_batch, MyProto)
 protos_from_table = protarrow.table_to_messages(table, MyProto)
 ```
 
-## Customize arrow type
-
-The arrow type for `Enum`, `Timestamp` and `TimeOfDay` can be configured:
-
-```python
-config = protarrow.ProtarrowConfig(
-    enum_type=pa.int32(),
-    timestamp_type=pa.timestamp("ms", "America/New_York"),
-    time_of_day_type=pa.time32("ms"),
-)
-record_batch = protarrow.messages_to_record_batch(my_protos, MyProto, config)
-```
-
-# Type Mapping
-
-## Native Types
-
-| Proto    | Pyarrow                 | Note         |
-|----------|-------------------------|--------------|
-| bool     | bool_                   |              |
-| bytes    | binary                  |              |
-| double   | float64                 |              |
-| enum     | **int32**/string/binary | configurable |
-| fixed32  | int32                   |              |
-| fixed64  | int64                   |              |
-| float    | float32                 |              |
-| int32    | int32                   |              |
-| int64    | int64                   |              |
-| message  | struct                  |              |
-| sfixed32 | int32                   |              |
-| sfixed64 | int64                   |              |
-| sint32   | int32                   |              |
-| sint64   | int64                   |              |
-| string   | string                  |              |
-| uint32   | uint32                  |              |
-| uint64   | uint64                  |              |
-
-## Other types
-
-
-| Proto                       | Pyarrow                | Note                               |
-|-----------------------------|------------------------|------------------------------------|
-| repeated                    | list_                  |                                    |
-| map                         | map_                   |                                    |
-| google.protobuf.BoolValue   | bool_                  |                                    |
-| google.protobuf.BytesValue  | binary                 |                                    |
-| google.protobuf.DoubleValue | float64                |                                    |
-| google.protobuf.FloatValue  | float32                |                                    |
-| google.protobuf.Int32Value  | int32                  |                                    |
-| google.protobuf.Int64Value  | int64                  |                                    |
-| google.protobuf.StringValue | string                 |                                    |
-| google.protobuf.Timestamp   | timestamp("ns", "UTC") | Unit and timezone are configurable |
-| google.protobuf.UInt32Value | uint32                 |                                    |
-| google.protobuf.UInt64Value | uint64                 |                                    |
-| google.type.Date            | date32()               |                                    |
-| google.type.TimeOfDay       | **time64**/time32      | Unit and type are configurable     |
-
-## Nullability
-
-* Top level native field, list and maps are marked as non-nullable.
-* Any nested message and their children are nullable
-
-# Development
-
-## Set up
-
-```shell
-python3 -m venv --clear venv
-source venv/bin/activate
-poetry self add "poetry-dynamic-versioning[plugin]"
-poetry install
-python ./scripts/protoc.py
-pre-commit install
-```
-
-## Testing
-
-This library relies on property based testing. 
-Tests convert randomly generated data from protobuf to arrow and back, making sure the end result is the same as the input.
-
-```shell
-coverage run --branch --include "*/protarrow/*" -m pytest tests
-coverage report
-```
+See the [documentation](https://protarrow.readthedocs.io/en/latest/)
 
 
 <!-- Badges: -->
@@ -151,3 +70,9 @@ coverage report
 [stars-url]: https://github.com/tradewelltech/protarrow
 [versions-image]: https://img.shields.io/pypi/pyversions/protarrow
 [versions-url]: https://pypi.org/project/protarrow/
+[doc-image]: https://readthedocs.org/projects/protarrow/badge/?version=latest
+[doc-url]: https://protarrow.readthedocs.io/en/latest/?badge=latest
+[license-image]: http://img.shields.io/:license-Apache%202-blue.svg
+[license-url]: https://github.com/tradewelltech/protarrow/blob/master/LICENSE
+[codecov-image]: https://codecov.io/gh/tradewelltech/protarrow/branch/master/graph/badge.svg?token=XMFH27IL70
+[codecov-url]: https://codecov.io/gh/tradewelltech/protarrow
