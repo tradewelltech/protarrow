@@ -6,3 +6,6 @@ nav:
   - Types: types.md
   - Development: development.md
   - Faq: faq.md
+
+theme:
+  name: material
