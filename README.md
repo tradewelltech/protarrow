@@ -5,6 +5,8 @@
 [![Build Status][build-image]][build-url]
 [![Documentation][doc-image]][doc-url]
 [![License][license-image]][license-url]
+[![Downloads][downloads-image]][downloads-url]
+
 
 # Protarrow
 
@@ -76,3 +78,5 @@ See the [documentation](https://protarrow.readthedocs.io/en/latest/)
 [license-url]: https://github.com/tradewelltech/protarrow/blob/master/LICENSE
 [codecov-image]: https://codecov.io/gh/tradewelltech/protarrow/branch/master/graph/badge.svg?token=XMFH27IL70
 [codecov-url]: https://codecov.io/gh/tradewelltech/protarrow
+[downloads-image]: https://pepy.tech/badge/protarrow
+[downloads-url]: https://static.pepy.tech/badge/protarrow/month
