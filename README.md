@@ -66,8 +66,8 @@ See the [documentation](https://protarrow.readthedocs.io/en/latest/)
 
 [pypi-image]: https://img.shields.io/pypi/v/protarrow
 [pypi-url]: https://pypi.org/project/protarrow/
-[build-image]: https://github.com/tradewelltech/protarrow/actions/workflows/build.yaml/badge.svg
-[build-url]: https://github.com/tradewelltech/protarrow/actions/workflows/build.yaml
+[build-image]: https://github.com/tradewelltech/protarrow/actions/workflows/ci.yaml/badge.svg
+[build-url]: https://github.com/tradewelltech/protarrow/actions/workflows/ci.yaml
 [stars-image]: https://img.shields.io/github/stars/tradewelltech/protarrow
 [stars-url]: https://github.com/tradewelltech/protarrow
 [versions-image]: https://img.shields.io/pypi/pyversions/protarrow
