@@ -6,6 +6,7 @@
 [![Documentation][doc-image]][doc-url]
 [![License][license-image]][license-url]
 [![Downloads][downloads-image]][downloads-url]
+[![Downloads][downloads-month-image]][downloads-month-url]
 
 
 # Protarrow
@@ -79,4 +80,6 @@ See the [documentation](https://protarrow.readthedocs.io/en/latest/)
 [codecov-image]: https://codecov.io/gh/tradewelltech/protarrow/branch/master/graph/badge.svg?token=XMFH27IL70
 [codecov-url]: https://codecov.io/gh/tradewelltech/protarrow
 [downloads-image]: https://pepy.tech/badge/protarrow
-[downloads-url]: https://static.pepy.tech/badge/protarrow/month
+[downloads-url]: https://static.pepy.tech/badge/protarrow
+[downloads-month-image]: https://pepy.tech/badge/protarrow/month
+[downloads-month-url]: https://static.pepy.tech/badge/protarrow/month
