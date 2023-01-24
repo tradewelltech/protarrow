@@ -5,6 +5,9 @@
 [![Build Status][build-image]][build-url]
 [![Documentation][doc-image]][doc-url]
 [![License][license-image]][license-url]
+[![Downloads][downloads-image]][downloads-url]
+[![Downloads][downloads-month-image]][downloads-month-url]
+
 
 # Protarrow
 
@@ -64,8 +67,8 @@ See the [documentation](https://protarrow.readthedocs.io/en/latest/)
 
 [pypi-image]: https://img.shields.io/pypi/v/protarrow
 [pypi-url]: https://pypi.org/project/protarrow/
-[build-image]: https://github.com/tradewelltech/protarrow/actions/workflows/build.yaml/badge.svg
-[build-url]: https://github.com/tradewelltech/protarrow/actions/workflows/build.yaml
+[build-image]: https://github.com/tradewelltech/protarrow/actions/workflows/ci.yaml/badge.svg
+[build-url]: https://github.com/tradewelltech/protarrow/actions/workflows/ci.yaml
 [stars-image]: https://img.shields.io/github/stars/tradewelltech/protarrow
 [stars-url]: https://github.com/tradewelltech/protarrow
 [versions-image]: https://img.shields.io/pypi/pyversions/protarrow
@@ -76,3 +79,7 @@ See the [documentation](https://protarrow.readthedocs.io/en/latest/)
 [license-url]: https://github.com/tradewelltech/protarrow/blob/master/LICENSE
 [codecov-image]: https://codecov.io/gh/tradewelltech/protarrow/branch/master/graph/badge.svg?token=XMFH27IL70
 [codecov-url]: https://codecov.io/gh/tradewelltech/protarrow
+[downloads-image]: https://pepy.tech/badge/protarrow
+[downloads-url]: https://static.pepy.tech/badge/protarrow
+[downloads-month-image]: https://pepy.tech/badge/protarrow/month
+[downloads-month-url]: https://static.pepy.tech/badge/protarrow/month
