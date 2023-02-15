@@ -7,6 +7,8 @@
 [![License][license-image]][license-url]
 [![Downloads][downloads-image]][downloads-url]
 [![Downloads][downloads-month-image]][downloads-month-url]
+[![Code style: black][codestyle-image]][codestyle-url]
+[![snyk][snyk-image]][snyk-url]
 
 
 # Protarrow
@@ -83,3 +85,7 @@ See the [documentation](https://protarrow.readthedocs.io/en/latest/)
 [downloads-url]: https://static.pepy.tech/badge/protarrow
 [downloads-month-image]: https://pepy.tech/badge/protarrow/month
 [downloads-month-url]: https://static.pepy.tech/badge/protarrow/month
+[codestyle-image]: https://img.shields.io/badge/code%20style-black-000000.svg
+[codestyle-url]: https://github.com/ambv/black
+[snyk-image]: https://snyk.io/advisor/python/protarrow/badge.svg
+[snyk-url]: https://snyk.io/advisor/python/protarrow
