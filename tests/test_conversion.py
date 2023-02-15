@@ -168,20 +168,15 @@ def test_arrow_bug_18257():
     time_array = pa.array([1, 2, 3], dtype)
     assert pa.types.is_time64(time_array.type) is True
     assert isinstance(dtype, pa.Time64Type) is True
-    assert isinstance(time_array.type, pa.Time64Type) is False  # Wrong
-    assert isinstance(time_array.type, pa.DataType) is True  # Wrong
+    assert isinstance(time_array.type, pa.Time64Type)
     assert dtype == time_array.type
     assert dtype.unit == "ns"
-    with pytest.raises(
-        AttributeError, match=r"'pyarrow.lib.DataType' object has no attribute 'unit'"
-    ):
-        # Should be able to access unit:
-        time_array.type.unit
+    assert time_array.type.unit == "ns"
 
 
 def test_arrow_bug_18264():
     """https://issues.apache.org/jira/browse/ARROW-18264"""
-    time_ns = pa.array([1, 2, 3], pa.time64("ns"))
+    time_ns = pa.array([1], pa.time64("ns"))
     scalar = time_ns[0]
     with pytest.raises(
         ValueError,
@@ -191,11 +186,7 @@ def test_arrow_bug_18264():
         r"access the .value attribute",
     ):
         scalar.as_py()
-    with pytest.raises(
-        AttributeError,
-        match=r"'pyarrow.lib.Time64Scalar' object has no attribute 'value'",
-    ):
-        scalar.value
+    assert scalar.value == 1
 
 
 def test_enum_values_as_int():

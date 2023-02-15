@@ -118,7 +118,6 @@ def set_field(message: Message, field: FieldDescriptor, count: int) -> None:
 
 def generate_field_data(field: FieldDescriptor, count: int):
     if field.label == FieldDescriptor.LABEL_REPEATED:
-
         size = random.randint(0, count)
         return [_generate_data(field, count) for _ in range(size)]
     else:

@@ -93,8 +93,6 @@ def _time_of_day_to_seconds(time_of_day: TimeOfDay) -> int:
 
 
 def _proto_date_to_py_date(proto_date: Date) -> datetime.date:
-    # TODO: fix when
-    x: datetime.date.min
     if proto_date.year == 0:
         return datetime.date.min
     else:
