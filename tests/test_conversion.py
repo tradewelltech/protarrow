@@ -502,11 +502,11 @@ def test_empty():
     _check_messages_same(source_messages, messages_back)
 
 
-def test_empty_struct_not_possible():
+def test_empty_struct_now_possible():
     # See https://github.com/apache/arrow/issues/15109
     array = pa.StructArray.from_arrays(arrays=[], names=[], mask=pa.array([True, True]))
     assert array.type == pa.struct([])
-    assert len(array) == 0
+    assert len(array) == 2
 
 
 def test_empty_struct_workaround():
