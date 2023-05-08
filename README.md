@@ -16,7 +16,7 @@
 **Protarrow** is a python library for converting from protobuf to arrow and back.
 
 It is used at [Tradewell Technologies](https://www.tradewelltech.co/), 
-to share date between transactional and analytical applications,
+to share data between transactional and analytical applications,
 with little boilerplate code and zero data loss.
 
 # Installation
