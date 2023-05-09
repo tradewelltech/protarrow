@@ -66,7 +66,7 @@ MAP_KEYS = ["int32", "string"]
 
 
 def generate():
-    env = Environment(loader=FileSystemLoader(DIR.as_posix()))  # nosec B701
+    env = Environment(loader=FileSystemLoader(DIR.as_posix()), autoescape=True)
     template = env.get_template("template.proto.in")
     generated = template.render(types=TYPES, map_keys=MAP_KEYS)
     with (DIR.parent / "protos" / "bench.proto").open("w") as fp:
