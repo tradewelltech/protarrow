@@ -16,7 +16,7 @@ colorama==0.4.6
     #   mkdocs-material
 ghp-import==2.1.0
     # via mkdocs
-griffe==0.29.0
+griffe==0.29.1
     # via mkdocstrings-python
 idna==3.4
     # via requests
@@ -49,10 +49,12 @@ mkdocs==1.4.3
     #   mkdocstrings
 mkdocs-autorefs==0.4.1
     # via mkdocstrings
-mkdocs-material==9.1.15
+mkdocs-material==9.1.17
     # via -r requirements.in
 mkdocs-material-extensions==1.1.1
-    # via mkdocs-material
+    # via
+    #   -r requirements.in
+    #   mkdocs-material
 mkdocstrings[python]==0.22.0
     # via
     #   -r requirements.in
@@ -65,6 +67,7 @@ pygments==2.15.1
     # via mkdocs-material
 pymdown-extensions==10.0.1
     # via
+    #   -r requirements.in
     #   mkdocs-material
     #   mkdocstrings
 python-dateutil==2.8.2
