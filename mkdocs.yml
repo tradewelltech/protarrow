@@ -1,5 +1,7 @@
 site_name: Protarrow
 site_url: https://protarrow.readthedocs.io/en/latest/
+repo_url: https://github.com/tradewelltech/protarrow
+
 nav:
   - Home: index.md
   - Usage: usage.md
@@ -9,5 +11,38 @@ nav:
 
 theme:
   name: material
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - content.code.annotate
+    - content.tabs.link
+    - content.code.copy
+    - header.autohide
+    - navigation.indexes
+    - navigation.instant
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
   palette:
     scheme: slate
+  logo: static/icons/beavers/logo.svg
+  favicon: static/icons/beavers/icon.png
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_source: false
+
+markdown_extensions:
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.snippets:
+  - pymdownx.emoji
+  - pymdownx.highlight
+extra:
+  project_name: "protarrow"
