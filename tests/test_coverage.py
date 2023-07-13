@@ -296,3 +296,19 @@ def test_missing_map_field():
             }
         )
     ]
+
+
+def test_missing_enum_from_proto():
+    message = ExampleMessage()
+    message.example_enum_value = 150  # does not exist
+    assert protarrow.messages_to_table([message], ExampleMessage)[
+        "example_enum_value"
+    ].to_pylist() == [150]
+
+    assert protarrow.messages_to_table(
+        [message], ExampleMessage, protarrow.ProtarrowConfig(enum_type=pa.string())
+    )["example_enum_value"].to_pylist() == ["UNKNOWN_EXAMPLE_ENUM"]
+
+    assert protarrow.messages_to_table(
+        [message], ExampleMessage, protarrow.ProtarrowConfig(enum_type=pa.binary())
+    )["example_enum_value"].to_pylist() == [b"UNKNOWN_EXAMPLE_ENUM"]
