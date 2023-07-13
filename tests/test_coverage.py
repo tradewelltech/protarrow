@@ -143,8 +143,16 @@ def test_get_enum_converter():
         get_enum_converter(pa.dictionary(pa.int32(), pa.binary()), enum_descriptor)(1)
         == b"EXAMPLE_ENUM_1"
     )
-    with pytest.raises(KeyError, match="10"):
+
+    assert (
         get_enum_converter(pa.dictionary(pa.int32(), pa.binary()), enum_descriptor)(10)
+        == b"UNKNOWN_EXAMPLE_ENUM"
+    )
+
+    assert (
+        get_enum_converter(pa.dictionary(pa.int32(), pa.string()), enum_descriptor)(10)
+        == "UNKNOWN_EXAMPLE_ENUM"
+    )
 
     with pytest.raises(TypeError, match="double"):
         get_enum_converter(pa.float64(), enum_descriptor)

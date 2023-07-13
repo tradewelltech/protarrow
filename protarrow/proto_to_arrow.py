@@ -222,18 +222,20 @@ def get_enum_converter(
             k: bytes(v.name, encoding="UTF-8")
             for k, v in enum_descriptor.values_by_number.items()
         }
+        fallback = values_by_number[enum_descriptor.values[0].number]
 
         def converter(x: int) -> bytes:
-            return values_by_number[x]
+            return values_by_number.get(x, fallback)
 
         return converter
     elif is_string_enum(data_type):
         values_by_number = {
             k: v.name for k, v in enum_descriptor.values_by_number.items()
         }
+        fallback = values_by_number[enum_descriptor.values[0].number]
 
         def converter(x: int) -> bytes:
-            return values_by_number[x]
+            return values_by_number.get(x, fallback)
 
         return converter
     else:
