@@ -90,14 +90,14 @@ def test_message_type_to_struct_type(
 @pytest.mark.parametrize("message_type", MESSAGES)
 @pytest.mark.parametrize("config", CONFIGS)
 def test_with_random(message_type: Type[Message], config: ProtarrowConfig):
-    source_messages = [
-        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
-        for m in generate_messages(message_type, 10)
-    ]
-
+    source_messages = generate_messages(message_type, 10)
     table = messages_to_table(source_messages, message_type, config)
     messages_back = table_to_messages(table, message_type)
-    _check_messages_same(source_messages, messages_back)
+    truncated_messages = [
+        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
+        for m in source_messages
+    ]
+    _check_messages_same(truncated_messages, messages_back)
 
 
 @pytest.mark.parametrize("message_type", MESSAGES)
@@ -106,13 +106,15 @@ def test_with_sample_data(message_type: Type[Message], config: ProtarrowConfig):
     source_file = (
         pathlib.Path(__file__).parent / "data" / f"{message_type.DESCRIPTOR.name}.jsonl"
     )
-    source_messages = [
-        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
-        for m in read_proto_jsonl(source_file, message_type)
-    ]
+    source_messages = read_proto_jsonl(source_file, message_type)
+
     table = messages_to_table(source_messages, message_type, config)
     messages_back = table_to_messages(table, message_type)
-    _check_messages_same(source_messages, messages_back)
+    truncated_messages = [
+        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
+        for m in source_messages
+    ]
+    _check_messages_same(truncated_messages, messages_back)
 
 
 def test_wrapped_type_nullable():
@@ -444,10 +446,7 @@ def test_cast_empty(message_type: Type[Message], config: ProtarrowConfig):
 @pytest.mark.parametrize("message_type", MESSAGES)
 @pytest.mark.parametrize("config", CONFIGS)
 def test_cast_same(message_type: Type[Message], config: ProtarrowConfig):
-    source_messages = [
-        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
-        for m in generate_messages(message_type, 10)
-    ]
+    source_messages = generate_messages(message_type, 10)
     table = messages_to_table(source_messages, message_type, config)
     casted_table = cast_table(table, message_type, config)
     assert table == casted_table
@@ -484,17 +483,18 @@ def test_can_cast_enum_to_dictionary_and_back(
 @pytest.mark.parametrize("message_type", MESSAGES)
 @pytest.mark.parametrize("config", CONFIGS)
 def test_extractor(message_type: Type[Message], config: ProtarrowConfig):
-    source_messages = [
-        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
-        for m in generate_messages(message_type, 10)
-    ]
+    source_messages = [m for m in generate_messages(message_type, 10)]
 
     table = messages_to_table(source_messages, message_type, config)
     message_extractor = MessageExtractor(table.schema, message_type)
     messages_back = [
         message_extractor.read_table_row(table, row) for row in range(len(table))
     ]
-    _check_messages_same(source_messages, messages_back)
+    truncated_messages = [
+        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
+        for m in source_messages
+    ]
+    _check_messages_same(truncated_messages, messages_back)
 
 
 @pytest.mark.parametrize("message_type", MESSAGES)
