@@ -259,7 +259,9 @@ class PlainAssigner(collections.abc.Iterable):
 
     def __call__(self, scalar: pa.Scalar) -> None:
         value = self.converter(scalar) if scalar.is_valid else None
-        if value is not None:
+        # `self.message` can be null for nested messages.
+        # We'd expect the scalar to be either null or the default value in this case
+        if self.message is not None and value is not None:
             if self.nullable:
                 getattr(self.message, self.field_descriptor.name).value = value
             else:
@@ -284,9 +286,10 @@ class AppendAssigner(collections.abc.Iterable):
     def __iter__(self) -> Iterator[Callable[[pa.Scalar], None]]:
         assert self.attribute is None
         for message, size in zip(self.messages, self.sizes):
-            self.attribute = getattr(message, self.field_descriptor.name)
-            for _ in range(size):
-                yield self
+            if message is not None:
+                self.attribute = getattr(message, self.field_descriptor.name)
+                for _ in range(size):
+                    yield self
         self.attribute = None
 
     def __call__(self, scalar: pa.Scalar) -> None:
@@ -312,9 +315,10 @@ class MapKeyAssigner(collections.abc.Iterable):
     def __iter__(self) -> Iterator[Callable[[pa.Scalar], Message]]:
         assert self.attribute is None
         for message, offset in zip(self.messages, self.sizes):
-            self.attribute = getattr(message, self.field_descriptor.name)
-            for _ in range(offset):
-                yield self
+            if message is not None:
+                self.attribute = getattr(message, self.field_descriptor.name)
+                for _ in range(offset):
+                    yield self
         self.attribute = None
 
     def __call__(self, scalar: pa.Scalar) -> Message:
@@ -363,9 +367,10 @@ class MapItemAssigner(collections.abc.Iterable):
     def __iter__(self) -> Iterator[Callable[[pa.Scalar, pa.Scalar], Message]]:
         assert self.attribute is None
         for message, size in zip(self.messages, self.sizes):
-            self.attribute = getattr(message, self.field_descriptor.name)
-            for _ in range(size):
-                yield self
+            if message is not None:
+                self.attribute = getattr(message, self.field_descriptor.name)
+                for _ in range(size):
+                    yield self
         self.attribute = None
 
     def __call__(self, key: pa.Scalar, value: pa.Scalar):

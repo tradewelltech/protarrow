@@ -312,3 +312,21 @@ def test_missing_enum_from_proto():
     assert protarrow.messages_to_table(
         [message], ExampleMessage, protarrow.ProtarrowConfig(enum_type=pa.binary())
     )["example_enum_value"].to_pylist() == [b"UNKNOWN_EXAMPLE_ENUM"]
+
+
+def test_nested_missing_values():
+    """
+    Check for cases where nested messages are null.
+
+    When a nested message is null, the arrow arrays of their underlying fields
+    """
+    source_messages = [
+        NestedExampleMessage(),
+        NestedExampleMessage(example_message=ExampleMessage(double_value=1.0)),
+    ]
+    table = protarrow.messages_to_table(
+        source_messages,
+        NestedExampleMessage,
+    )
+    messages_back = protarrow.table_to_messages(table, NestedExampleMessage)
+    assert messages_back == source_messages
