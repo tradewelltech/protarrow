@@ -321,6 +321,26 @@ def test_truncate_nested():
     )
 
 
+def test_truncate_nested_nested():
+    assert truncate_nanos(
+        NestedExampleMessage(
+            example_message=ExampleMessage(
+                timestamp_value=Timestamp(seconds=10, nanos=123_456_789),
+                timestamp_string_map={"foo": Timestamp(seconds=10, nanos=123_456_789)},
+                time_of_day_value=TimeOfDay(hours=1, nanos=123_456_789),
+            ),
+        ),
+        "us",
+        "ms",
+    ) == NestedExampleMessage(
+        example_message=ExampleMessage(
+            timestamp_value=Timestamp(seconds=10, nanos=123_456_000),
+            timestamp_string_map={"foo": Timestamp(seconds=10, nanos=123_456_000)},
+            time_of_day_value=TimeOfDay(hours=1, nanos=123_000_000),
+        )
+    )
+
+
 @pytest.mark.parametrize(
     "enum_type", [pa.binary(), pa.dictionary(pa.int32(), pa.binary())]
 )

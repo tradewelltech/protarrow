@@ -169,8 +169,7 @@ def truncate_nanos(message: Message, timestamp_unit: str, time_unit: str) -> Mes
                     else:
                         for item in field_value:
                             truncate_nanos(item, timestamp_unit, time_unit)
-                else:
-                    message.HasField(field.name)
+                elif message.HasField(field.name):
                     truncate_nanos(
                         getattr(message, field.name), timestamp_unit, time_unit
                     )
