@@ -49,3 +49,11 @@ message NestedExampleMessage {
   map<{{map_key}}, ExampleMessage> example_message_{{map_key}}_map = {{ 3 + loop.index}};
   {% endfor %}
 }
+
+message SuperNestedExampleMessage {
+  NestedExampleMessage nested_example_message = 1;
+  repeated NestedExampleMessage repeated_nested_example_message = 2;
+  {% for map_key in map_keys -%}
+  map<{{map_key}}, ExampleMessage> nested_example_message_{{map_key}}_map = {{ 3 + loop.index}};
+  {% endfor %}
+}

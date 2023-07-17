@@ -202,8 +202,9 @@ class RepeatedNestedIterable(collections.abc.Iterable):
 
     def __iter__(self) -> Iterator[Any]:
         for parent in self.parents:
-            for child in getattr(parent, self.field_descriptor.name):
-                yield child
+            if parent is not None:
+                for child in getattr(parent, self.field_descriptor.name):
+                    yield child
 
 
 def convert_scalar(scalar: pa.Scalar) -> Any:
