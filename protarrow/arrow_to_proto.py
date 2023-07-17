@@ -177,7 +177,7 @@ class OptionalNestedIterable(collections.abc.Iterable):
 
     def __iter__(self) -> Iterator[Optional[Any]]:
         for parent, valid in zip(self.parents, self.validity_mask):
-            if valid.is_valid and valid.as_py():
+            if valid.is_valid and valid.as_py() and parent is not None:
                 yield getattr(parent, self.field_descriptor.name)
             else:
                 yield None
@@ -186,7 +186,7 @@ class OptionalNestedIterable(collections.abc.Iterable):
         """This needs to be called if there are no fields in the message"""
         empty = self.field_descriptor.message_type._concrete_class()
         for parent, valid in zip(self.parents, self.validity_mask):
-            if valid.is_valid and valid.as_py():
+            if valid.is_valid and valid.as_py() and parent is not None:
                 value = getattr(parent, self.field_descriptor.name)
                 value.MergeFrom(empty)
 

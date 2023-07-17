@@ -353,3 +353,8 @@ def test_missing_temporal_nested_value():
         assert table.flatten()[
             f"example_message.{temporal_name}"
         ].is_valid().to_pylist() == [False, True]
+
+
+def test_missing_temporal_nested_columns():
+    table = pa.table({"unknown": pa.nulls(10)})
+    protarrow.table_to_messages(table, NestedExampleMessage)
