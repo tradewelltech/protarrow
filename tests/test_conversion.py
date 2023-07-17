@@ -27,10 +27,14 @@ from protarrow.proto_to_arrow import (
     messages_to_record_batch,
     messages_to_table,
 )
-from protarrow_protos.bench_pb2 import ExampleMessage, NestedExampleMessage
+from protarrow_protos.bench_pb2 import (
+    ExampleMessage,
+    NestedExampleMessage,
+    SuperNestedExampleMessage,
+)
 from tests.random_generator import generate_messages, random_date, truncate_nanos
 
-MESSAGES = [ExampleMessage, NestedExampleMessage]
+MESSAGES = [ExampleMessage, NestedExampleMessage, SuperNestedExampleMessage]
 CONFIGS = [
     ProtarrowConfig(),
     ProtarrowConfig(enum_type=pa.binary()),

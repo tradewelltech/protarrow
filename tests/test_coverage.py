@@ -17,6 +17,7 @@ from protarrow.arrow_to_proto import (
     OffsetToSize,
     OptionalNestedIterable,
     PlainAssigner,
+    RepeatedNestedIterable,
     _extract_array_messages,
     _extract_map_field,
     _extract_record_batch_messages,
@@ -34,7 +35,11 @@ from protarrow.proto_to_arrow import (
     field_descriptor_to_data_type,
     get_enum_converter,
 )
-from protarrow_protos.bench_pb2 import ExampleMessage, NestedExampleMessage
+from protarrow_protos.bench_pb2 import (
+    ExampleMessage,
+    NestedExampleMessage,
+    SuperNestedExampleMessage,
+)
 
 
 def test_map_converter_adapter():
@@ -353,3 +358,48 @@ def test_missing_temporal_nested_value():
         assert table.flatten()[
             f"example_message.{temporal_name}"
         ].is_valid().to_pylist() == [False, True]
+
+
+def test_missing_nested_column():
+    table = pa.table(
+        {"repeated_nested_example_message": pa.nulls(10, pa.list_(pa.struct([])))}
+    )
+    protarrow.cast_table(table, SuperNestedExampleMessage, protarrow.ProtarrowConfig())
+    protarrow.table_to_messages(table, SuperNestedExampleMessage)
+
+
+def test_misaligned_nested_iterable():
+    """Special case where the validity mask isn't aligned wit the nested values"""
+    iterable = OptionalNestedIterable(
+        [None, NestedExampleMessage(), None],
+        NestedExampleMessage.DESCRIPTOR.fields_by_name["example_message"],
+        [pa.scalar(False), pa.scalar(False), pa.scalar(True)],
+    )
+    nested = list(iterable)
+    assert nested == [None, None, None]
+
+
+def test_misaligned_nested_iterable_prime():
+    """Special case where the validity mask isn't aligned wit the nested values"""
+    iterable = OptionalNestedIterable(
+        [None, NestedExampleMessage(), None],
+        NestedExampleMessage.DESCRIPTOR.fields_by_name["example_message"],
+        [pa.scalar(False), pa.scalar(False), pa.scalar(True)],
+    )
+    iterable.prime()
+    nested = list(iterable)
+    assert nested == [None, None, None]
+
+
+def test_missing_parent_repeated_nested_iterable():
+    iterable = RepeatedNestedIterable(
+        [
+            None,
+            NestedExampleMessage(),
+            NestedExampleMessage(
+                repeated_example_message=[ExampleMessage(string_value="hello")]
+            ),
+        ],
+        NestedExampleMessage.DESCRIPTOR.fields_by_name["repeated_example_message"],
+    )
+    assert list(iterable) == [ExampleMessage(string_value="hello")]

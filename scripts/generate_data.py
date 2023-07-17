@@ -3,14 +3,22 @@ from pathlib import Path
 
 from google.protobuf.json_format import MessageToDict
 
-from protarrow_protos.bench_pb2 import ExampleMessage, NestedExampleMessage
+from protarrow_protos.bench_pb2 import (
+    ExampleMessage,
+    NestedExampleMessage,
+    SuperNestedExampleMessage,
+)
 from tests.random_generator import generate_messages
 
 DIR = Path(__file__).parent
 
 
 def main():
-    for message_type in [ExampleMessage, NestedExampleMessage]:
+    for message_type in [
+        ExampleMessage,
+        NestedExampleMessage,
+        SuperNestedExampleMessage,
+    ]:
         messages = generate_messages(message_type, 20)
         file_name = (
             DIR.parent / "tests" / "data" / (message_type.DESCRIPTOR.name + ".jsonl")

@@ -153,3 +153,11 @@ message NestedExampleMessage {
   map<string, ExampleMessage> example_message_string_map = 5;
   
 }
+
+message SuperNestedExampleMessage {
+  NestedExampleMessage nested_example_message = 1;
+  repeated NestedExampleMessage repeated_nested_example_message = 2;
+  map<int32, ExampleMessage> nested_example_message_int32_map = 4;
+  map<string, ExampleMessage> nested_example_message_string_map = 5;
+  
+}
