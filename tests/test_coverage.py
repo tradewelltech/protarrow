@@ -3,6 +3,7 @@ These tests are here to get the coverage to 100%
 They cover scenarios that don't make sense IRL.
 """
 import dataclasses
+import datetime
 from typing import Optional
 
 import pyarrow as pa
@@ -330,3 +331,25 @@ def test_nested_missing_values():
     )
     messages_back = protarrow.table_to_messages(table, NestedExampleMessage)
     assert messages_back == source_messages
+
+
+def test_missing_temporal_nested_value():
+    for temporal_name, temporal_value in {
+        "time_of_day_value": datetime.time(hour=1),
+        "timestamp_value": datetime.datetime.now(),
+        "date_value": datetime.date.today(),
+    }.items():
+        table = pa.table(
+            {
+                "example_message": pa.array(
+                    [
+                        None,
+                        {temporal_name: temporal_value},
+                    ]
+                )
+            }
+        )
+        protarrow.table_to_messages(table, NestedExampleMessage)
+        assert table.flatten()[
+            f"example_message.{temporal_name}"
+        ].is_valid().to_pylist() == [False, True]

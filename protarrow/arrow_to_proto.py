@@ -521,7 +521,7 @@ def _extract_field(
     elif field_descriptor.message_type in TEMPORAL_CONVERTERS:
         extractor = TEMPORAL_CONVERTERS[field_descriptor.message_type](array.type)
         for message, value in zip(messages, array):
-            if value.is_valid:
+            if value.is_valid and message is not None:
                 getattr(
                     message,
                     field_descriptor.name,
