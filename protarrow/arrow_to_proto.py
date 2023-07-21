@@ -66,7 +66,7 @@ def _date_scalar_to_proto(scalar: pa.Date32Scalar) -> Date:
 
 
 def _time_64_ns_scalar_to_proto(scalar: pa.Time64Scalar) -> TimeOfDay:
-    total_nanos = scalar.cast(pa.int64()).as_py()
+    total_nanos = scalar.value
     return TimeOfDay(
         nanos=total_nanos % 1_000_000_000,
         seconds=(total_nanos // 1_000_000_000) % 60,
@@ -76,7 +76,7 @@ def _time_64_ns_scalar_to_proto(scalar: pa.Time64Scalar) -> TimeOfDay:
 
 
 def _time_64_us_scalar_to_proto(scalar: pa.Time64Scalar) -> TimeOfDay:
-    total_us = scalar.cast(pa.int64()).as_py()
+    total_us = scalar.value
     return TimeOfDay(
         nanos=(total_us % 1_000_000) * 1_000,
         seconds=(total_us // 1_000_000) % 60,
@@ -86,7 +86,7 @@ def _time_64_us_scalar_to_proto(scalar: pa.Time64Scalar) -> TimeOfDay:
 
 
 def _time_32_ms_scalar_to_proto(scalar: pa.Time32Scalar) -> TimeOfDay:
-    total_ms = scalar.cast(pa.int32()).as_py()
+    total_ms = scalar.value
     return TimeOfDay(
         nanos=(total_ms % 1_000) * 1_000_000,
         seconds=(total_ms // 1_000) % 60,
@@ -96,7 +96,7 @@ def _time_32_ms_scalar_to_proto(scalar: pa.Time32Scalar) -> TimeOfDay:
 
 
 def _time_32_s_scalar_to_proto(scalar: pa.Time32Scalar) -> TimeOfDay:
-    total_s = scalar.cast(pa.int32()).as_py()
+    total_s = scalar.value
     return TimeOfDay(
         nanos=0,
         seconds=(total_s // 1) % 60,

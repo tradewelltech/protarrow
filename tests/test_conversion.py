@@ -527,7 +527,7 @@ def test_empty():
 
 
 def test_empty_struct_now_possible():
-    # See https://github.com/apache/arrow/issues/15109
+    """See https://github.com/apache/arrow/issues/15109"""
     array = pa.StructArray.from_arrays(arrays=[], names=[], mask=pa.array([True, True]))
     assert array.type == pa.struct([])
     assert len(array) == 2

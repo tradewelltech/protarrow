@@ -188,12 +188,8 @@ def cast_struct_array(
         arrays.append(array)
         fields.append(field)
     if len(arrays) == 0:
-        # TODO: remove when this is fixed
-        #  https://github.com/apache/arrow/issues/15109
         return pa.StructArray.from_arrays(
-            arrays=[pa.nulls(len(struct_array))],
-            fields=[pa.field("null", pa.null())],
-            mask=struct_array.is_null(),
+            arrays=[], fields=[], mask=struct_array.is_null()
         ).cast(pa.struct([]))
     else:
         return pa.StructArray.from_arrays(
