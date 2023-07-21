@@ -4,6 +4,7 @@ from typing import Any, Iterable, List, Type
 
 import pyarrow as pa
 import pytest
+from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.json_format import Parse
 from google.protobuf.message import Message
@@ -16,12 +17,17 @@ from protarrow.arrow_to_proto import (
     is_custom_field,
     table_to_messages,
 )
-from protarrow.cast_to_proto import cast_table, get_arrow_default_value
+from protarrow.cast_to_proto import (
+    cast_table,
+    get_arrow_default_value,
+    get_casted_array,
+)
 from protarrow.common import M, ProtarrowConfig
 from protarrow.message_extractor import MessageExtractor
 from protarrow.proto_to_arrow import (
     NestedIterable,
     _repeated_proto_to_array,
+    field_descriptor_to_field,
     message_type_to_schema,
     message_type_to_struct_type,
     messages_to_record_batch,
@@ -541,3 +547,67 @@ def test_empty_struct_workaround():
     empty_array = array.cast(pa.struct([]))
     assert len(empty_array) == 2
     assert empty_array.type == pa.struct([])
+
+
+@pytest.mark.parametrize("config", CONFIGS[:-1])
+def test_only_messages_default_to_null_on_missing_array(config):
+    """
+    Missing arrays in cast should have null only for nested (non-repeated) message.
+
+    TODO: Add the last config when MapScaler.as_py is fixed
+     see https://github.com/apache/arrow/issues/36809
+    """
+    for field_descriptor in NestedExampleMessage.DESCRIPTOR.fields:
+        expected = (
+            None
+            if field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
+            and field_descriptor.label != FieldDescriptor.LABEL_REPEATED
+            else []
+        )
+        assert get_casted_array(field_descriptor, None, 1, config)[0].to_pylist() == [
+            expected
+        ]
+
+
+@pytest.mark.parametrize("config", CONFIGS[:-1])
+def test_only_messages_stay_to_null_on_casted_array(config):
+    """
+    Arrays with null in cast should have null only for nested (non-repeated) message.
+
+    TODO: Add the last config when MapScaler.as_py is fixed
+     see https://github.com/apache/arrow/issues/36809
+    """
+    for field_descriptor in NestedExampleMessage.DESCRIPTOR.fields:
+        expected = (
+            None
+            if field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
+            and field_descriptor.label != FieldDescriptor.LABEL_REPEATED
+            else []
+        )
+        arrow_field = field_descriptor_to_field(field_descriptor, config)
+        assert get_casted_array(
+            field_descriptor,
+            pa.array([None], arrow_field.type),
+            1,
+            config=config,
+        )[0].to_pylist() == [expected]
+
+
+def test_pyarrow_gh_36809():
+    """https://github.com/apache/arrow/issues/36809"""
+    assert pa.scalar(
+        [("foo", "bar")],
+        pa.map_(
+            pa.string(),
+            pa.field("value", pa.string()),
+        ),
+    ).as_py() == [("foo", "bar")]
+
+    with pytest.raises(KeyError, match=r"value"):
+        pa.scalar(
+            [("foo", "bar")],
+            pa.map_(
+                pa.string(),
+                pa.field("map_value", pa.string()),
+            ),
+        ).as_py()
