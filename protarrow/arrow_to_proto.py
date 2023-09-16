@@ -1,7 +1,7 @@
 import collections.abc
 import dataclasses
 import datetime
-from typing import Any, Callable, Iterable, Iterator, List, Optional, Type
+from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Type
 
 import pyarrow as pa
 from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
@@ -151,6 +151,30 @@ def is_custom_field(field_descriptor: FieldDescriptor):
         field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
         and field_descriptor.message_type not in SPECIAL_CONVERTERS
     )
+
+
+@dataclasses.dataclass(frozen=True)
+class OffsetsIterator:
+    offsets: pa.Array
+
+    def __iter__(self) -> Iterator[Tuple[int, int]]:
+        if len(self.offsets) > 0:
+            current_offset = self.offsets[0].as_py()
+            for item in self.offsets[1:]:
+                offset = item.as_py()
+                yield current_offset, offset
+                current_offset = offset
+
+
+@dataclasses.dataclass(frozen=True)
+class ListValuesIterator:
+    list_array: pa.ListArray
+
+    def __iter__(self) -> Iterator[pa.Scalar]:
+        values_array = self.list_array.values
+        for first, last in OffsetsIterator(self.list_array.offsets):
+            for value in values_array[first:last]:
+                yield value
 
 
 @dataclasses.dataclass(frozen=True)
@@ -490,7 +514,7 @@ def _extract_repeated_primitive(
         converter=converter,
     )
 
-    for each_assigner, value in zip(assigner, array.values):
+    for each_assigner, value in zip(assigner, ListValuesIterator(array)):
         each_assigner(value)
 
 

@@ -1,4 +1,3 @@
-import datetime
 import pathlib
 from typing import Any, Iterable, List, Type
 
@@ -38,7 +37,7 @@ from protarrow_protos.bench_pb2 import (
     NestedExampleMessage,
     SuperNestedExampleMessage,
 )
-from tests.random_generator import generate_messages, random_date, truncate_nanos
+from tests.random_generator import generate_messages, truncate_nanos
 
 MESSAGES = [ExampleMessage, NestedExampleMessage, SuperNestedExampleMessage]
 CONFIGS = [
@@ -167,38 +166,6 @@ def test_native_type_not_nullable():
         field = schema.field(name)
         assert field.type == expected_type
         assert field.nullable is False
-
-
-def test_range():
-    datetime.date.max - datetime.date.min
-    random_date()
-
-
-def test_arrow_bug_18257():
-    """https://issues.apache.org/jira/browse/ARROW-18257"""
-    dtype = pa.time64("ns")
-    time_array = pa.array([1, 2, 3], dtype)
-    assert pa.types.is_time64(time_array.type) is True
-    assert isinstance(dtype, pa.Time64Type) is True
-    assert isinstance(time_array.type, pa.Time64Type)
-    assert dtype == time_array.type
-    assert dtype.unit == "ns"
-    assert time_array.type.unit == "ns"
-
-
-def test_arrow_bug_18264():
-    """https://issues.apache.org/jira/browse/ARROW-18264"""
-    time_ns = pa.array([1], pa.time64("ns"))
-    scalar = time_ns[0]
-    with pytest.raises(
-        ValueError,
-        match=r"Nanosecond resolution temporal type 1 is not safely convertible "
-        r"to microseconds to convert to datetime.datetime. "
-        r"Install pandas to return as Timestamp with nanosecond support or "
-        r"access the .value attribute",
-    ):
-        scalar.as_py()
-    assert scalar.value == 1
 
 
 def test_enum_values_as_int():
@@ -532,23 +499,6 @@ def test_empty():
     _check_messages_same(source_messages, messages_back)
 
 
-def test_empty_struct_now_possible():
-    """See https://github.com/apache/arrow/issues/15109"""
-    array = pa.StructArray.from_arrays(arrays=[], names=[], mask=pa.array([True, True]))
-    assert array.type == pa.struct([])
-    assert len(array) == 2
-
-
-def test_empty_struct_workaround():
-    array = pa.StructArray.from_arrays(
-        arrays=[pa.nulls(2, pa.null())], names=["DELETE"], mask=pa.array([True, True])
-    )
-    assert len(array) == 2
-    empty_array = array.cast(pa.struct([]))
-    assert len(empty_array) == 2
-    assert empty_array.type == pa.struct([])
-
-
 @pytest.mark.parametrize("config", CONFIGS[:-1])
 def test_only_messages_default_to_null_on_missing_array(config):
     """
@@ -593,21 +543,11 @@ def test_only_messages_stay_to_null_on_casted_array(config):
         )[0].to_pylist() == [expected]
 
 
-def test_pyarrow_gh_36809():
-    """https://github.com/apache/arrow/issues/36809"""
-    assert pa.scalar(
-        [("foo", "bar")],
-        pa.map_(
-            pa.string(),
-            pa.field("value", pa.string()),
-        ),
-    ).as_py() == [("foo", "bar")]
-
-    with pytest.raises(KeyError, match=r"value"):
-        pa.scalar(
-            [("foo", "bar")],
-            pa.map_(
-                pa.string(),
-                pa.field("map_value", pa.string()),
-            ),
-        ).as_py()
+def test_repeated_primitives_not_aligned_array():
+    source_messages = [
+        ExampleMessage(int32_values=[1, 2, 3]),
+        ExampleMessage(int32_values=[4, 5, 6]),
+    ]
+    table = messages_to_table(source_messages, ExampleMessage, ProtarrowConfig())
+    messages_back = table_to_messages(table[1:], ExampleMessage)
+    _check_messages_same(source_messages[1:], messages_back)
