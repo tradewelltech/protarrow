@@ -37,6 +37,7 @@ from protarrow_protos.bench_pb2 import (
     NestedExampleMessage,
     SuperNestedExampleMessage,
 )
+from protarrow_protos.example_pb2 import EmptyMessage, NestedEmptyMessage
 from tests.random_generator import generate_messages, truncate_nanos
 
 MESSAGES = [ExampleMessage, NestedExampleMessage, SuperNestedExampleMessage]
@@ -543,11 +544,65 @@ def test_only_messages_stay_to_null_on_casted_array(config):
         )[0].to_pylist() == [expected]
 
 
-def test_repeated_primitives_not_aligned_array():
+def test_repeated_primitives_array_slice():
     source_messages = [
         ExampleMessage(int32_values=[1, 2, 3]),
         ExampleMessage(int32_values=[4, 5, 6]),
     ]
     table = messages_to_table(source_messages, ExampleMessage, ProtarrowConfig())
     messages_back = table_to_messages(table[1:], ExampleMessage)
+    _check_messages_same(source_messages[1:], messages_back)
+
+
+def test_repeated_message_array_slice():
+    source_messages = [
+        NestedExampleMessage(
+            repeated_example_message=[
+                ExampleMessage(int32_value=1),
+                ExampleMessage(int32_value=2),
+                ExampleMessage(int32_value=3),
+            ]
+        ),
+        NestedExampleMessage(
+            repeated_example_message=[
+                ExampleMessage(int32_value=4),
+                ExampleMessage(int32_value=5),
+                ExampleMessage(int32_value=6),
+            ]
+        ),
+    ]
+    table = messages_to_table(source_messages, NestedExampleMessage, ProtarrowConfig())
+    messages_back = table_to_messages(table[1:], NestedExampleMessage)
+    _check_messages_same(source_messages[1:], messages_back)
+
+
+def test_empty_nested_message():
+    source_messages = [
+        NestedEmptyMessage(empty_message=EmptyMessage()),
+        NestedEmptyMessage(empty_message=EmptyMessage()),
+    ]
+    table = messages_to_table(source_messages, NestedEmptyMessage, ProtarrowConfig())
+    messages_back = table_to_messages(table[1:], NestedEmptyMessage)
+    _check_messages_same(source_messages[1:], messages_back)
+
+
+def test_empty_repeated_message():
+    source_messages = [
+        NestedEmptyMessage(
+            repeated_empty_message=[
+                EmptyMessage(),
+                EmptyMessage(),
+                EmptyMessage(),
+            ]
+        ),
+        NestedEmptyMessage(
+            repeated_empty_message=[
+                EmptyMessage(),
+                EmptyMessage(),
+                EmptyMessage(),
+            ]
+        ),
+    ]
+    table = messages_to_table(source_messages, NestedEmptyMessage, ProtarrowConfig())
+    messages_back = table_to_messages(table[1:], NestedEmptyMessage)
     _check_messages_same(source_messages[1:], messages_back)
