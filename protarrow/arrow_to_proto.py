@@ -1,7 +1,7 @@
 import collections.abc
 import dataclasses
 import datetime
-from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Type
+from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Type, Union
 
 import pyarrow as pa
 from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
@@ -168,6 +168,10 @@ class OffsetsIterator:
 
 @dataclasses.dataclass(frozen=True)
 class ListValuesIterator:
+    """
+    Iterate through ListArray underlying values taking offsets into consideration.
+    """
+
     list_array: pa.ListArray
 
     def __iter__(self) -> Iterator[pa.Scalar]:
@@ -424,6 +428,9 @@ def _extract_map_field(
     assert pa.types.is_map(array.type), array.type
     value_descriptor = field_descriptor.message_type.fields_by_name["value"]
 
+    values_array = _offset_values_array(array, array.items)
+    keys_array = _offset_values_array(array, array.keys)
+
     if is_custom_field(value_descriptor):
         # Because protobuf doesn't warranty orders of map,
         # we have to make a copy of the list of values here
@@ -435,7 +442,7 @@ def _extract_map_field(
                 array.type.key_type,
                 OffsetToSize(array.offsets),
             ),
-            array.keys,
+            keys_array,
         ):
             values.append(assigner(key))
 
@@ -447,7 +454,7 @@ def _extract_map_field(
             field_index = item_type.get_field_index(field_descriptor.name)
             if field_index != -1:
                 _extract_field(
-                    array.values.field(1).field(field_index),
+                    values_array.field(field_index),
                     field_descriptor,
                     values,
                 )
@@ -461,8 +468,8 @@ def _extract_map_field(
                 array.type.item_type,
                 OffsetToSize(array.offsets),
             ),
-            array.keys,
-            array.values.field(1),
+            keys_array,
+            values_array,
         ):
             assigner(key, value)
 
@@ -529,10 +536,10 @@ def _extract_repeated_message(
         OffsetToSize(array.offsets),
         lambda x: x,
     )
-    for each_assigner, value in zip(assigner, array.values):
+    for each_assigner, value in zip(assigner, ListValuesIterator(array)):
         each_assigner(child)
     _extract_array_messages(
-        array.values,
+        _offset_values_array(array, array.values),
         field_descriptor.message_type,
         RepeatedNestedIterable(messages, field_descriptor),
     )
@@ -602,3 +609,18 @@ def table_to_messages(table: pa.Table, message_type: Type[M]) -> List[M]:
     for batch in table.to_reader():
         messages.extend(record_batch_to_messages(batch, message_type))
     return messages
+
+
+def _offset_values_array(
+    array: Union[pa.ListArray, pa.MapArray], values_array: pa.Array
+) -> pa.Array:
+    """Apply the ListArray/MapArray offset to its child value array"""
+    if array.offset == 0:
+        return values_array
+    else:
+        values_offset = (
+            -1
+            if array.offset >= len(array.offsets)
+            else array.offsets[array.offset - 1].as_py()
+        )
+        return values_array[values_offset:]

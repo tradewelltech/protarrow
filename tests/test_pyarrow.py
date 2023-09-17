@@ -110,3 +110,13 @@ def test_arrow_bug_18257():
     assert dtype == time_array.type
     assert dtype.unit == "ns"
     assert time_array.type.unit == "ns"
+
+
+def test_map_array_members():
+    map_array = pa.array(
+        [{"hello": 1, "foo": 2}, {"other": 3, "none": None}],
+        pa.map_(pa.string(), pa.int32()),
+    )
+    assert isinstance(map_array, pa.MapArray)
+    assert map_array.keys == pa.array(["hello", "foo", "other", "none"])
+    assert map_array.items == pa.array([1, 2, 3, None], pa.int32())

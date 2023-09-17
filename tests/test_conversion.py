@@ -576,6 +576,28 @@ def test_repeated_message_array_slice():
     _check_messages_same(source_messages[1:], messages_back)
 
 
+def test_map_message_array_slice():
+    source_messages = [
+        NestedExampleMessage(
+            example_message_int32_map={
+                1: ExampleMessage(int32_value=1),
+                2: ExampleMessage(int32_value=2),
+                3: ExampleMessage(int32_value=3),
+            }
+        ),
+        NestedExampleMessage(
+            example_message_int32_map={
+                4: ExampleMessage(int32_value=4),
+                5: ExampleMessage(int32_value=5),
+                6: ExampleMessage(int32_value=6),
+            }
+        ),
+    ]
+    table = messages_to_table(source_messages, NestedExampleMessage, ProtarrowConfig())
+    messages_back = table_to_messages(table[1:], NestedExampleMessage)
+    _check_messages_same(source_messages[1:], messages_back)
+
+
 def test_empty_nested_message():
     source_messages = [
         NestedEmptyMessage(empty_message=EmptyMessage()),
