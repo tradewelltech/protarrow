@@ -12,6 +12,7 @@ from google.type.timeofday_pb2 import TimeOfDay
 
 import protarrow
 from protarrow.arrow_to_proto import (
+    _offset_values_array,
     create_enum_converter,
     is_custom_field,
     table_to_messages,
@@ -106,6 +107,22 @@ def test_with_random(message_type: Type[Message], config: ProtarrowConfig):
     truncated_messages = [
         truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
         for m in source_messages
+    ]
+    _check_messages_same(truncated_messages, messages_back)
+
+
+@pytest.mark.parametrize("message_type", MESSAGES)
+@pytest.mark.parametrize("config", CONFIGS)
+@pytest.mark.parametrize("index", [0, 1, 3])
+def test_with_random_not_aligned(
+    message_type: Type[Message], config: ProtarrowConfig, index: int
+):
+    source_messages = generate_messages(message_type, 3)
+    table = messages_to_table(source_messages, message_type, config)
+    messages_back = table_to_messages(table[index:], message_type)
+    truncated_messages = [
+        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
+        for m in source_messages[index:]
     ]
     _check_messages_same(truncated_messages, messages_back)
 
@@ -598,6 +615,28 @@ def test_map_message_array_slice():
     _check_messages_same(source_messages[1:], messages_back)
 
 
+def test_primitive_map_message_array_slice():
+    source_messages = [
+        NestedExampleMessage(
+            example_message_int32_map={
+                1: ExampleMessage(double_int32_map={1: 1.1}),
+                2: ExampleMessage(double_int32_map={2: 2.2}),
+                3: ExampleMessage(double_int32_map={3: 3.3}),
+            }
+        ),
+        NestedExampleMessage(
+            example_message_int32_map={
+                4: ExampleMessage(double_int32_map={4: 4.4}),
+                5: ExampleMessage(double_int32_map={5: 5.5}),
+                6: ExampleMessage(double_int32_map={6: 6.6}),
+            }
+        ),
+    ]
+    table = messages_to_table(source_messages, NestedExampleMessage, ProtarrowConfig())
+    messages_back = table_to_messages(table[1:], NestedExampleMessage)
+    _check_messages_same(source_messages[1:], messages_back)
+
+
 def test_empty_nested_message():
     source_messages = [
         NestedEmptyMessage(empty_message=EmptyMessage()),
@@ -642,3 +681,28 @@ def test_empty_repeated_message():
     table = messages_to_table(source_messages, NestedEmptyMessage, ProtarrowConfig())
     messages_back = table_to_messages(table[1:], NestedEmptyMessage)
     _check_messages_same(source_messages[1:], messages_back)
+
+
+def test_offset_values_array():
+    array = pa.array([[1], [1, 2], [1, 2, 3]])
+    slice_0 = array[0:]
+    assert _offset_values_array(slice_0, slice_0.values).to_pylist() == [
+        1,
+        1,
+        2,
+        1,
+        2,
+        3,
+    ]
+
+    slice_1 = array[1:]
+    assert _offset_values_array(slice_1, slice_1.values).to_pylist() == [1, 2, 1, 2, 3]
+
+    slice_2 = array[2:]
+    assert _offset_values_array(slice_2, slice_2.values).to_pylist() == [1, 2, 3]
+
+    slice_3 = array[3:]
+    assert _offset_values_array(slice_3, slice_3.values).to_pylist() == []
+
+    slice_m1 = array[-1:]
+    assert _offset_values_array(slice_m1, slice_m1.values).to_pylist() == [1, 2, 3]

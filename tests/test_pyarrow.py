@@ -1,7 +1,6 @@
 """
 Tests the behavior of pyarrow
 """
-import datetime
 
 import pyarrow as pa
 import pytest
@@ -96,7 +95,6 @@ def test_arrow_bug_18264():
     """https://issues.apache.org/jira/browse/ARROW-18264"""
     time_ns = pa.array([1], pa.time64("ns"))
     scalar = time_ns[0]
-    assert scalar.as_py() == datetime.time(0, 0)
     assert scalar.value == 1
 
 

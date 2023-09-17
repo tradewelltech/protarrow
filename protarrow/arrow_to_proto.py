@@ -615,12 +615,7 @@ def _offset_values_array(
     array: Union[pa.ListArray, pa.MapArray], values_array: pa.Array
 ) -> pa.Array:
     """Apply the ListArray/MapArray offset to its child value array"""
-    if array.offset == 0:
+    if array.offset == 0 or len(array.offsets) == 0:
         return values_array
     else:
-        values_offset = (
-            -1
-            if array.offset >= len(array.offsets)
-            else array.offsets[array.offset - 1].as_py()
-        )
-        return values_array[values_offset:]
+        return values_array[array.offsets[0].as_py() :]
