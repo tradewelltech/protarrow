@@ -586,6 +586,20 @@ def test_empty_nested_message():
     _check_messages_same(source_messages[1:], messages_back)
 
 
+def test_empty_nested_message_has_has_not():
+    source_messages = [
+        NestedEmptyMessage(empty_message=EmptyMessage(empty_value=Empty())),
+        NestedEmptyMessage(empty_message=EmptyMessage()),
+        NestedEmptyMessage(),
+    ]
+    table = messages_to_table(source_messages, NestedEmptyMessage, ProtarrowConfig())
+    messages_back = table_to_messages(table, NestedEmptyMessage)
+    _check_messages_same(source_messages, messages_back)
+    assert messages_back[0].empty_message.HasField("empty_value")
+    assert not messages_back[1].empty_message.HasField("empty_value")
+    assert not messages_back[1].empty_message.HasField("empty_value")
+
+
 def test_empty_repeated_message():
     source_messages = [
         NestedEmptyMessage(
