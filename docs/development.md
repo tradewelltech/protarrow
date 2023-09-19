@@ -8,6 +8,7 @@ python3 -m venv --clear venv
 source venv/bin/activate
 poetry self add "poetry-dynamic-versioning[plugin]"
 poetry install
+python ./scripts/generate_proto.py
 python ./scripts/protoc.py
 pre-commit install
 ```
@@ -16,6 +17,7 @@ pre-commit install
 
 This library relies on property based testing. 
 Tests convert randomly generated data from protobuf to arrow and back, making sure the end result is the same as the input.
+
 
 To run tests fast:
 ```shell
@@ -27,6 +29,33 @@ To Get coverage:
 coverage run --branch --include "*/protarrow/*" -m pytest tests
 coverage report
 ```
+
+## Generating the change log
+
+We use [git-change-log](https://pawamoy.github.io/git-changelog/usage/) to generate our CHANGELOG.md
+
+Please follow the [basic convention](https://pawamoy.github.io/git-changelog/usage/#basic-convention) for  commit message.
+
+To update the change log, run:
+```shell
+git-changelog -io CHANGELOG.md
+```
+
+## New Release
+
+For new release, first prepare the change log, push and merge it.
+```shell
+git-changelog -bio CHANGELOG.md
+```
+
+Then tag and push:
+```shell
+git tag vX.X.X
+git push origin vX.X.X
+```
+
+Lastly on github, go to tags and create a release. 
+The CI will deploy to pypi automatically from then.
 
 ## Resources
 
