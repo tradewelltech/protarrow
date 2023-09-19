@@ -390,6 +390,22 @@ python-dateutil = ">=2.8.1"
 dev = ["flake8", "markdown", "twine", "wheel"]
 
 [[package]]
+name = "git-changelog"
+version = "2.2.0"
+description = "Automatic Changelog generator using Jinja2 templates."
+category = "dev"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "git_changelog-2.2.0-py3-none-any.whl", hash = "sha256:425aeb902d571e33e090a4cce3171337d4190dfa0292473f3d70b32f74248b89"},
+    {file = "git_changelog-2.2.0.tar.gz", hash = "sha256:dd23c6c661319f0a609edd5c51a5e5c8e09cda68eda7036aae7d206cf535746d"},
+]
+
+[package.dependencies]
+Jinja2 = ">=2.10,<4"
+semver = ">=2.13"
+
+[[package]]
 name = "googleapis-common-protos"
 version = "1.60.0"
 description = "Common protobufs used in Google APIs"
@@ -1463,6 +1479,18 @@ socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
+name = "semver"
+version = "3.0.1"
+description = "Python helper for Semantic Versioning (https://semver.org)"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "semver-3.0.1-py3-none-any.whl", hash = "sha256:2a23844ba1647362c7490fe3995a86e097bb590d16f0f32dfc383008f19e4cdf"},
+    {file = "semver-3.0.1.tar.gz", hash = "sha256:9ec78c5447883c67b97f98c3b6212796708191d22e4ad30f4570f840171cbce1"},
+]
+
+[[package]]
 name = "setuptools"
 version = "68.1.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
@@ -1725,4 +1753,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.12"
-content-hash = "43d47a421be07cb4c0ad1d17806801b62134ec28df9ca86fda42577dbe6ff3fa"
+content-hash = "f4009f1f2f396d1e99659ad6924281f57cdbf98dee69d81ecfdf23e152a99fba"
