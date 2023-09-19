@@ -57,6 +57,17 @@ git push origin vX.X.X
 Lastly on github, go to tags and create a release. 
 The CI will deploy to pypi automatically from then.
 
+## Testing the documentation
+
+```shell
+mkdocs serve --livereload --watch=./
+```
+
+## Updating dependencies
+
+- For the repo `poetry lock`
+- For the doc: `(cd docs/; pip-compile ./requirements.in  > ./requirements.txt)`
+
 ## Resources
 
 The repo set up is inspired by this [guide](https://mathspp.com/blog/how-to-create-a-python-package-in-2022)
