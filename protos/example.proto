@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 package protarrow.protos;
 
 message MyProto {
@@ -21,4 +23,15 @@ message NullableExample {
   NestedNullableExample message_value = 10;
   repeated NestedNullableExample message_repeated = 11;
   map<string, NestedNullableExample> message_map = 12;
+}
+
+message EmptyMessage {
+  google.protobuf.Empty empty_value = 1;
+}
+
+message NestedEmptyMessage {
+  EmptyMessage empty_message = 1;
+  repeated EmptyMessage repeated_empty_message = 2;
+  map<int32, EmptyMessage> empty_example_message_int32_map = 4;
+  map<string, EmptyMessage> empty_example_message_string_map = 5;
 }

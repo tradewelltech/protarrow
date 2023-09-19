@@ -8,4 +8,4 @@ exclude =
 
 max-line-length = 88
 
-# extend-ignore = R1705
+extend-ignore = E203
