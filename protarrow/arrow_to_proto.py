@@ -1,7 +1,7 @@
 import collections.abc
 import dataclasses
 import datetime
-from typing import Any, Callable, Iterable, Iterator, List, Optional, Type
+from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Type, Union
 
 import pyarrow as pa
 from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
@@ -151,6 +151,34 @@ def is_custom_field(field_descriptor: FieldDescriptor):
         field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
         and field_descriptor.message_type not in SPECIAL_CONVERTERS
     )
+
+
+@dataclasses.dataclass(frozen=True)
+class OffsetsIterator:
+    offsets: pa.Array
+
+    def __iter__(self) -> Iterator[Tuple[int, int]]:
+        if len(self.offsets) > 0:
+            current_offset = self.offsets[0].as_py()
+            for item in self.offsets[1:]:
+                offset = item.as_py()
+                yield current_offset, offset
+                current_offset = offset
+
+
+@dataclasses.dataclass(frozen=True)
+class ListValuesIterator:
+    """
+    Iterate through ListArray underlying values taking offsets into consideration.
+    """
+
+    list_array: pa.ListArray
+
+    def __iter__(self) -> Iterator[pa.Scalar]:
+        values_array = self.list_array.values
+        for first, last in OffsetsIterator(self.list_array.offsets):
+            for value in values_array[first:last]:
+                yield value
 
 
 @dataclasses.dataclass(frozen=True)
@@ -400,6 +428,9 @@ def _extract_map_field(
     assert pa.types.is_map(array.type), array.type
     value_descriptor = field_descriptor.message_type.fields_by_name["value"]
 
+    values_array = _offset_values_array(array, array.items)
+    keys_array = _offset_values_array(array, array.keys)
+
     if is_custom_field(value_descriptor):
         # Because protobuf doesn't warranty orders of map,
         # we have to make a copy of the list of values here
@@ -411,7 +442,7 @@ def _extract_map_field(
                 array.type.key_type,
                 OffsetToSize(array.offsets),
             ),
-            array.keys,
+            keys_array,
         ):
             values.append(assigner(key))
 
@@ -423,7 +454,7 @@ def _extract_map_field(
             field_index = item_type.get_field_index(field_descriptor.name)
             if field_index != -1:
                 _extract_field(
-                    array.values.field(1).field(field_index),
+                    values_array.field(field_index),
                     field_descriptor,
                     values,
                 )
@@ -437,8 +468,8 @@ def _extract_map_field(
                 array.type.item_type,
                 OffsetToSize(array.offsets),
             ),
-            array.keys,
-            array.values.field(1),
+            keys_array,
+            values_array,
         ):
             assigner(key, value)
 
@@ -490,7 +521,7 @@ def _extract_repeated_primitive(
         converter=converter,
     )
 
-    for each_assigner, value in zip(assigner, array.values):
+    for each_assigner, value in zip(assigner, ListValuesIterator(array)):
         each_assigner(value)
 
 
@@ -505,10 +536,10 @@ def _extract_repeated_message(
         OffsetToSize(array.offsets),
         lambda x: x,
     )
-    for each_assigner, value in zip(assigner, array.values):
+    for each_assigner, value in zip(assigner, ListValuesIterator(array)):
         each_assigner(child)
     _extract_array_messages(
-        array.values,
+        _offset_values_array(array, array.values),
         field_descriptor.message_type,
         RepeatedNestedIterable(messages, field_descriptor),
     )
@@ -578,3 +609,13 @@ def table_to_messages(table: pa.Table, message_type: Type[M]) -> List[M]:
     for batch in table.to_reader():
         messages.extend(record_batch_to_messages(batch, message_type))
     return messages
+
+
+def _offset_values_array(
+    array: Union[pa.ListArray, pa.MapArray], values_array: pa.Array
+) -> pa.Array:
+    """Apply the ListArray/MapArray offset to its child value array"""
+    if array.offset == 0 or len(array.offsets) == 0:
+        return values_array
+    else:
+        return values_array[array.offsets[0].as_py() :]
