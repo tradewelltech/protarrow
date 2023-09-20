@@ -26,15 +26,15 @@ pytest -n auto tests
 
 To Get coverage:
 ```shell
-coverage run --branch --include "*/protarrow/*" -m pytest tests
-coverage report
+coverage run --branch --include "./protarrow/*" -m pytest tests
+coverage report --show-missing
 ```
 
 ## Generating the change log
 
 We use [git-change-log](https://pawamoy.github.io/git-changelog/usage/) to generate our CHANGELOG.md
 
-Please follow the [basic convention](https://pawamoy.github.io/git-changelog/usage/#basic-convention) for  commit message.
+Please follow the [basic convention](https://pawamoy.github.io/git-changelog/usage/#basic-convention) for commit message.
 
 To update the change log, run:
 ```shell
@@ -66,7 +66,7 @@ mkdocs serve --livereload --watch=./
 ## Updating dependencies
 
 - For the repo `poetry lock`
-- For the doc: `(cd docs/; pip-compile ./requirements.in  > ./requirements.txt)`
+- For the doc: `(cd docs/; pip-compile ./requirements.in > ./requirements.txt)`
 
 ## Resources
 
