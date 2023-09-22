@@ -28,5 +28,5 @@ repos:
     hooks:
       - id: bandit
         additional_dependencies:
-          - toml
+          - ".[toml]"
         args: [--config=pyproject.toml]
