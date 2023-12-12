@@ -3,7 +3,6 @@ Tests the behavior of pyarrow
 """
 
 import pyarrow as pa
-import pytest
 
 
 def test_pyarrow_list_array_slices():
@@ -64,14 +63,14 @@ def test_pyarrow_gh_36809():
         ),
     ).as_py() == [("foo", "bar")]
 
-    with pytest.raises(KeyError, match=r"value"):
-        pa.scalar(
-            [("foo", "bar")],
-            pa.map_(
-                pa.string(),
-                pa.field("map_value", pa.string()),
-            ),
-        ).as_py()
+    # This use to raise value error:
+    assert pa.scalar(
+        [("foo", "bar")],
+        pa.map_(
+            pa.string(),
+            pa.field("map_value", pa.string()),
+        ),
+    ).as_py() == [("foo", "bar")]
 
 
 def test_empty_struct_now_possible():
