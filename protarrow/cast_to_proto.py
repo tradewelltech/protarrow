@@ -87,7 +87,8 @@ def _cast_array(
         assert isinstance(array, pa.MapArray)
         key_field, value_field = get_map_descriptors(field_descriptor)
         map_array = pa.MapArray.from_arrays(
-            array.offsets,
+            # TODO: remove when https://github.com/apache/arrow/issues/40750 is fixed
+            maybe_copy_offsets(array.offsets),
             _cast_array(array.keys, key_field, config),
             _cast_array(array.items, value_field, config),
         )
@@ -208,3 +209,11 @@ def cast_table(
     for record_batch in table.to_reader():
         record_batches.append(cast_record_batch(record_batch, message_type, config))
     return pa.Table.from_batches(record_batches, proto_schema)
+
+
+def maybe_copy_offsets(offsets: pa.Array) -> pa.Array:
+    if offsets.offset != 0:
+        # TODO: this it not efficient, find a way to copy in arrow
+        return pa.array(offsets.to_pylist(), offsets.type)
+    else:
+        return offsets

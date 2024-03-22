@@ -1,7 +1,7 @@
 import collections.abc
 import dataclasses
 import datetime
-from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Type
 
 import pyarrow as pa
 from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
@@ -22,7 +22,7 @@ from google.protobuf.wrappers_pb2 import (
 from google.type.date_pb2 import Date
 from google.type.timeofday_pb2 import TimeOfDay
 
-from protarrow.common import M, is_binary_enum, is_string_enum
+from protarrow.common import M, is_binary_enum, is_string_enum, offset_values_array
 
 _NANOS_PER_UNIT = {"ns": 1, "us": 1_000, "ms": 1_000_000, "s": 1_000_000_000}
 _TIME_CONVERTER = {
@@ -428,8 +428,8 @@ def _extract_map_field(
     assert pa.types.is_map(array.type), array.type
     value_descriptor = field_descriptor.message_type.fields_by_name["value"]
 
-    values_array = _offset_values_array(array, array.items)
-    keys_array = _offset_values_array(array, array.keys)
+    values_array = offset_values_array(array, array.items)
+    keys_array = offset_values_array(array, array.keys)
 
     if is_custom_field(value_descriptor):
         # Because protobuf doesn't warranty orders of map,
@@ -539,7 +539,7 @@ def _extract_repeated_message(
     for each_assigner, value in zip(assigner, ListValuesIterator(array)):
         each_assigner(child)
     _extract_array_messages(
-        _offset_values_array(array, array.values),
+        offset_values_array(array, array.values),
         field_descriptor.message_type,
         RepeatedNestedIterable(messages, field_descriptor),
     )
@@ -609,13 +609,3 @@ def table_to_messages(table: pa.Table, message_type: Type[M]) -> List[M]:
     for batch in table.to_reader():
         messages.extend(record_batch_to_messages(batch, message_type))
     return messages
-
-
-def _offset_values_array(
-    array: Union[pa.ListArray, pa.MapArray], values_array: pa.Array
-) -> pa.Array:
-    """Apply the ListArray/MapArray offset to its child value array"""
-    if array.offset == 0 or len(array.offsets) == 0:
-        return values_array
-    else:
-        return values_array[array.offsets[0].as_py() :]
