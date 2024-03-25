@@ -12,17 +12,18 @@ from google.type.timeofday_pb2 import TimeOfDay
 
 import protarrow
 from protarrow.arrow_to_proto import (
-    _offset_values_array,
     create_enum_converter,
     is_custom_field,
     table_to_messages,
 )
 from protarrow.cast_to_proto import (
+    _cast_array,
     cast_table,
     get_arrow_default_value,
     get_casted_array,
+    maybe_copy_offsets,
 )
-from protarrow.common import M, ProtarrowConfig
+from protarrow.common import M, ProtarrowConfig, offset_values_array
 from protarrow.message_extractor import MessageExtractor
 from protarrow.proto_to_arrow import (
     NestedIterable,
@@ -447,6 +448,17 @@ def test_cast_same(message_type: Type[Message], config: ProtarrowConfig):
     assert table == casted_table
 
 
+@pytest.mark.parametrize("message_type", MESSAGES)
+@pytest.mark.parametrize("config", CONFIGS)
+def test_cast_same_view(message_type: Type[Message], config: ProtarrowConfig):
+    source_messages = generate_messages(message_type, 10)
+    table = messages_to_table(source_messages, message_type, config)
+
+    view = table[5:]
+    casted_view = cast_table(view, message_type, config)
+    assert casted_view == view
+
+
 def test_is_custom_field():
     assert not is_custom_field(
         ExampleMessage.DESCRIPTOR.fields_by_name["wrapped_double_value"]
@@ -686,7 +698,7 @@ def test_empty_repeated_message():
 def test_offset_values_array():
     array = pa.array([[1], [1, 2], [1, 2, 3]])
     slice_0 = array[0:]
-    assert _offset_values_array(slice_0, slice_0.values).to_pylist() == [
+    assert offset_values_array(slice_0, slice_0.values).to_pylist() == [
         1,
         1,
         2,
@@ -696,13 +708,97 @@ def test_offset_values_array():
     ]
 
     slice_1 = array[1:]
-    assert _offset_values_array(slice_1, slice_1.values).to_pylist() == [1, 2, 1, 2, 3]
+    assert offset_values_array(slice_1, slice_1.values).to_pylist() == [1, 2, 1, 2, 3]
 
     slice_2 = array[2:]
-    assert _offset_values_array(slice_2, slice_2.values).to_pylist() == [1, 2, 3]
+    assert offset_values_array(slice_2, slice_2.values).to_pylist() == [1, 2, 3]
 
     slice_3 = array[3:]
-    assert _offset_values_array(slice_3, slice_3.values).to_pylist() == []
+    assert offset_values_array(slice_3, slice_3.values).to_pylist() == []
 
     slice_m1 = array[-1:]
-    assert _offset_values_array(slice_m1, slice_m1.values).to_pylist() == [1, 2, 3]
+    assert offset_values_array(slice_m1, slice_m1.values).to_pylist() == [1, 2, 3]
+
+
+def test_cast_map_offset():
+    config = ProtarrowConfig()
+    field = ExampleMessage.DESCRIPTOR.fields_by_name["int32_string_map"]
+    values = [
+        [("foo", 123), ("bar", 123)],
+        [("foo", 456), ("bar", 456)],
+    ]
+    from_array = pa.array(values, pa.map_(pa.string(), pa.int64()))
+    to_array = pa.array(
+        values,
+        pa.map_(
+            pa.string(),
+            pa.field(
+                config.map_value_name,
+                pa.int32(),
+                nullable=config.map_value_nullable,
+            ),
+        ),
+    )
+    assert _cast_array(from_array, field, ProtarrowConfig()) == to_array
+
+    assert _cast_array(from_array[1:], field, ProtarrowConfig()) == to_array[1:]
+
+
+def test_cast_list_offset():
+    config = ProtarrowConfig()
+    field = ExampleMessage.DESCRIPTOR.fields_by_name["int32_values"]
+    values = [
+        [1, 2, 3],
+        [4, 5, 6],
+    ]
+    from_array = pa.array(values, pa.list_(pa.int32()))
+    to_array = pa.array(
+        values,
+        pa.list_(
+            pa.field(
+                config.list_value_name,
+                pa.int32(),
+                nullable=config.list_value_nullable,
+            ),
+        ),
+    )
+
+    assert _cast_array(from_array, field, ProtarrowConfig()) == to_array
+    assert _cast_array(from_array[1:], field, ProtarrowConfig()) == to_array[1:]
+
+
+def test_maybe_copy_offsets():
+    array = pa.array([1, 2, 3], pa.int32())
+    assert maybe_copy_offsets(array) is array  # no copy
+    view = array[1:]
+    copy = maybe_copy_offsets(array[1:])
+    assert copy == view
+    assert copy is not view  # copy
+    assert copy.offset == 0
+    # Sadly pa.array is highly optimized
+    assert pa.array(array) is array
+
+
+def test_map_cast():
+    array = pa.array(
+        [
+            [(123, 123), (456, 456)],
+            [(7, 7), (8, 8)],
+        ],
+        pa.map_(pa.int32(), pa.int64()),
+    )
+    table = pa.table({"int32_int32_map": array})
+
+    assert (
+        cast_table(table, ExampleMessage, ProtarrowConfig())[
+            "int32_int32_map"
+        ].to_pylist()
+        == array.to_pylist()
+    )
+    # Again with a view:
+    assert (
+        cast_table(table[1:], ExampleMessage, ProtarrowConfig())[
+            "int32_int32_map"
+        ].to_pylist()
+        == array[1:].to_pylist()
+    )

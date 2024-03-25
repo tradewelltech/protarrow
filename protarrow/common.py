@@ -41,3 +41,13 @@ def is_string_enum(data_type: pa.DataType) -> bool:
     return pa.types.is_string(data_type) or (
         pa.types.is_dictionary(data_type) and pa.types.is_string(data_type.value_type)
     )
+
+
+def offset_values_array(
+    array: Union[pa.ListArray, pa.MapArray], values_array: pa.Array
+) -> pa.Array:
+    """Apply the ListArray/MapArray offset to its child value array"""
+    if array.offset == 0 or len(array.offsets) == 0:
+        return values_array
+    else:
+        return values_array[array.offsets[0].as_py() :]

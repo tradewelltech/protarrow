@@ -3,6 +3,7 @@ Tests the behavior of pyarrow
 """
 
 import pyarrow as pa
+import pytest
 
 
 def test_pyarrow_list_array_slices():
@@ -117,3 +118,25 @@ def test_map_array_members():
     assert isinstance(map_array, pa.MapArray)
     assert map_array.keys == pa.array(["hello", "foo", "other", "none"])
     assert map_array.items == pa.array([1, 2, 3, None], pa.int32())
+
+
+def test_arrow_bug_40750():
+    """https://github.com/apache/arrow/issues/40750"""
+    offsets = pa.array([0, 0, 0, 0, 0, 0], pa.int32())
+
+    map_array = pa.MapArray.from_arrays(
+        offsets,
+        pa.array([], pa.string()),
+        pa.array([], pa.string()),
+    )
+    assert len(map_array) == 5
+    assert map_array.to_pylist() == [[]] * 5
+    with pytest.raises(
+        pa.ArrowInvalid,
+        match=r"List child array invalid: Invalid: Struct child array #0 has length smaller than expected for struct array \(0 < 1\)",
+    ):
+        pa.MapArray.from_arrays(
+            offsets[1:],
+            pa.array([], pa.string()),
+            pa.array([], pa.string()),
+        )
