@@ -1,4 +1,5 @@
 import pathlib
+import sys
 import warnings
 from typing import List
 
@@ -30,7 +31,8 @@ def run_protoc(arguments: List[str]):
 
 
 def main():
-    _OUT_DIR.mkdir(parents=True, exist_ok=True)
+    out_dir = _OUT_DIR if len(sys.argv) < 2 else pathlib.Path(sys.argv[1])
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     proto_files = [x.as_posix() for x in _SRC_DIR.glob("**/*.proto")]
     proto_args = [
@@ -38,7 +40,7 @@ def main():
         "--proto_path={}".format(_GOOGLE_COMMON_PROTOS_ROOT_DIR),
         "--proto_path={}".format(_GRPC_PROTOS_INCLUDE),
         "--proto_path={}".format(_SRC_DIR),
-        "--python_out={}".format(_OUT_DIR),
+        "--python_out={}".format(out_dir),
     ] + proto_files
     print(" ".join(proto_args))
     run_protoc(proto_args)
