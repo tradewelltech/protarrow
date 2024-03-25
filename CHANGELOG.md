@@ -6,9 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
-## Unreleased
+## [v0.3.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.3.0) - 2024-03-25
 
-<small>[Compare with latest](https://github.com/tradewelltech/protarrow/compare/v0.2.4...HEAD)</small>
+<small>[Compare with v0.2.4](https://github.com/tradewelltech/protarrow/compare/v0.2.4...v0.3.0)</small>
 
 ### Added
 
@@ -18,9 +18,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- Fix protoc ([0f86253](https://github.com/tradewelltech/protarrow/commit/0f862539556b5ced7f8861f5cb3653db2e402589) by aandres).
+- Fix issue with map chunks (#64) ([b524b65](https://github.com/tradewelltech/protarrow/commit/b524b650bb3ab87ab176189a26c828b6763178cf) by 0x26res).
 
-<!-- insertion marker -->
 
 ## [v0.2.4](https://github.com/tradewelltech/protarrow/releases/tag/v0.2.4) - 2023-09-19
 
