@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## Unreleased
+
+<small>[Compare with latest](https://github.com/tradewelltech/protarrow/compare/v0.2.4...HEAD)</small>
+
+### Added
+
+- add latest dependencies (#60) ([f693316](https://github.com/tradewelltech/protarrow/commit/f6933167c8f47c8ef34a1287e58c0b8a3a85d932) by 0x26res).
+- Add change log (#59) ([94fb8e5](https://github.com/tradewelltech/protarrow/commit/94fb8e57b545315ec95785235dd186ccd96087a6) by 0x26res).
+- Add ruff ([93b4d8d](https://github.com/tradewelltech/protarrow/commit/93b4d8d73b60becda6d1bfa665e59b597616ec08) by 0x26res).
+
+### Fixed
+
+- Fix protoc ([0f86253](https://github.com/tradewelltech/protarrow/commit/0f862539556b5ced7f8861f5cb3653db2e402589) by aandres).
+
+<!-- insertion marker -->
+
 ## [v0.2.4](https://github.com/tradewelltech/protarrow/releases/tag/v0.2.4) - 2023-09-19
 
 <small>[Compare with v0.2.3](https://github.com/tradewelltech/protarrow/compare/v0.2.3...v0.2.4)</small>

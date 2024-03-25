@@ -44,7 +44,7 @@ def main():
     ] + proto_files
     print(" ".join(proto_args))
     run_protoc(proto_args)
-    (_OUT_DIR / "__init__.py").touch()
+    (out_dir / "__init__.py").touch()
 
 
 if __name__ == "__main__":
