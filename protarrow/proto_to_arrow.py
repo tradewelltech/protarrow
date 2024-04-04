@@ -346,7 +346,7 @@ def _proto_field_to_array(
         null_value = (
             None
             if (
-                field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
+                field_descriptor.has_presence
                 # We use none for repeated field as there should not
                 # be any missing list elements, they are not nullable
                 or field_descriptor.label == FieldDescriptor.LABEL_REPEATED
@@ -451,14 +451,14 @@ def _proto_field_nullable(
     elif field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED:
         return config.list_nullable
     else:
-        return field_descriptor.type == FieldDescriptorProto.TYPE_MESSAGE
+        return field_descriptor.has_presence
 
 
 def _proto_field_validity_mask(
     messages: Iterable[Message], field_descriptor: FieldDescriptor
 ) -> Optional[List[bool]]:
     if (
-        field_descriptor.type != FieldDescriptorProto.TYPE_MESSAGE
+        not field_descriptor.has_presence
         or field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED
     ):
         return None
