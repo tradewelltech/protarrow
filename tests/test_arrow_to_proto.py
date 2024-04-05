@@ -1,12 +1,10 @@
-from typing import cast
-
 import pyarrow as pa
 
 from protarrow.arrow_to_proto import ListValuesIterator, OffsetsIterator
 
 
 def test_offsets_iterator():
-    array = cast(pa.array([[1], [], None, [1, 2], [1, 2, 3]]), pa.ListArray)
+    array = pa.array([[1], [], None, [1, 2], [1, 2, 3]])
 
     assert list(OffsetsIterator(array.offsets)) == [
         (0, 1),
