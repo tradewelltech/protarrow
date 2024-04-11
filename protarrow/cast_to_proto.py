@@ -72,7 +72,7 @@ def _cast_flat_array(
             results = array.cast(
                 _PROTO_PRIMITIVE_TYPE_TO_PYARROW[field_descriptor.type]
             )
-        if results.null_count > 0:
+        if not field_descriptor.has_presence and results.null_count > 0:
             return results.fill_null(get_arrow_default_value(field_descriptor, config))
         else:
             return results
@@ -130,10 +130,7 @@ def get_casted_array(
     expected_field = field_descriptor_to_field(field_descriptor, config)
     if source_array is not None:
         casted_array = _cast_array(source_array, field_descriptor, config)
-    elif (
-        field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
-        and field_descriptor.label != FieldDescriptor.LABEL_REPEATED
-    ):
+    elif field_descriptor.has_presence:
         casted_array = pa.nulls(num_rows, expected_field.type)
         if pa.types.is_struct(expected_field.type):
             casted_array = cast_struct_array(

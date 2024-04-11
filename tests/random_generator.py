@@ -110,9 +110,12 @@ def set_field(message: Message, field: FieldDescriptor, count: int) -> None:
                     field_value[entry.key] = entry.value
         else:
             field_value.extend(data)
-    elif field.type == FieldDescriptor.TYPE_MESSAGE:
+    elif field.has_presence:
         if random.getrandbits(1) == 1:
-            getattr(message, field.name).CopyFrom(data)
+            if field.type == FieldDescriptor.TYPE_MESSAGE:
+                getattr(message, field.name).CopyFrom(data)
+            else:
+                setattr(message, field.name, data)
     else:
         setattr(message, field.name, data)
 

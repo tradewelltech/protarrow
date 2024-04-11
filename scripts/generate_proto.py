@@ -26,6 +26,12 @@ class TypeTemplate:
     def wrapped(name: str) -> "TypeTemplate":
         return TypeTemplate("wrapped_" + name.lower(), f"google.protobuf.{name}Value")
 
+    def can_be_optional(self) -> bool:
+        return (
+            self.protobuf_type.lower() == self.protobuf_type
+            or self.protobuf_type == "ExampleEnum"
+        )
+
 
 TYPES = [
     # Primitives

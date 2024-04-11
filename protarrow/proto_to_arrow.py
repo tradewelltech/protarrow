@@ -274,7 +274,7 @@ def field_descriptor_to_field(
         return pa.field(
             field_descriptor.name,
             field_descriptor_to_data_type(field_descriptor, config),
-            nullable=field_descriptor.type == FieldDescriptor.TYPE_MESSAGE,
+            nullable=field_descriptor.has_presence,
         )
 
 
@@ -346,7 +346,7 @@ def _proto_field_to_array(
         null_value = (
             None
             if (
-                field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
+                field_descriptor.has_presence
                 # We use none for repeated field as there should not
                 # be any missing list elements, they are not nullable
                 or field_descriptor.label == FieldDescriptor.LABEL_REPEATED
@@ -451,16 +451,13 @@ def _proto_field_nullable(
     elif field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED:
         return config.list_nullable
     else:
-        return field_descriptor.type == FieldDescriptorProto.TYPE_MESSAGE
+        return field_descriptor.has_presence
 
 
 def _proto_field_validity_mask(
     messages: Iterable[Message], field_descriptor: FieldDescriptor
 ) -> Optional[List[bool]]:
-    if (
-        field_descriptor.type != FieldDescriptorProto.TYPE_MESSAGE
-        or field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED
-    ):
+    if not field_descriptor.has_presence:
         return None
     mask = []
     field_name = field_descriptor.name
@@ -515,9 +512,11 @@ def _messages_to_array(
     return pa.StructArray.from_arrays(
         arrays=arrays,
         fields=fields,
-        mask=pc.invert(pa.array(validity_mask, pa.bool_()))
-        if validity_mask is not None
-        else pa.repeat(False, len(messages)),
+        mask=(
+            pc.invert(pa.array(validity_mask, pa.bool_()))
+            if validity_mask is not None
+            else pa.repeat(False, len(messages))
+        ),
     )
 
 

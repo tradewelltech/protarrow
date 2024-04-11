@@ -83,6 +83,8 @@ message ExampleMessage {
   repeated google.protobuf.Empty empty_values = 58;
   
   
+
+
   // Map with int32 keys
   map<int32, double> double_int32_map = 88;
   map<int32, float> float_int32_map = 89;
@@ -114,6 +116,8 @@ message ExampleMessage {
   map<int32, google.type.TimeOfDay> time_of_day_int32_map = 115;
   map<int32, google.protobuf.Empty> empty_int32_map = 116;
   
+
+
   // Map with string keys
   map<string, double> double_string_map = 117;
   map<string, float> float_string_map = 118;
@@ -144,6 +148,23 @@ message ExampleMessage {
   map<string, google.type.Date> date_string_map = 143;
   map<string, google.type.TimeOfDay> time_of_day_string_map = 144;
   map<string, google.protobuf.Empty> empty_string_map = 145;
+  // Optional
+  optional double optional_double_value = 175;
+  optional float optional_float_value = 176;
+  optional int32 optional_int32_value = 177;
+  optional int64 optional_int64_value = 178;
+  optional uint32 optional_uint32_value = 179;
+  optional uint64 optional_uint64_value = 180;
+  optional sint32 optional_sint32_value = 181;
+  optional sint64 optional_sint64_value = 182;
+  optional fixed32 optional_fixed32_value = 183;
+  optional fixed64 optional_fixed64_value = 184;
+  optional sfixed32 optional_sfixed32_value = 185;
+  optional sfixed64 optional_sfixed64_value = 186;
+  optional bool optional_bool_value = 187;
+  optional string optional_string_value = 188;
+  optional bytes optional_bytes_value = 189;
+  optional ExampleEnum optional_example_enum_value = 199;
   }
 
 message NestedExampleMessage {

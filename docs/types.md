@@ -45,8 +45,9 @@
 ## Nullability
 
 By default, nullability follows the convention imposed by protobuf:
-- Native field, list, map, list value, map key, map value are marked as non-nullable.
-- Non-repeated messages are the only nullable fields. 
+
+- Primitive field, list, map, list value, map key and map value are non-nullable.
+- Non-repeated messages and `optional` are the only nullable fields.
 
 
 Some of this can be configured:

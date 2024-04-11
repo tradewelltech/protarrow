@@ -6,15 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
-## Unreleased
+## [v0.4.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.4.0) - 2024-04-11
 
-<small>[Compare with latest](https://github.com/tradewelltech/protarrow/compare/v0.3.0...HEAD)</small>
+<small>[Compare with v0.3.0](https://github.com/tradewelltech/protarrow/compare/v0.3.0...v0.4.0)</small>
 
 ### Added
 
-- Add missing test ([ca3805e](https://github.com/tradewelltech/protarrow/commit/ca3805ecb84fb5aea93a9150d2d39aab70e7ffc9) by aandres).
+- Add support for optional ([136e8b4](https://github.com/tradewelltech/protarrow/commit/136e8b428e8d7afadae96c56d5ef4c2b6fe9e7c3) by aandres).
+- Add missing test ([0cf04a7](https://github.com/tradewelltech/protarrow/commit/0cf04a7f5bd83d6713fc7b9a093b8037ffe43df0) by aandres).
 
-<!-- insertion marker -->
 
 ## [v0.3.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.3.0) - 2024-03-25
 
