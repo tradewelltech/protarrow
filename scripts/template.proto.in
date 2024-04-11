@@ -26,6 +26,7 @@ message ExampleMessage {
   {{ dtype.protobuf_type }} {{ dtype.name }}_value = {{ loop.index }};
   {% endfor -%}
 
+
   // Repeated values
   {% for dtype in types -%}
   repeated {{ dtype.protobuf_type }} {{ dtype.name }}_values = {{ loop.index + loop.length }};
@@ -34,11 +35,22 @@ message ExampleMessage {
   {% set key_count = [0] %}
   {% for map_key in map_keys -%}
   {% if key_count.append(key_count.pop() + 1) %}{% endif %}
+
+
   // Map with {{map_key}} keys
   {% for dtype in types -%}
   map<{{map_key}}, {{ dtype.protobuf_type }}> {{ dtype.name }}_{{map_key}}_map = {{ loop.index + loop.length * (2 + key_count[0]) }};
   {% endfor -%}
   {% endfor -%}
+
+
+  // Optional
+  {% for dtype in types -%}
+  {% if dtype.can_be_optional() -%}
+  optional {{ dtype.protobuf_type }} optional_{{ dtype.name }}_value = {{ loop.index + loop.length * 6 }};
+  {% endif -%}
+  {% endfor -%}
+
 
 }
 

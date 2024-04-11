@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
 
 package protarrow.protos;
 
@@ -39,4 +40,7 @@ message NestedEmptyMessage {
 message MessageWithOptional {
   optional string optional_string = 1;
   string plain_string = 2;
+  google.protobuf.StringValue string_value = 3;
+  repeated google.protobuf.StringValue string_values = 4;
+
 }
