@@ -1,6 +1,6 @@
 # Protarrow
 
-A python library for converting from protobuf to arrow and back
+A python library for converting from Protocol Buffers to Apache Arrow and back.
 
 ___
 

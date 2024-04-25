@@ -1,2 +1,2 @@
-Python library for converting from Protobuf to Arrow and back
+Python library for converting from Protocol Buffers to Apache Arrow and back.
 Copyright 2022 Protarrow Authors
