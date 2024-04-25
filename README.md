@@ -13,7 +13,7 @@
 
 # Protarrow
 
-**Protarrow** is a python library for converting from protobuf to arrow and back.
+**Protarrow** is a python library for converting from Protocol Buffers to Apache Arrow and back.
 
 It is used at [Tradewell Technologies](https://www.tradewelltech.co/), 
 to share data between transactional and analytical applications,
