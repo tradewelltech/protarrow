@@ -10,5 +10,5 @@ and analytical workload (using [apache arrow](https://arrow.apache.org/)).
 
 [usage]: usage.md
 [types]: types.md
-[development]: development.md
+[contributing]: contributing.md
 [faq]: faq.md

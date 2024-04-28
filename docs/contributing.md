@@ -1,7 +1,9 @@
+# Contributing
 
-# Development
 
-## Set up
+Welcome! We're happy to have you here. Thank you in advance for your contribution to protarrow.
+
+## Development environment set up
 
 ```shell
 python3 -m venv --clear venv
