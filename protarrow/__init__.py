@@ -9,7 +9,7 @@ from protarrow.proto_to_arrow import (
     messages_to_table,
 )
 
-__version__ = "0.0.0"
+__version__ = "0.4.0.post3.dev0+cf1e1bf"
 __all__ = [
     "MessageExtractor",
     "ProtarrowConfig",

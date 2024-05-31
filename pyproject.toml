@@ -1,7 +1,7 @@
 
 [tool.poetry]
 name = "protarrow"
-version = "0.0.0"
+version = "0.4.0.post3.dev0+cf1e1bf"
 description = "Convert from protobuf to arrow and back"
 authors = ["Tradewell Tech <engineering@tradewelltech.co>"]
 maintainers = ["0x26res <0x26res@gmail.com>"]
@@ -16,7 +16,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: Apache Software License",
     "Natural Language :: English",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -26,9 +25,9 @@ keywords = ["apache-arrow", "protobuf", "data"]
 
 [tool.poetry.dependencies]
 googleapis-common-protos = ">=1.53.0"
-protobuf = ">=3.20.1"
+protobuf = ">=3.20.1,<5"
 pyarrow = ">=12.0.0"
-python = ">=3.8,<4"
+python = ">=3.9,<4"
 
 [tool.poetry.group.dev.dependencies]
 Jinja2 = ">=3.1.2"
@@ -49,7 +48,6 @@ pytest = ">=7.2.0"
 pytest-benchmark = ">=4.0.0"
 pytest-xdist = ">=3.1.0"
 
-
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
 build-backend = "poetry_dynamic_versioning.backend"
@@ -68,7 +66,7 @@ skip = [".gitignore"]
 skips = ["B101", "B311"]
 
 [tool.poetry-dynamic-versioning]
-enable = true
+enable = false
 
 [tool.poetry-dynamic-versioning.substitution]
 files = ["*/__init__.py"]
