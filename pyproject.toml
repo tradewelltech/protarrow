@@ -20,6 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 keywords = ["apache-arrow", "protobuf", "data"]
 
@@ -27,7 +28,7 @@ keywords = ["apache-arrow", "protobuf", "data"]
 googleapis-common-protos = ">=1.53.0"
 protobuf = ">=3.20.1"
 pyarrow = ">=12.0.0"
-python = ">=3.8,<3.12"
+python = ">=3.8,<4"
 
 [tool.poetry.group.dev.dependencies]
 Jinja2 = ">=3.1.2"
