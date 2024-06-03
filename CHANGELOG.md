@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.5.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.5.0) - 2024-05-31
+
+<small>[Compare with v0.4.0](https://github.com/tradewelltech/protarrow/compare/v0.4.0...v0.5.0)</small>
+
+### Added
+
+- Add support for python 3.12 ([9b454e1](https://github.com/tradewelltech/protarrow/commit/9b454e1cf284fd96cd5e8c419ab95a2ad84513b1) by aandres).
+- Add contributing and code of conduct, update dependencies (#74) ([f058ce5](https://github.com/tradewelltech/protarrow/commit/f058ce583a93e0dbca027067cd9df075a211c3b9) by 0x26res).
+
 ## [v0.4.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.4.0) - 2024-04-11
 
 <small>[Compare with v0.3.0](https://github.com/tradewelltech/protarrow/compare/v0.3.0...v0.4.0)</small>
