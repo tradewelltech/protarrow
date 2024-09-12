@@ -6,13 +6,25 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
-## [v0.5.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.5.0) - 2024-05-31
+## [v0.6.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.6.0) - 2024-09-12
 
-<small>[Compare with v0.4.0](https://github.com/tradewelltech/protarrow/compare/v0.4.0...v0.5.0)</small>
+<small>[Compare with v0.5.2](https://github.com/tradewelltech/protarrow/compare/v0.5.2...v0.6.0)</small>
 
 ### Added
 
-- Add support for python 3.12 ([9b454e1](https://github.com/tradewelltech/protarrow/commit/9b454e1cf284fd96cd5e8c419ab95a2ad84513b1) by aandres).
+- Add support for protobuf v5, pre-commit and docs ([09cc0b1](https://github.com/tradewelltech/protarrow/commit/09cc0b19f5805b67ad9d45ef8064c6e1b743fd16) by aandres).
+
+## [v0.5.2](https://github.com/tradewelltech/protarrow/releases/tag/v0.5.2) - 2024-06-03
+
+<small>[Compare with v0.5.1](https://github.com/tradewelltech/protarrow/compare/v0.5.1...v0.5.2)</small>
+
+## [v0.5.1](https://github.com/tradewelltech/protarrow/releases/tag/v0.5.1) - 2024-06-03
+
+<small>[Compare with v0.4.0](https://github.com/tradewelltech/protarrow/compare/v0.4.0...v0.5.1)</small>
+
+### Added
+
+- Add support for python 3.12 (#75) ([b178269](https://github.com/tradewelltech/protarrow/commit/b17826994a216b164edeef0a1140c816ec66dbea) by 0x26res).
 - Add contributing and code of conduct, update dependencies (#74) ([f058ce5](https://github.com/tradewelltech/protarrow/commit/f058ce583a93e0dbca027067cd9df075a211c3b9) by 0x26res).
 
 ## [v0.4.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.4.0) - 2024-04-11
@@ -21,9 +33,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Add support for optional ([136e8b4](https://github.com/tradewelltech/protarrow/commit/136e8b428e8d7afadae96c56d5ef4c2b6fe9e7c3) by aandres).
-- Add missing test ([0cf04a7](https://github.com/tradewelltech/protarrow/commit/0cf04a7f5bd83d6713fc7b9a093b8037ffe43df0) by aandres).
+- Add support for optional (#71) ([e4daff8](https://github.com/tradewelltech/protarrow/commit/e4daff8237d30cdfa0e54aaf393dfbd2f71ec3d9) by 0x26res).
+- Add missing test (#70) ([716713b](https://github.com/tradewelltech/protarrow/commit/716713b207308ba613413f3de1fcedf7533ecdcc) by 0x26res).
 
+### Fixed
+
+- Fix documentation configuration (#67) ([1be5113](https://github.com/tradewelltech/protarrow/commit/1be51136236964dcaa7e8b6272817870896b4088) by 0x26res).
 
 ## [v0.3.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.3.0) - 2024-03-25
 
@@ -31,6 +46,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Add change log (#66) ([86bee1c](https://github.com/tradewelltech/protarrow/commit/86bee1cd131887ac785b4f7368cb89a856547db0) by 0x26res).
 - add latest dependencies (#60) ([f693316](https://github.com/tradewelltech/protarrow/commit/f6933167c8f47c8ef34a1287e58c0b8a3a85d932) by 0x26res).
 - Add change log (#59) ([94fb8e5](https://github.com/tradewelltech/protarrow/commit/94fb8e57b545315ec95785235dd186ccd96087a6) by 0x26res).
 - Add ruff ([93b4d8d](https://github.com/tradewelltech/protarrow/commit/93b4d8d73b60becda6d1bfa665e59b597616ec08) by 0x26res).
@@ -38,7 +54,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Fix issue with map chunks (#64) ([b524b65](https://github.com/tradewelltech/protarrow/commit/b524b650bb3ab87ab176189a26c828b6763178cf) by 0x26res).
-
 
 ## [v0.2.4](https://github.com/tradewelltech/protarrow/releases/tag/v0.2.4) - 2023-09-19
 
@@ -114,6 +129,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add badges, tag for python 3.11 ([40d3c5a](https://github.com/tradewelltech/protarrow/commit/40d3c5a9293fc7287f1d08be383fbfd3160bd526) by aandres).
 - Add monthly download ([5adacdb](https://github.com/tradewelltech/protarrow/commit/5adacdb3da6e5653518390cee979a1f0516b9746) by aandres).
 - Add more badges ([6e9778a](https://github.com/tradewelltech/protarrow/commit/6e9778aad5cf8485c0e12f003e0a18a628ffebb1) by aandres).
+- Add py311 ([ad89893](https://github.com/tradewelltech/protarrow/commit/ad898931d7a267d45c5d58a89538b9e153b38d25) by aandres).
 
 ### Fixed
 
@@ -140,7 +156,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v0.1.1](https://github.com/tradewelltech/protarrow/releases/tag/v0.1.1) - 2022-12-20
 
-<small>[Compare with v0.1.0rc2](https://github.com/tradewelltech/protarrow/compare/v0.1.0rc2...v0.1.1)</small>
+<small>[Compare with v0.1.0](https://github.com/tradewelltech/protarrow/compare/v0.1.0...v0.1.1)</small>
 
 ### Added
 
@@ -152,17 +168,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix for 3.8 ([120c576](https://github.com/tradewelltech/protarrow/commit/120c576705e0daf970fa1dad92e76a5fdf55dda6) by aandres).
 - Fix license ([6251314](https://github.com/tradewelltech/protarrow/commit/625131485655d5f3659dc51ed719ff0a035ce2b1) by aandres).
 
-## [v0.1.0rc2](https://github.com/tradewelltech/protarrow/releases/tag/v0.1.0rc2) - 2022-12-14
+## [v0.1.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.1.0) - 2022-12-14
 
-<small>[Compare with v0.1.0rc1](https://github.com/tradewelltech/protarrow/compare/v0.1.0rc1...v0.1.0rc2)</small>
+<small>[Compare with v0.0.4](https://github.com/tradewelltech/protarrow/compare/v0.0.4...v0.1.0)</small>
 
 ### Added
 
 - Add support for casting to and from dictionary encoded enums ([ccaf3d0](https://github.com/tradewelltech/protarrow/commit/ccaf3d0dafe5c3824c1c98056e7b17c1b517a784) by aandres).
-
-## [v0.1.0rc1](https://github.com/tradewelltech/protarrow/releases/tag/v0.1.0rc1) - 2022-12-05
-
-<small>[Compare with v0.0.4](https://github.com/tradewelltech/protarrow/compare/v0.0.4...v0.1.0rc1)</small>
 
 ### Removed
 
@@ -178,39 +190,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v0.0.3](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.3) - 2022-11-30
 
-<small>[Compare with v0.0.3rc6](https://github.com/tradewelltech/protarrow/compare/v0.0.3rc6...v0.0.3)</small>
-
-## [v0.0.3rc6](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.3rc6) - 2022-11-30
-
-<small>[Compare with v0.0.3rc5](https://github.com/tradewelltech/protarrow/compare/v0.0.3rc5...v0.0.3rc6)</small>
+<small>[Compare with v0.0.2](https://github.com/tradewelltech/protarrow/compare/v0.0.2...v0.0.3)</small>
 
 ### Added
 
 - Add code to cast to proto schema ([1fd25bb](https://github.com/tradewelltech/protarrow/commit/1fd25bbaa8d71c46487552f259e13947b9b4572c) by aandres).
-
-## [v0.0.3rc5](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.3rc5) - 2022-11-29
-
-<small>[Compare with v0.0.3rc4](https://github.com/tradewelltech/protarrow/compare/v0.0.3rc4...v0.0.3rc5)</small>
-
-## [v0.0.3rc4](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.3rc4) - 2022-11-28
-
-<small>[Compare with v0.0.3rc3](https://github.com/tradewelltech/protarrow/compare/v0.0.3rc3...v0.0.3rc4)</small>
-
-### Added
-
 - Add more customization options ([8e9e862](https://github.com/tradewelltech/protarrow/commit/8e9e862000929f830aadfe810bb6b35ef7a2f6e7) by aandres).
-
-## [v0.0.3rc3](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.3rc3) - 2022-11-28
-
-<small>[Compare with v0.0.3rc2](https://github.com/tradewelltech/protarrow/compare/v0.0.3rc2...v0.0.3rc3)</small>
-
-## [v0.0.3rc2](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.3rc2) - 2022-11-28
-
-<small>[Compare with v0.0.3rc1](https://github.com/tradewelltech/protarrow/compare/v0.0.3rc1...v0.0.3rc2)</small>
-
-## [v0.0.3rc1](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.3rc1) - 2022-11-27
-
-<small>[Compare with v0.0.2](https://github.com/tradewelltech/protarrow/compare/v0.0.2...v0.0.3rc1)</small>
 
 ### Fixed
 
@@ -227,73 +212,26 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v0.0.1](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.1) - 2022-11-26
 
-<small>[Compare with v0.0.1.rc6](https://github.com/tradewelltech/protarrow/compare/v0.0.1.rc6...v0.0.1)</small>
+<small>[Compare with first commit](https://github.com/tradewelltech/protarrow/compare/b504418b12af0dc4b6eee5f28a13fdbe212ca380...v0.0.1)</small>
 
 ### Added
 
 - Add documentation badge ([a0447c5](https://github.com/tradewelltech/protarrow/commit/a0447c5364b553b659afd0dc6d02c9111129a224) by aandres).
 - Add requirements for docs ([197affc](https://github.com/tradewelltech/protarrow/commit/197affc679d94d35d394a1ffc09c6fcdc28d147d) by aandres).
 - Add docs ([29fc146](https://github.com/tradewelltech/protarrow/commit/29fc146601273c67bc79b8614765c74f073d3302) by aandres).
-
-## [v0.0.1.rc6](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.1.rc6) - 2022-11-25
-
-<small>[Compare with v0.0.1.rc5](https://github.com/tradewelltech/protarrow/compare/v0.0.1.rc5...v0.0.1.rc6)</small>
-
-### Added
-
-- Add py311 ([ad89893](https://github.com/tradewelltech/protarrow/commit/ad898931d7a267d45c5d58a89538b9e153b38d25) by aandres).
-
-### Fixed
-
-- Fix 3.8 ([3a8c49e](https://github.com/tradewelltech/protarrow/commit/3a8c49e2cb9e748cebd2e81304cb9c5ef92bc509) by aandres).
-
-## [v0.0.1.rc5](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.1.rc5) - 2022-11-25
-
-<small>[Compare with v0.0.1.rc4](https://github.com/tradewelltech/protarrow/compare/v0.0.1.rc4...v0.0.1.rc5)</small>
-
-### Changed
-
-- Change branch ([34305df](https://github.com/tradewelltech/protarrow/commit/34305df4b1fae903b2aa6e5dfae28ce463f41282) by aandres).
-
-## [v0.0.1.rc4](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.1.rc4) - 2022-11-25
-
-<small>[Compare with v0.0.1.rc3](https://github.com/tradewelltech/protarrow/compare/v0.0.1.rc3...v0.0.1.rc4)</small>
-
-### Fixed
-
-- Fix lint ([03c6cb9](https://github.com/tradewelltech/protarrow/commit/03c6cb997474bfc8a0ba64c4cbccb481d0473423) by aandres).
-- Fix protoc ([7f4f21b](https://github.com/tradewelltech/protarrow/commit/7f4f21b2b264cc45379bdf0c6f98aefd5896d5c7) by aandres).
-
-## [v0.0.1.rc3](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.1.rc3) - 2022-11-24
-
-<small>[Compare with v0.0.1.rc2](https://github.com/tradewelltech/protarrow/compare/v0.0.1.rc2...v0.0.1.rc3)</small>
-
-## [v0.0.1.rc2](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.1.rc2) - 2022-11-23
-
-<small>[Compare with v0.0.1.rc1](https://github.com/tradewelltech/protarrow/compare/v0.0.1.rc1...v0.0.1.rc2)</small>
-
-### Added
-
 - Add license ([018b5cf](https://github.com/tradewelltech/protarrow/commit/018b5cfbb8eb75becaf74c0bd870f260fcd9768d) by aandres).
 - Add examples ([38b0188](https://github.com/tradewelltech/protarrow/commit/38b0188d747fe96b40cfd66463daeb5b431a6d48) by aandres).
 - Add case for missing nested list ([6198973](https://github.com/tradewelltech/protarrow/commit/61989730e5702edd69dd911b0820a24a6188aa3f) by aandres).
-
-## [v0.0.1.rc1](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.1.rc1) - 2022-11-21
-
-<small>[Compare with v0.0.1.rc](https://github.com/tradewelltech/protarrow/compare/v0.0.1.rc...v0.0.1.rc1)</small>
-
-### Added
-
 - Add readme and version plugin ([6569c78](https://github.com/tradewelltech/protarrow/commit/6569c785bb3af6557ce73b4d1bcd0d5e90b10c90) by aandres).
-
-## [v0.0.1.rc](https://github.com/tradewelltech/protarrow/releases/tag/v0.0.1.rc) - 2022-11-17
-
-<small>[Compare with first commit](https://github.com/tradewelltech/protarrow/compare/b504418b12af0dc4b6eee5f28a13fdbe212ca380...v0.0.1.rc)</small>
-
-### Added
-
 - Add test around wrapper types ([d6efa64](https://github.com/tradewelltech/protarrow/commit/d6efa64b6c51bfa5ed760f0e85a9544d24a05edd) by aandres).
 
 ### Fixed
 
+- Fix 3.8 ([3a8c49e](https://github.com/tradewelltech/protarrow/commit/3a8c49e2cb9e748cebd2e81304cb9c5ef92bc509) by aandres).
+- Fix lint ([03c6cb9](https://github.com/tradewelltech/protarrow/commit/03c6cb997474bfc8a0ba64c4cbccb481d0473423) by aandres).
+- Fix protoc ([7f4f21b](https://github.com/tradewelltech/protarrow/commit/7f4f21b2b264cc45379bdf0c6f98aefd5896d5c7) by aandres).
 - Fix typo ([85e4f68](https://github.com/tradewelltech/protarrow/commit/85e4f685ea52a3b64074d0e1a38e75df68136be5) by aandres).
+
+### Changed
+
+- Change branch ([34305df](https://github.com/tradewelltech/protarrow/commit/34305df4b1fae903b2aa6e5dfae28ce463f41282) by aandres).
