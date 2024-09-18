@@ -2,6 +2,7 @@
 These tests are here to get the coverage to 100%
 They cover scenarios that don't make sense IRL.
 """
+
 import dataclasses
 import datetime
 from typing import Optional
