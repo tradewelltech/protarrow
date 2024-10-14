@@ -57,13 +57,14 @@ my_proto_1 = message_extractor.read_table_row(table, 1)
 
 ## Customize arrow type
 
-The arrow type for `Enum`, `Timestamp` and `TimeOfDay` can be configured:
+The arrow type for `Enum`, `Timestamp` and `TimeOfDay` and `Duration` can be configured:
 
 ```python
 config = protarrow.ProtarrowConfig(
     enum_type=pa.int32(),
     timestamp_type=pa.timestamp("ms", "America/New_York"),
     time_of_day_type=pa.time32("ms"),
+    duration_type=pa.duration("s"),
 )
 record_batch = protarrow.messages_to_record_batch(my_protos, MyProto, config)
 ```

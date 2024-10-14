@@ -3,6 +3,7 @@ from typing import Any, Optional, Tuple, Type
 import pyarrow as pa
 import pyarrow.compute as pc
 from google.protobuf.descriptor import Descriptor, FieldDescriptor
+from google.protobuf.duration_pb2 import Duration
 from google.protobuf.message import Message
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.type.timeofday_pb2 import TimeOfDay
@@ -52,6 +53,8 @@ def _cast_flat_array(
             return array.cast(config.time_of_day_type)
         elif field_descriptor.message_type == Timestamp.DESCRIPTOR:
             return array.cast(config.timestamp_type)
+        elif field_descriptor.message_type == Duration.DESCRIPTOR:
+            return array.cast(config.duration_type)
         elif field_descriptor.message_type in _PROTO_DESCRIPTOR_TO_PYARROW:
             return array.cast(
                 _PROTO_DESCRIPTOR_TO_PYARROW[field_descriptor.message_type]

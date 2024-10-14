@@ -66,6 +66,7 @@ TYPES = [
     TypeTemplate.logical("google.type.Date"),
     TypeTemplate.logical("google.type.TimeOfDay"),
     TypeTemplate.logical("google.protobuf.Empty"),
+    TypeTemplate.logical("google.protobuf.Duration"),
 ]
 
 MAP_KEYS = ["int32", "string"]
