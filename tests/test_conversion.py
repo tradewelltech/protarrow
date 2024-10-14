@@ -4,6 +4,7 @@ from typing import Any, Iterable, List, Type
 import pyarrow as pa
 import pytest
 from google.protobuf.descriptor import FieldDescriptor
+from google.protobuf.duration_pb2 import Duration
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.json_format import Parse
 from google.protobuf.message import Message
@@ -40,8 +41,9 @@ from protarrow_protos.bench_pb2 import (
     SuperNestedExampleMessage,
 )
 from protarrow_protos.example_pb2 import EmptyMessage, NestedEmptyMessage
-from tests.random_generator import generate_messages, truncate_nanos
+from tests.random_generator import generate_messages, truncate_messages, truncate_nanos
 
+TEST_MESSAGE_COUNT = 5
 MESSAGES = [ExampleMessage, NestedExampleMessage, SuperNestedExampleMessage]
 CONFIGS = [
     ProtarrowConfig(),
@@ -62,6 +64,10 @@ CONFIGS = [
     ProtarrowConfig(time_of_day_type=pa.time64("us")),
     ProtarrowConfig(time_of_day_type=pa.time32("ms")),
     ProtarrowConfig(time_of_day_type=pa.time32("s")),
+    ProtarrowConfig(duration_type=pa.duration("s")),
+    ProtarrowConfig(duration_type=pa.duration("ms")),
+    ProtarrowConfig(duration_type=pa.duration("us")),
+    ProtarrowConfig(duration_type=pa.duration("ns")),
     ProtarrowConfig(list_nullable=True),
     ProtarrowConfig(map_nullable=True),
     ProtarrowConfig(map_value_nullable=True),
@@ -105,10 +111,7 @@ def test_with_random(message_type: Type[Message], config: ProtarrowConfig):
     source_messages = generate_messages(message_type, 10)
     table = messages_to_table(source_messages, message_type, config)
     messages_back = table_to_messages(table, message_type)
-    truncated_messages = [
-        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
-        for m in source_messages
-    ]
+    truncated_messages = truncate_messages(source_messages, config)
     _check_messages_same(truncated_messages, messages_back)
 
 
@@ -121,10 +124,7 @@ def test_with_random_not_aligned(
     source_messages = generate_messages(message_type, 3)
     table = messages_to_table(source_messages, message_type, config)
     messages_back = table_to_messages(table[index:], message_type)
-    truncated_messages = [
-        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
-        for m in source_messages[index:]
-    ]
+    truncated_messages = truncate_messages(source_messages[index:], config)
     _check_messages_same(truncated_messages, messages_back)
 
 
@@ -138,10 +138,7 @@ def test_with_sample_data(message_type: Type[Message], config: ProtarrowConfig):
 
     table = messages_to_table(source_messages, message_type, config)
     messages_back = table_to_messages(table, message_type)
-    truncated_messages = [
-        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
-        for m in source_messages
-    ]
+    truncated_messages = truncate_messages(source_messages, config)
     _check_messages_same(truncated_messages, messages_back)
 
 
@@ -281,26 +278,28 @@ def test_check_init_sorted():
 
 def test_truncate_nanos():
     assert truncate_nanos(
-        Timestamp(seconds=10, nanos=123456789),
-        "s",
-        "us",
+        Timestamp(seconds=10, nanos=123456789), "s", "us", "s"
     ) == Timestamp(seconds=10)
 
     assert truncate_nanos(
-        Timestamp(seconds=10, nanos=123456789), "ms", "us"
+        Timestamp(seconds=10, nanos=123456789), "ms", "us", "s"
     ) == Timestamp(seconds=10, nanos=123000000)
 
     assert truncate_nanos(
-        Timestamp(seconds=10, nanos=123456789), "us", "us"
+        Timestamp(seconds=10, nanos=123456789), "us", "us", "s"
     ) == Timestamp(seconds=10, nanos=123456000)
 
     assert truncate_nanos(
-        Timestamp(seconds=10, nanos=123456789), "ns", "us"
+        Timestamp(seconds=10, nanos=123456789), "ns", "us", "s"
     ) == Timestamp(seconds=10, nanos=123456789)
 
     assert truncate_nanos(
-        TimeOfDay(seconds=10, nanos=123456789), "ns", "us"
+        TimeOfDay(seconds=10, nanos=123456789), "ns", "us", "s"
     ) == TimeOfDay(seconds=10, nanos=123456000)
+
+    assert truncate_nanos(
+        Duration(seconds=10, nanos=123456789), "ns", "us", "us"
+    ) == Duration(seconds=10, nanos=123456000)
 
 
 def test_truncate_nested():
@@ -312,6 +311,7 @@ def test_truncate_nested():
         ),
         "us",
         "ms",
+        "ns",
     ) == ExampleMessage(
         timestamp_value=Timestamp(seconds=10, nanos=123_456_000),
         timestamp_string_map={"foo": Timestamp(seconds=10, nanos=123_456_000)},
@@ -330,6 +330,7 @@ def test_truncate_nested_nested():
         ),
         "us",
         "ms",
+        "ns",
     ) == NestedExampleMessage(
         example_message=ExampleMessage(
             timestamp_value=Timestamp(seconds=10, nanos=123_456_000),
@@ -433,7 +434,7 @@ def test_create_enum_converter_wrong_type():
 @pytest.mark.parametrize("message_type", MESSAGES)
 @pytest.mark.parametrize("config", CONFIGS)
 def test_cast_empty(message_type: Type[Message], config: ProtarrowConfig):
-    table = pa.table({"nulls": pa.nulls(10, pa.null())})
+    table = pa.table({"nulls": pa.nulls(TEST_MESSAGE_COUNT, pa.null())})
     casted_table = cast_table(table, message_type, config)
     assert len(table) == len(casted_table)
     assert casted_table.schema == message_type_to_schema(message_type, config)
@@ -442,7 +443,7 @@ def test_cast_empty(message_type: Type[Message], config: ProtarrowConfig):
 @pytest.mark.parametrize("message_type", MESSAGES)
 @pytest.mark.parametrize("config", CONFIGS)
 def test_cast_same(message_type: Type[Message], config: ProtarrowConfig):
-    source_messages = generate_messages(message_type, 10)
+    source_messages = generate_messages(message_type, TEST_MESSAGE_COUNT)
     table = messages_to_table(source_messages, message_type, config)
     casted_table = cast_table(table, message_type, config)
     assert table == casted_table
@@ -451,10 +452,11 @@ def test_cast_same(message_type: Type[Message], config: ProtarrowConfig):
 @pytest.mark.parametrize("message_type", MESSAGES)
 @pytest.mark.parametrize("config", CONFIGS)
 def test_cast_same_view(message_type: Type[Message], config: ProtarrowConfig):
-    source_messages = generate_messages(message_type, 10)
+    source_messages = generate_messages(message_type, TEST_MESSAGE_COUNT)
     table = messages_to_table(source_messages, message_type, config)
 
-    view = table[5:]
+    assert 2 + 1 < TEST_MESSAGE_COUNT, "View too small"
+    view = table[2:]
     casted_view = cast_table(view, message_type, config)
     assert casted_view == view
 
@@ -476,7 +478,7 @@ def test_can_cast_enum_to_dictionary_and_back(
     plain_config = ProtarrowConfig(enum_type=pa.string())
     dict_config = ProtarrowConfig(enum_type=pa.dictionary(pa.int32(), pa.string()))
 
-    source_messages = generate_messages(message_type, 10)
+    source_messages = generate_messages(message_type, TEST_MESSAGE_COUNT)
 
     plain_table = messages_to_table(source_messages, message_type, plain_config)
     dict_table = messages_to_table(source_messages, message_type, dict_config)
@@ -490,17 +492,14 @@ def test_can_cast_enum_to_dictionary_and_back(
 @pytest.mark.parametrize("message_type", MESSAGES)
 @pytest.mark.parametrize("config", CONFIGS)
 def test_extractor(message_type: Type[Message], config: ProtarrowConfig):
-    source_messages = [m for m in generate_messages(message_type, 10)]
+    source_messages = generate_messages(message_type, TEST_MESSAGE_COUNT)
 
     table = messages_to_table(source_messages, message_type, config)
     message_extractor = MessageExtractor(table.schema, message_type)
     messages_back = [
         message_extractor.read_table_row(table, row) for row in range(len(table))
     ]
-    truncated_messages = [
-        truncate_nanos(m, config.timestamp_type.unit, config.time_of_day_type.unit)
-        for m in source_messages
-    ]
+    truncated_messages = truncate_messages(source_messages, config)
     _check_messages_same(truncated_messages, messages_back)
 
 
@@ -802,3 +801,24 @@ def test_map_cast():
         ].to_pylist()
         == array[1:].to_pylist()
     )
+
+
+@pytest.mark.parametrize("config", CONFIGS)
+def test_duration(config):
+    messages = [ExampleMessage(duration_value=Duration(seconds=10, nanos=123456789))]
+    table = protarrow.messages_to_record_batch(messages, ExampleMessage, config)
+    assert isinstance(table, pa.RecordBatch)
+    messages_back = protarrow.record_batch_to_messages(table, ExampleMessage)
+    expected = truncate_messages(messages, config)
+    assert messages_back == expected
+
+
+def test_duration_specific():
+    messages = [ExampleMessage(duration_value=Duration(seconds=10, nanos=123456789))]
+    config = protarrow.ProtarrowConfig(duration_type=pa.duration("us"))
+    expected = truncate_messages(messages, config)
+    table = protarrow.messages_to_record_batch(messages, ExampleMessage, config)
+    assert table.schema.field("duration_value").type == pa.duration("us")
+    assert isinstance(table, pa.RecordBatch)
+    messages_back = protarrow.record_batch_to_messages(table, ExampleMessage)
+    assert messages_back == expected

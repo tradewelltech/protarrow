@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.7.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.7.0) - 2024-10-14
+
+<small>[Compare with v0.6.0](https://github.com/tradewelltech/protarrow/compare/v0.6.0...v0.7.0)</small>
+
+### Added
+
+- Add support for duration ([c9ab1e2](https://github.com/tradewelltech/protarrow/commit/c9ab1e203712a503dec6bbbd58d340ca37542de5) by aandres).
+
 ## [v0.6.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.6.0) - 2024-09-12
 
 <small>[Compare with v0.5.2](https://github.com/tradewelltech/protarrow/compare/v0.5.2...v0.6.0)</small>

@@ -4,11 +4,13 @@ import secrets
 import typing
 
 from google.protobuf.descriptor import EnumDescriptor, FieldDescriptor
+from google.protobuf.duration_pb2 import Duration
 from google.protobuf.message import Message
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.type.date_pb2 import Date
 from google.type.timeofday_pb2 import TimeOfDay
 
+import protarrow
 from protarrow.common import M
 from protarrow.proto_to_arrow import is_map
 
@@ -27,6 +29,13 @@ def random_bytes(count: int) -> bytes:
 
 def random_timestamp() -> Timestamp:
     return Timestamp(
+        seconds=random.randint(-9223372036, 9223372035),
+        nanos=random.randint(0, 999_999_999),
+    )
+
+
+def random_duration() -> Duration:
+    return Duration(
         seconds=random.randint(-9223372036, 9223372035),
         nanos=random.randint(0, 999_999_999),
     )
@@ -65,6 +74,7 @@ MESSAGE_GENERATORS = {
     Date.DESCRIPTOR: random_date,
     Timestamp.DESCRIPTOR: random_timestamp,
     TimeOfDay.DESCRIPTOR: random_time_of_day,
+    Duration.DESCRIPTOR: random_duration,
 }
 
 
@@ -145,11 +155,35 @@ def _generate_enum(enum: EnumDescriptor) -> int:
     return random.choice(enum.values).index
 
 
-def truncate_nanos(message: Message, timestamp_unit: str, time_unit: str) -> Message:
+def truncate_messages(
+    messages: list[Message], config: protarrow.ProtarrowConfig
+) -> list[Message]:
+    return [
+        truncate_nanos(
+            m,
+            config.timestamp_type.unit,
+            config.time_of_day_type.unit,
+            config.duration_type.unit,
+        )
+        for m in messages
+    ]
+
+
+def truncate_nanos(
+    message: Message,
+    timestamp_unit: str,
+    time_unit: str,
+    duration_unit: str,
+) -> Message:
     if message.DESCRIPTOR == Timestamp.DESCRIPTOR:
         message.nanos = (
             message.nanos // UNIT_IN_NANOS[timestamp_unit]
         ) * UNIT_IN_NANOS[timestamp_unit]
+    elif message.DESCRIPTOR == Duration.DESCRIPTOR:
+        message.nanos = (message.nanos // UNIT_IN_NANOS[duration_unit]) * UNIT_IN_NANOS[
+            duration_unit
+        ]
+
     elif message.DESCRIPTOR == TimeOfDay.DESCRIPTOR:
         message.nanos = (message.nanos // UNIT_IN_NANOS[time_unit]) * UNIT_IN_NANOS[
             time_unit
@@ -168,13 +202,20 @@ def truncate_nanos(message: Message, timestamp_unit: str, time_unit: str) -> Mes
                             == FieldDescriptor.TYPE_MESSAGE
                         ):
                             for key, value in field_value.items():
-                                truncate_nanos(value, timestamp_unit, time_unit)
+                                truncate_nanos(
+                                    value, timestamp_unit, time_unit, duration_unit
+                                )
 
                     else:
                         for item in field_value:
-                            truncate_nanos(item, timestamp_unit, time_unit)
+                            truncate_nanos(
+                                item, timestamp_unit, time_unit, duration_unit
+                            )
                 elif message.HasField(field.name):
                     truncate_nanos(
-                        getattr(message, field.name), timestamp_unit, time_unit
+                        getattr(message, field.name),
+                        timestamp_unit,
+                        time_unit,
+                        duration_unit,
                     )
     return message

@@ -19,6 +19,7 @@ import pyarrow as pa
 import pyarrow.compute as pc
 from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
 from google.protobuf.descriptor_pb2 import FieldDescriptorProto
+from google.protobuf.duration_pb2 import Duration
 from google.protobuf.internal.containers import MessageMap, RepeatedScalarFieldContainer
 from google.protobuf.message import Message
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -125,6 +126,13 @@ _TIME_OF_DAY_CONVERTERS = {
     "ms": _time_of_day_to_millis,
     "us": _time_of_day_to_micros,
     "ns": _time_of_day_to_nanos,
+}
+
+_DURATION_CONVERTERS = {
+    "s": Duration.ToSeconds,
+    "ms": Duration.ToMilliseconds,
+    "us": Duration.ToMicroseconds,
+    "ns": Duration.ToNanoseconds,
 }
 
 
@@ -286,6 +294,8 @@ def field_descriptor_to_data_type(
         return config.timestamp_type
     elif field_descriptor.message_type == TimeOfDay.DESCRIPTOR:
         return config.time_of_day_type
+    elif field_descriptor.message_type == Duration.DESCRIPTOR:
+        return config.duration_type
     elif field_descriptor.type == FieldDescriptorProto.TYPE_MESSAGE:
         try:
             return _PROTO_DESCRIPTOR_TO_PYARROW[field_descriptor.message_type]
@@ -314,6 +324,8 @@ def _get_converter(
 ) -> Optional[Callable[[Any], Any]]:
     if field_descriptor.message_type == Timestamp.DESCRIPTOR:
         return _TIMESTAMP_CONVERTERS[config.timestamp_type.unit]
+    elif field_descriptor.message_type == Duration.DESCRIPTOR:
+        return _DURATION_CONVERTERS[config.duration_type.unit]
     elif field_descriptor.message_type == TimeOfDay.DESCRIPTOR:
         return _TIME_OF_DAY_CONVERTERS[config.time_of_day_type.unit]
     elif field_descriptor.type == FieldDescriptorProto.TYPE_MESSAGE:

@@ -5,6 +5,7 @@ from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Typ
 
 import pyarrow as pa
 from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
+from google.protobuf.duration_pb2 import Duration
 from google.protobuf.internal.containers import MessageMap
 from google.protobuf.message import Message
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -75,6 +76,29 @@ def _time_64_ns_scalar_to_proto(scalar: pa.Time64Scalar) -> TimeOfDay:
     )
 
 
+def _duration_ns_scalar_to_proto(scalar: pa.DurationScalar) -> Duration:
+    total_nanos = scalar.value
+    return Duration(
+        nanos=total_nanos % 1_000_000_000, seconds=(total_nanos // 1_000_000_000)
+    )
+
+
+def _duration_us_scalar_to_proto(scalar: pa.DurationScalar) -> Duration:
+    total_us = scalar.value
+    return Duration(
+        nanos=(total_us % 1_000_000) * 1_000, seconds=(total_us // 1_000_000)
+    )
+
+
+def _duration_ms_scalar_to_proto(scalar: pa.DurationScalar) -> Duration:
+    total_us = scalar.value
+    return Duration(nanos=(total_us % 1_000) * 1_000_000, seconds=(total_us // 1_000))
+
+
+def _duration_s_scalar_to_proto(scalar: pa.DurationScalar) -> Duration:
+    return Duration(seconds=scalar.value)
+
+
 def _time_64_us_scalar_to_proto(scalar: pa.Time64Scalar) -> TimeOfDay:
     total_us = scalar.value
     return TimeOfDay(
@@ -112,6 +136,13 @@ TIME_OF_DAY_CONVERTERS = {
     pa.time32("s"): _time_32_s_scalar_to_proto,
 }
 
+DURATION_CONVERTERS = {
+    "ns": _duration_ns_scalar_to_proto,
+    "us": _duration_us_scalar_to_proto,
+    "ms": _duration_ms_scalar_to_proto,
+    "s": _duration_s_scalar_to_proto,
+}
+
 TIMESTAMP_CONVERTERS = {
     "ns": _timestamp_ns_scalar_to_proto,
     "us": _timestamp_us_scalar_to_proto,
@@ -123,6 +154,7 @@ TEMPORAL_CONVERTERS = {
     Timestamp.DESCRIPTOR: lambda data_type: TIMESTAMP_CONVERTERS[data_type.unit],
     Date.DESCRIPTOR: lambda _: _date_scalar_to_proto,
     TimeOfDay.DESCRIPTOR: TIME_OF_DAY_CONVERTERS.__getitem__,
+    Duration.DESCRIPTOR: lambda data_type: DURATION_CONVERTERS[data_type.unit],
 }
 
 NULLABLE_TYPES = (

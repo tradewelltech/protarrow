@@ -20,6 +20,7 @@ class ProtarrowConfig:
     enum_type: pa.DataType = pa.int32()
     timestamp_type: pa.TimestampType = pa.timestamp("ns", "UTC")
     time_of_day_type: Union[pa.Time64Type, pa.Time32Type] = pa.time64("ns")
+    duration_type: pa.DurationType = pa.duration("ns")
     list_nullable: bool = False
     map_nullable: bool = False
     list_value_nullable: bool = False
