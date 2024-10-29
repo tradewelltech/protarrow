@@ -383,7 +383,7 @@ def _proto_field_to_array(
 
 
 def _get_offsets(
-    repeated_values: Iterable[Union[RepeatedScalarFieldContainer, MessageMap]]
+    repeated_values: Iterable[Union[RepeatedScalarFieldContainer, MessageMap]],
 ) -> List[int]:
     last_offset = 0
     offsets = []
