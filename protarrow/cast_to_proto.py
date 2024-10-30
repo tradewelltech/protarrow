@@ -91,6 +91,7 @@ def _cast_array(
         key_field, value_field = get_map_descriptors(field_descriptor)
         map_array = pa.MapArray.from_arrays(
             # TODO: remove when https://github.com/apache/arrow/issues/40750 is fixed
+            #  and library is pinned to pyarrow>=17.0.0
             maybe_copy_offsets(array.offsets),
             _cast_array(array.keys, key_field, config),
             _cast_array(array.items, value_field, config),
