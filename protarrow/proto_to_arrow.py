@@ -520,15 +520,16 @@ def _messages_to_array(
                 nullable=_proto_field_nullable(field_descriptor, config),
             )
         )
-
+    if validity_mask is not None:
+        mask = pc.invert(pa.array(validity_mask, pa.bool_()))
+    elif len(arrays) == 0:
+        mask = pa.repeat(False, len(messages))  # type: ignore[arg-type]
+    else:
+        mask = None
     return pa.StructArray.from_arrays(
         arrays=arrays,
         fields=fields,
-        mask=(
-            pc.invert(pa.array(validity_mask, pa.bool_()))
-            if validity_mask is not None
-            else pa.repeat(False, len(messages))
-        ),
+        mask=mask,
     )
 
 
