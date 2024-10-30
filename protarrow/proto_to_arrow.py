@@ -100,7 +100,7 @@ def _proto_date_to_py_date(proto_date: Date) -> datetime.date:
         return datetime.date(proto_date.year, proto_date.month, proto_date.day)
 
 
-_PROTO_DESCRIPTOR_TO_ARROW_CONVERTER = {
+_PROTO_DESCRIPTOR_TO_ARROW_CONVERTER: dict[Descriptor, Callable[[Any], Any]] = {
     Date.DESCRIPTOR: _proto_date_to_py_date,
     TimeOfDay.DESCRIPTOR: _time_of_day_to_nanos,
     BoolValue.DESCRIPTOR: operator.attrgetter("value"),
@@ -147,7 +147,7 @@ class FlattenedIterable(collections.abc.Iterable):
                     yield child
 
     def __len__(self) -> int:
-        return sum(len(i) for i in self.parents if i)
+        return sum(len(i) for i in self.parents if i is not None)
 
 
 @dataclasses.dataclass(frozen=True)
