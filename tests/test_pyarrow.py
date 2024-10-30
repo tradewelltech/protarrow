@@ -3,7 +3,6 @@ Tests the behavior of pyarrow
 """
 
 import pyarrow as pa
-import pytest
 
 
 def test_pyarrow_list_array_slices():
@@ -131,12 +130,9 @@ def test_arrow_bug_40750():
     )
     assert len(map_array) == 5
     assert map_array.to_pylist() == [[]] * 5
-    with pytest.raises(
-        pa.ArrowInvalid,
-        match=r"List child array invalid: Invalid: Struct child array #0 has length smaller than expected for struct array \(0 < 1\)",
-    ):
-        pa.MapArray.from_arrays(
-            offsets[1:],
-            pa.array([], pa.string()),
-            pa.array([], pa.string()),
-        )
+
+    pa.MapArray.from_arrays(
+        offsets[1:],
+        pa.array([], pa.string()),
+        pa.array([], pa.string()),
+    )
