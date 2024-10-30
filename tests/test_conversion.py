@@ -28,6 +28,7 @@ from protarrow.common import M, ProtarrowConfig, offset_values_array
 from protarrow.message_extractor import MessageExtractor
 from protarrow.proto_to_arrow import (
     NestedIterable,
+    _messages_to_array,
     _repeated_proto_to_array,
     field_descriptor_to_field,
     message_type_to_schema,
@@ -197,6 +198,27 @@ def test_enum_values_as_int():
         ProtarrowConfig(),
     )
     assert array.to_pylist() == [[0, 1, 0], [], []]
+
+
+def test_messages_to_array_empty():
+    assert _messages_to_array(
+        [Empty(), Empty()], Empty.DESCRIPTOR, None, ProtarrowConfig()
+    ) == pa.StructArray.from_arrays([], names=[], mask=pa.array([False, False]))
+
+
+def test_empty_values():
+    records = [
+        ExampleMessage(empty_values=[Empty(), Empty(), Empty()]),
+        ExampleMessage(empty_values=[]),
+        ExampleMessage(),
+    ]
+
+    array = _repeated_proto_to_array(
+        NestedIterable(records, lambda x: x.empty_values),
+        ExampleMessage.DESCRIPTOR.fields_by_name["empty_values"],
+        ProtarrowConfig(),
+    )
+    assert array.to_pylist() == [[{}, {}, {}], [], []]
 
 
 @pytest.mark.parametrize(
