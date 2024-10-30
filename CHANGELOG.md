@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Add toml format ([a8d573f](https://github.com/tradewelltech/protarrow/commit/a8d573f1d15c64490a3de2cb2c89bc762ef0b7c3) by aandres3).
 - Add ignore for type check ([08f591f](https://github.com/tradewelltech/protarrow/commit/08f591f5625f0cf3bd43ba2f61cb3c0a1795c0e2) by aandres3).
 
 ## [v0.7.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.7.0) - 2024-10-14

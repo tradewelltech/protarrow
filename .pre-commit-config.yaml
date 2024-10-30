@@ -21,3 +21,10 @@ repos:
         additional_dependencies:
           - ".[toml]"
         args: [--config=pyproject.toml]
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.14.0
+    hooks:
+      - id: pretty-format-toml
+        files: "^.*.toml"
+        args:
+          - "--autofix"
