@@ -108,7 +108,9 @@ def _cast_array(
         )
 
     elif field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
-        assert isinstance(array, pa.ListArray)
+        assert isinstance(
+            array, (pa.ListArray, pa.LargeListArray, pa.FixedSizeListArray)
+        )
         item_array = _cast_flat_array(array.values, field_descriptor, config)
         return pa.ListArray.from_arrays(
             array.offsets,

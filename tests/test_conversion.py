@@ -221,6 +221,19 @@ def test_empty_values():
     assert array.to_pylist() == [[{}, {}, {}], [], []]
 
 
+def test_empty_values_end_to_end():
+    records = [
+        ExampleMessage(empty_values=[Empty(), Empty(), Empty()]),
+        ExampleMessage(empty_values=[]),
+        ExampleMessage(),
+    ]
+
+    array = protarrow.messages_to_record_batch(
+        records, ExampleMessage, ProtarrowConfig()
+    )
+    assert array.to_pylist() == [[{}, {}, {}], [], []]
+
+
 @pytest.mark.parametrize(
     ["config", "expected"],
     [
@@ -844,3 +857,26 @@ def test_duration_specific():
     assert isinstance(table, pa.RecordBatch)
     messages_back = protarrow.record_batch_to_messages(table, ExampleMessage)
     assert messages_back == expected
+
+
+def test_large_list_in_cast():
+    table = pa.table(
+        {
+            "double_values": pa.LargeListArray.from_arrays(
+                offsets=[0, 3, 3, 5],
+                values=[1.1, 2.2, 3.3, 4.4, 5.5],
+            )
+        }
+    )
+    assert isinstance(cast_table(table, ExampleMessage, ProtarrowConfig()), pa.Table)
+
+
+def test_fixed_list_in_cast():
+    table = pa.table(
+        {
+            "double_values": pa.FixedSizeListArray.from_arrays(
+                values=[1.1, 2.2, 3.3, 4.4, 5.5, None], list_size=3
+            )
+        }
+    )
+    assert isinstance(cast_table(table, ExampleMessage, ProtarrowConfig()), pa.Table)

@@ -6,14 +6,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
-## [v0.8.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.8.0) - 2024-10-30
+## [v0.8.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.8.0) - 2024-11-01
 
 <small>[Compare with v0.7.0](https://github.com/tradewelltech/protarrow/compare/v0.7.0...v0.8.0)</small>
 
 ### Added
 
-- Add toml format ([a8d573f](https://github.com/tradewelltech/protarrow/commit/a8d573f1d15c64490a3de2cb2c89bc762ef0b7c3) by aandres3).
-- Add ignore for type check ([08f591f](https://github.com/tradewelltech/protarrow/commit/08f591f5625f0cf3bd43ba2f61cb3c0a1795c0e2) by aandres3).
+- Add support for large list ([7ed0999](https://github.com/tradewelltech/protarrow/commit/7ed0999b24beb719fec59f7c09f4626e2b39b3a4) by aandres3).
+- Add toml format (#83) ([0458ba6](https://github.com/tradewelltech/protarrow/commit/0458ba6dca84ea37becccbf7c8197b658c9971b6) by 0x26res).
+- add test and ignore type checks (#82) ([30ed8b1](https://github.com/tradewelltech/protarrow/commit/30ed8b18ff91b97d0d4c6e2b3bc58fb3ad3e1c49) by 0x26res).
+
 
 ## [v0.7.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.7.0) - 2024-10-14
 

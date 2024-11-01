@@ -56,5 +56,5 @@ This works, but it has a few drawbacks:
 
 - It can't guess the types for missing values, empty list, empty map, empty input.
 - Special types like date and timestamp are not supported.
-- Integer and floats will be casted to there 64 bits representation, which is inefficient.
+- Integer and floats will be casted to their 64 bits representation, which is inefficient.
 - When representing enum as string you'd want to use dictionary encoding to save memory.
