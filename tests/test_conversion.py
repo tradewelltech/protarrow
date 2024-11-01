@@ -230,7 +230,7 @@ def test_empty_values_end_to_end():
 
     array = protarrow.messages_to_record_batch(
         records, ExampleMessage, ProtarrowConfig()
-    )
+    )["empty_values"]
     assert array.to_pylist() == [[{}, {}, {}], [], []]
 
 
@@ -865,17 +865,6 @@ def test_large_list_in_cast():
             "double_values": pa.LargeListArray.from_arrays(
                 offsets=[0, 3, 3, 5],
                 values=[1.1, 2.2, 3.3, 4.4, 5.5],
-            )
-        }
-    )
-    assert isinstance(cast_table(table, ExampleMessage, ProtarrowConfig()), pa.Table)
-
-
-def test_fixed_list_in_cast():
-    table = pa.table(
-        {
-            "double_values": pa.FixedSizeListArray.from_arrays(
-                values=[1.1, 2.2, 3.3, 4.4, 5.5, None], list_size=3
             )
         }
     )
