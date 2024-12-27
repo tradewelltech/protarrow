@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.9.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.9.0) - 2024-12-27
+
+<small>[Compare with v0.8.0](https://github.com/tradewelltech/protarrow/compare/v0.8.0...v0.9.0)</small>
+
+### Added
+
+- Add fix for linter (run in python 3.12) (#89) ([a1f12b7](https://github.com/tradewelltech/protarrow/commit/a1f12b72e8a7f2c248b56581854f6f42b5477af7) by 0x26res).
+- Add python 3.13 support ([631e8ca](https://github.com/tradewelltech/protarrow/commit/631e8caafd0c1439467f21e20ace3779b3f50eb8) by aandres3).
+
 ## [v0.8.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.8.0) - 2024-11-01
 
 <small>[Compare with v0.7.0](https://github.com/tradewelltech/protarrow/compare/v0.7.0...v0.8.0)</small>
