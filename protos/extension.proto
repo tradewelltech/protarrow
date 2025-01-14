@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package protarrow.protos;
+
+message Base {
+  extensions 100 to 199;
+}
+
+extend Base {
+  optional string name = 100;
+  optional int32 id = 101;
+  repeated int32 values = 102;
+}
