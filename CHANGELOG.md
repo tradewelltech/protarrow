@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.10.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.10.0) - 2025-01-14
+
+<small>[Compare with v0.9.0](https://github.com/tradewelltech/protarrow/compare/v0.9.0...v0.10.0)</small>
+
+### Added
+
+- Add test for large list ([498f732](https://github.com/tradewelltech/protarrow/commit/498f7321ddfb40ce0ac7326781a7e98e278ffb72) by aandres3).
+- Add check for both `pa.types.is_list` and `pa.types.is_large_list` in assertions (#88) ([ffc452e](https://github.com/tradewelltech/protarrow/commit/ffc452e81c6186048a6b93aaecc122c3c8ea98c8) by chase).
+
 ## [v0.9.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.9.0) - 2024-12-27
 
 <small>[Compare with v0.8.0](https://github.com/tradewelltech/protarrow/compare/v0.8.0...v0.9.0)</small>
