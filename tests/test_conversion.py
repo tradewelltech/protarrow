@@ -859,7 +859,7 @@ def test_duration_specific():
     assert messages_back == expected
 
 
-def test_large_list_in_cast():
+def test_large_list_primitive():
     table = pa.table(
         {
             "double_values": pa.LargeListArray.from_arrays(
@@ -869,3 +869,57 @@ def test_large_list_in_cast():
         }
     )
     assert isinstance(cast_table(table, ExampleMessage, ProtarrowConfig()), pa.Table)
+    protos = protarrow.table_to_messages(table, ExampleMessage)
+    assert protos == [
+        ExampleMessage(double_values=[1.1, 2.2, 3.3]),
+        ExampleMessage(),
+        ExampleMessage(double_values=[4.4, 5.5]),
+    ]
+
+
+def test_large_list_nested():
+    table = pa.table(
+        {"example_message": pa.array([{"double_value": 1.0}, {"double_value": 2.0}])}
+    )
+    assert isinstance(
+        cast_table(table, NestedExampleMessage, ProtarrowConfig()), pa.Table
+    )
+    protos = protarrow.table_to_messages(table, NestedExampleMessage)
+    assert protos == [
+        NestedExampleMessage(example_message=ExampleMessage(double_value=1.0)),
+        NestedExampleMessage(example_message=ExampleMessage(double_value=2.0)),
+    ]
+
+
+def test_large_list_nested_repeated():
+    table = pa.table(
+        {
+            "repeated_example_message": pa.LargeListArray.from_arrays(
+                offsets=[0, 2],
+                values=pa.array([{"double_value": 1.0}, {"double_value": 2.0}]),
+            )
+        }
+    )
+    assert isinstance(
+        cast_table(table, NestedExampleMessage, ProtarrowConfig()), pa.Table
+    )
+    protos = protarrow.table_to_messages(table, NestedExampleMessage)
+    assert protos == [
+        NestedExampleMessage(
+            repeated_example_message=[
+                ExampleMessage(double_value=1.0),
+                ExampleMessage(double_value=2.0),
+            ]
+        )
+    ]
+
+
+def test_large_list_cast_nested():
+    table = pa.table(
+        {"repeated_nested_example_message": pa.nulls(10, pa.large_list(pa.struct([])))}
+    )
+    protarrow.cast_table(table, SuperNestedExampleMessage, protarrow.ProtarrowConfig())
+    assert (
+        protarrow.table_to_messages(table, SuperNestedExampleMessage)
+        == [SuperNestedExampleMessage()] * 10
+    )
