@@ -65,6 +65,10 @@ pytest = ">=7.2.0"
 pytest-benchmark = ">=4.0.0"
 pytest-xdist = ">=3.1.0"
 
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/tradewelltech/protarrow/issues"
+"Changelog" = "https://github.com/tradewelltech/protarrow/blob/main/CHANGELOG.md"
+
 [tool.poetry-dynamic-versioning]
 enable = true
 
