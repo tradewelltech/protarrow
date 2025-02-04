@@ -560,7 +560,7 @@ def _extract_repeated_primitive(
 def _extract_repeated_message(
     array: pa.Array, field_descriptor: FieldDescriptor, messages: Iterable[Message]
 ):
-    assert pa.types.is_list(array.type)
+    assert pa.types.is_list(array.type) or pa.types.is_large_list(array.type)
     child = field_descriptor.message_type._concrete_class()
     assigner = AppendAssigner(
         messages,

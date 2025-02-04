@@ -46,7 +46,9 @@ def _cast_flat_array(
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig,
 ) -> pa.Array:
-    assert not pa.types.is_list(array.type), field_descriptor.name
+    assert not (pa.types.is_list(array.type) or pa.types.is_large_list(array.type)), (
+        field_descriptor.name
+    )
     assert not pa.types.is_map(array.type), field_descriptor.name
     if field_descriptor.type == FieldDescriptor.TYPE_MESSAGE:
         if field_descriptor.message_type == TimeOfDay.DESCRIPTOR:

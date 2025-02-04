@@ -99,9 +99,9 @@ def test_nullability():
     assert not nested_schema.field("double_values").nullable
     assert nested_schema.field("wrapped_double_value").nullable
 
-    assert (
-        schema == nested_schema
-    ), "The schema of a nested message is the same as if the message wasn't nested"
+    assert schema == nested_schema, (
+        "The schema of a nested message is the same as if the message wasn't nested"
+    )
 
 
 @pytest.mark.parametrize("list_nullable", [True, False])
