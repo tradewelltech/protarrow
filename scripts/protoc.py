@@ -37,10 +37,10 @@ def main():
     proto_files = [x.as_posix() for x in _SRC_DIR.glob("**/*.proto")]
     proto_args = [
         "protoc",
-        "--proto_path={}".format(_GOOGLE_COMMON_PROTOS_ROOT_DIR),
-        "--proto_path={}".format(_GRPC_PROTOS_INCLUDE),
-        "--proto_path={}".format(_SRC_DIR),
-        "--python_out={}".format(out_dir),
+        f"--proto_path={_GOOGLE_COMMON_PROTOS_ROOT_DIR}",
+        f"--proto_path={_GRPC_PROTOS_INCLUDE}",
+        f"--proto_path={_SRC_DIR}",
+        f"--python_out={out_dir}",
     ] + proto_files
     print(" ".join(proto_args))
     run_protoc(proto_args)

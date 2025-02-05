@@ -2,6 +2,10 @@ syntax = "proto2";
 
 package protarrow.protos;
 
+message Nested {
+  optional int32 int_32_value = 1;
+}
+
 message Base {
   extensions 100 to 199;
 }
@@ -10,4 +14,6 @@ extend Base {
   optional string name = 100;
   optional int32 id = 101;
   repeated int32 values = 102;
+  optional Nested nested = 103;
+  repeated Nested nested_repeated = 104;
 }
