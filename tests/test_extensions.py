@@ -7,7 +7,7 @@ from google.protobuf.message import Message
 from protarrow_protos.extension_pb2 import DESCRIPTOR, Base, Nested
 
 
-def encode_extensions_simple(message: Message):
+def encode_extensions_simple(message: Message) -> bytes:
     copy = message.__class__()
     for extension_descriptor in message.Extensions:
         if extension_descriptor.type == FieldDescriptor.TYPE_MESSAGE:
@@ -81,22 +81,22 @@ def decode_extensions(message: Message, payloads: dict[int, bytes]) -> Message:
     return message
 
 
-def decode_extension_wip(payload, extension_descriptor: FieldDescriptor):
+def decode_extension(payload, extension_descriptor: FieldDescriptor):
     decoder = TYPE_TO_DECODER[extension_descriptor.type](
         is_repeated=extension_descriptor.label == FieldDescriptor.LABEL_REPEATED,
         is_packed=extension_descriptor.is_packed,
         field_number=extension_descriptor.number,
-        key=None,
-        new_default=None,
+        key=extension_descriptor,
+        new_default=lambda x: x.__class__(),
     )
-    with io.BytesIO(payload) as buffer:
-        decoder(
-            pos=0,
-            end=len(payload),
-            buffer=buffer.read,
-            message=Base(),
-            field_dict=Base.DESCRIPTOR.field_dict,
-        )
+
+    decoder(
+        pos=0,
+        end=len(payload),
+        buffer=payload,
+        message=Base(),
+        field_dict={},
+    )
 
 
 def test_descriptor():
@@ -141,7 +141,7 @@ def test_nested_extensions():
     message_back = decode_extensions(Base(), payloads)
     assert message_back == message
 
-    # decode_extension(payload, extension)
+    decode_extension(payload, extension)
 
     run_round_trip(message)
 
