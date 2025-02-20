@@ -2,6 +2,41 @@
 build-backend = "poetry_dynamic_versioning.backend"
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
 
+[project]
+authors = [{name = "Tradewell Tech", email = "engineering@tradewelltech.co"}]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: Apache Software License",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13"
+]
+dependencies = [
+  "googleapis-common-protos>=1.53.0,<1.67.0",
+  "protobuf>=3.20.1",
+  "pyarrow>=16.0.0"
+]
+description = "Convert from protobuf to arrow and back"
+documentation = "https://protarrow.readthedocs.io/en/latest/"
+keywords = ["apache-arrow", "protobuf", "data"]
+license = "Apache-2.0"
+maintainers = [{name = "0x26res", email = "0x26res@gmail.com"}]
+name = "protarrow"
+packages = [
+  {include = "protarrow"}
+]
+readme = "README.md"
+repository = "https://github.com/tradewelltech/protarrow"
+requires-python = ">=3.9,<4"
+version = "0.0.0"
+
+[project.urls]
+"Bug Tracker" = "https://github.com/tradewelltech/protarrow/issues"
+"Changelog" = "https://github.com/tradewelltech/protarrow/blob/main/CHANGELOG.md"
+
 [tool.bandit]
 skips = ["B101", "B311"]
 
@@ -14,37 +49,6 @@ known_first_party = ["protarrow", "protarrow_protos"]
 profile = "black"
 skip = [".gitignore"]
 src_paths = ["protarrow", "tests"]
-
-[tool.poetry]
-authors = ["Tradewell Tech <engineering@tradewelltech.co>"]
-classifiers = [
-  "Development Status :: 4 - Beta",
-  "License :: OSI Approved :: Apache Software License",
-  "Natural Language :: English",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3.13"
-]
-description = "Convert from protobuf to arrow and back"
-documentation = "https://protarrow.readthedocs.io/en/latest/"
-keywords = ["apache-arrow", "protobuf", "data"]
-license = "Apache-2.0"
-maintainers = ["0x26res <0x26res@gmail.com>"]
-name = "protarrow"
-packages = [
-  {include = "protarrow"}
-]
-readme = "README.md"
-repository = "https://github.com/tradewelltech/protarrow"
-version = "0.0.0"
-
-[tool.poetry.dependencies]
-googleapis-common-protos = ">=1.53.0"
-protobuf = ">=3.20.1"
-pyarrow = ">=16.0.0"
-python = ">=3.9,<4"
 
 [tool.poetry.group.dev.dependencies]
 Jinja2 = ">=3.1.2"
@@ -64,10 +68,6 @@ pylint = ">=2.15.0"
 pytest = ">=7.2.0"
 pytest-benchmark = ">=4.0.0"
 pytest-xdist = ">=3.1.0"
-
-[tool.poetry.urls]
-"Bug Tracker" = "https://github.com/tradewelltech/protarrow/issues"
-"Changelog" = "https://github.com/tradewelltech/protarrow/blob/main/CHANGELOG.md"
 
 [tool.poetry-dynamic-versioning]
 enable = true
