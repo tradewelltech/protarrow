@@ -15,7 +15,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13"
 ]
 dependencies = [
-  "googleapis-common-protos>=1.53.0",
+  "googleapis-common-protos>=1.53.0,<1.67.0",
   "protobuf>=3.20.1",
   "pyarrow>=16.0.0"
 ]
@@ -33,7 +33,24 @@ repository = "https://github.com/tradewelltech/protarrow"
 requires-python = ">=3.9,<4"
 version = "0.0.0"
 
-[project.group.dev.dependencies]
+[project.urls]
+"Bug Tracker" = "https://github.com/tradewelltech/protarrow/issues"
+"Changelog" = "https://github.com/tradewelltech/protarrow/blob/main/CHANGELOG.md"
+
+[tool.bandit]
+skips = ["B101", "B311"]
+
+[tool.black]
+exclude = "venv/|tox/|protarrow_protos/.*"
+target-version = ["py39"]
+
+[tool.isort]
+known_first_party = ["protarrow", "protarrow_protos"]
+profile = "black"
+skip = [".gitignore"]
+src_paths = ["protarrow", "tests"]
+
+[tool.poetry.group.dev.dependencies]
 Jinja2 = ">=3.1.2"
 black = ">=22.10.0"
 coverage = ">=6.5.0"
@@ -51,23 +68,6 @@ pylint = ">=2.15.0"
 pytest = ">=7.2.0"
 pytest-benchmark = ">=4.0.0"
 pytest-xdist = ">=3.1.0"
-
-[project.urls]
-"Bug Tracker" = "https://github.com/tradewelltech/protarrow/issues"
-"Changelog" = "https://github.com/tradewelltech/protarrow/blob/main/CHANGELOG.md"
-
-[tool.bandit]
-skips = ["B101", "B311"]
-
-[tool.black]
-exclude = "venv/|tox/|protarrow_protos/.*"
-target-version = ["py39"]
-
-[tool.isort]
-known_first_party = ["protarrow", "protarrow_protos"]
-profile = "black"
-skip = [".gitignore"]
-src_paths = ["protarrow", "tests"]
 
 [tool.poetry-dynamic-versioning]
 enable = true
