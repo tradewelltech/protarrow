@@ -1,6 +1,6 @@
 # FAQ
 
-### Why convert from protobuf to arrow?
+## Why convert from protobuf to arrow?
 
 You need the right tool for the right job.
 **Apache Arrow** is optimized for analytical tasks.
@@ -19,7 +19,7 @@ It can also help you convert parquet data generated from kafka connect back to p
 
 - Build realtime analytical and ML services using kafka and protobuf
 
-You can use kafka to publish protobuf messages in real time. 
+You can use kafka to publish protobuf messages in real time.
 These messages can then be polled and processes in micro batches.
 These batches can be converted to arrow tables seamlessly to run analytics or ML workload.
 Later the data can be converted back to protobuf and published on kafka.
@@ -31,12 +31,13 @@ This data can then be parsed with high fidelity using the protobuf library, and 
 
 - Convert parquet data back to protobuf
 
-If you use kafka-connect, your kafka topic data is archived as parquet file. 
+If you use kafka-connect, your kafka topic data is archived as parquet file.
 To run test or replay your data you may want to convert this parquet data to protobuf.
 
-### Why not use `pa.Table.from_list` and `google.protobuf.json_format.MessageToDict`
+## Why not use `pa.Table.from_list` and `google.protobuf.json_format.MessageToDict`
 
 You could convert protobuf messages to arrow out of the box:
+
 ```python
 import pyarrow as pa
 import MyProto

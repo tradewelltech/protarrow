@@ -9,7 +9,6 @@ pip install protarrow
 
 ## Convert from proto to arrow
 
-
 ```protobuf
 message MyProto {
   string name = 1;
@@ -17,7 +16,6 @@ message MyProto {
   repeated int32 values = 3;
 }
 ```
-
 
 ```python
 import protarrow
@@ -33,12 +31,10 @@ record_batch = protarrow.messages_to_record_batch(my_protos, MyProto)
 table = protarrow.messages_to_table(my_protos, MyProto)
 ```
 
-
 | name   |   id | values   |
 |:-------|-----:|:---------|
 | foo    |    1 | [1 2 4]  |
 | bar    |    2 | [3 4 5]  |
-
 
 ## Convert from arrow to proto in batch
 
@@ -71,9 +67,10 @@ record_batch = protarrow.messages_to_record_batch(my_protos, MyProto, config)
 
 ## Cast existing table to proto schema
 
-You can use this library to cast existing table to the expected proto schema. 
+You can use this library to cast existing table to the expected proto schema.
 
 For example, if you have a table with missing columns:
+
 ```python
 source_table = pa.table({"name": ["hello"]})
 casted_table = protarrow.cast_table(source_table, MyProto, config)

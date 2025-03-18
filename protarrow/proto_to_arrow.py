@@ -40,34 +40,30 @@ from google.type.timeofday_pb2 import TimeOfDay
 from protarrow.common import M, ProtarrowConfig, is_binary_enum, is_string_enum
 
 _PROTO_DESCRIPTOR_TO_PYARROW = {
-    Date.DESCRIPTOR: pa.date32(),
     BoolValue.DESCRIPTOR: pa.bool_(),
-    BytesValue.DESCRIPTOR: pa.binary(),
+    Date.DESCRIPTOR: pa.date32(),
     DoubleValue.DESCRIPTOR: pa.float64(),
     FloatValue.DESCRIPTOR: pa.float32(),
     Int32Value.DESCRIPTOR: pa.int32(),
     Int64Value.DESCRIPTOR: pa.int64(),
-    StringValue.DESCRIPTOR: pa.string(),
     UInt32Value.DESCRIPTOR: pa.uint32(),
     UInt64Value.DESCRIPTOR: pa.uint64(),
 }
 
 _PROTO_PRIMITIVE_TYPE_TO_PYARROW = {
-    FieldDescriptorProto.TYPE_DOUBLE: pa.float64(),
-    FieldDescriptorProto.TYPE_FLOAT: pa.float32(),
-    FieldDescriptorProto.TYPE_INT64: pa.int64(),
-    FieldDescriptorProto.TYPE_UINT64: pa.uint64(),
-    FieldDescriptorProto.TYPE_INT32: pa.int32(),
-    FieldDescriptorProto.TYPE_FIXED64: pa.uint64(),
-    FieldDescriptorProto.TYPE_FIXED32: pa.uint32(),
     FieldDescriptorProto.TYPE_BOOL: pa.bool_(),
-    FieldDescriptorProto.TYPE_STRING: pa.string(),
-    FieldDescriptorProto.TYPE_BYTES: pa.binary(),
-    FieldDescriptorProto.TYPE_UINT32: pa.uint32(),
+    FieldDescriptorProto.TYPE_DOUBLE: pa.float64(),
+    FieldDescriptorProto.TYPE_FIXED32: pa.uint32(),
+    FieldDescriptorProto.TYPE_FIXED64: pa.uint64(),
+    FieldDescriptorProto.TYPE_FLOAT: pa.float32(),
+    FieldDescriptorProto.TYPE_INT32: pa.int32(),
+    FieldDescriptorProto.TYPE_INT64: pa.int64(),
     FieldDescriptorProto.TYPE_SFIXED32: pa.int32(),
     FieldDescriptorProto.TYPE_SFIXED64: pa.int64(),
     FieldDescriptorProto.TYPE_SINT32: pa.int32(),
     FieldDescriptorProto.TYPE_SINT64: pa.int64(),
+    FieldDescriptorProto.TYPE_UINT32: pa.uint32(),
+    FieldDescriptorProto.TYPE_UINT64: pa.uint64(),
 }
 
 
@@ -270,13 +266,7 @@ def field_descriptor_to_field(
     elif field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
         return pa.field(
             field_descriptor.name,
-            pa.list_(
-                pa.field(
-                    config.list_value_name,
-                    field_descriptor_to_data_type(field_descriptor, config),
-                    nullable=config.list_value_nullable,
-                ),
-            ),
+            config.list_(field_descriptor_to_data_type(field_descriptor, config)),
             nullable=config.list_nullable,
             metadata=config.field_metadata(field_descriptor.number),
         )
@@ -287,6 +277,26 @@ def field_descriptor_to_field(
             nullable=field_descriptor.has_presence,
             metadata=config.field_metadata(field_descriptor.number),
         )
+
+
+def _message_field_to_data_type(
+    field_descriptor: FieldDescriptor,
+    config: ProtarrowConfig,
+) -> pa.DataType:
+    try:
+        return _PROTO_DESCRIPTOR_TO_PYARROW[field_descriptor.message_type]
+    except KeyError:
+        if field_descriptor.message_type == BytesValue.DESCRIPTOR:
+            return config.binary_type
+        elif field_descriptor.message_type == StringValue.DESCRIPTOR:
+            return config.string_type
+        else:
+            return pa.struct(
+                [
+                    field_descriptor_to_field(child_field, config)
+                    for child_field in field_descriptor.message_type.fields
+                ]
+            )
 
 
 def field_descriptor_to_data_type(
@@ -300,17 +310,13 @@ def field_descriptor_to_data_type(
     elif field_descriptor.message_type == Duration.DESCRIPTOR:
         return config.duration_type
     elif field_descriptor.type == FieldDescriptorProto.TYPE_MESSAGE:
-        try:
-            return _PROTO_DESCRIPTOR_TO_PYARROW[field_descriptor.message_type]
-        except KeyError:
-            return pa.struct(
-                [
-                    field_descriptor_to_field(child_field, config)
-                    for child_field in field_descriptor.message_type.fields
-                ]
-            )
+        return _message_field_to_data_type(field_descriptor, config)
     elif field_descriptor.type == FieldDescriptorProto.TYPE_ENUM:
         return config.enum_type
+    elif field_descriptor.type == FieldDescriptorProto.TYPE_STRING:
+        return config.string_type
+    elif field_descriptor.type == FieldDescriptorProto.TYPE_BYTES:
+        return config.binary_type
     elif field_descriptor.type in _PROTO_PRIMITIVE_TYPE_TO_PYARROW:
         return _PROTO_PRIMITIVE_TYPE_TO_PYARROW.get(field_descriptor.type)
     else:
@@ -338,7 +344,11 @@ def _get_converter(
         return _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER.get(field_descriptor.message_type)
     elif field_descriptor.type == FieldDescriptorProto.TYPE_ENUM:
         return get_enum_converter(config.enum_type, field_descriptor.enum_type)
-    elif field_descriptor.type in _PROTO_PRIMITIVE_TYPE_TO_PYARROW:
+    elif (
+        field_descriptor.type == FieldDescriptorProto.TYPE_STRING
+        or field_descriptor.type == FieldDescriptorProto.TYPE_BYTES
+        or field_descriptor.type in _PROTO_PRIMITIVE_TYPE_TO_PYARROW
+    ):
         return lambda x: x
     else:
         raise TypeError(
@@ -413,14 +423,10 @@ def _repeated_proto_to_array(
     array = _proto_field_to_array(
         FlattenedIterable(repeated_values), field_descriptor, None, config
     )
-    return pa.ListArray.from_arrays(
+    return config.list_array_type.from_arrays(
         offsets,
         array,
-        pa.list_(
-            pa.field(
-                config.list_value_name, array.type, nullable=config.list_value_nullable
-            )
-        ),
+        config.list_(array.type),
     )
 
 
