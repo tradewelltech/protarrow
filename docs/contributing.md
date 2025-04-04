@@ -69,6 +69,7 @@ mkdocs serve --livereload --watch=./
 
 - For the repo `poetry lock`
 - For the doc: `(cd docs/; pip-compile ./requirements.in > ./requirements.txt)`
+- For pre-commit: `pre-commit autoupdate & pre-commit run --all-files`
 
 ## Resources
 

@@ -78,3 +78,4 @@ folders = [{path = "protarrow"}]
 
 [tool.ruff]
 line-length = 88
+lint.select = ["E", "F", "C", "I", "PERF"]

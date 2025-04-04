@@ -95,7 +95,7 @@ def test_optional_nested_iterable():
 
 def test_map_item_assigner():
     array = pa.array(
-        [[("hello", True), ("world", None)], None, tuple()],
+        [[("hello", True), ("world", None)], None, ()],
         pa.map_(pa.string(), pa.bool_()),
     )
 
