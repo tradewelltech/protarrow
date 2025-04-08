@@ -930,10 +930,10 @@ def test_field_metadata():
     schema = protarrow.message_type_to_schema(
         NestedExampleMessage, config=ProtarrowConfig(field_number_key=b"FIELD_NUMBER")
     )
-    assert schema.field_by_name("example_message").metadata == {b"FIELD_NUMBER": b"1"}
-    assert schema.field_by_name("example_message").type.field(
-        "double_value"
-    ).metadata == {b"FIELD_NUMBER": b"1"}
-    assert schema.field_by_name("example_message").type.field(
+    assert schema.field("example_message").metadata == {b"FIELD_NUMBER": b"1"}
+    assert schema.field("example_message").type.field("double_value").metadata == {
+        b"FIELD_NUMBER": b"1"
+    }
+    assert schema.field("example_message").type.field(
         "wrapped_double_value"
     ).metadata == {b"FIELD_NUMBER": b"16"}
