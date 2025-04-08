@@ -105,6 +105,7 @@ def _cast_array(
                     config.map_value_name,
                     map_array.type.item_type,
                     nullable=config.map_value_nullable,
+                    metadata=config.field_metadata(field_descriptor.number),
                 ),
             )
         )
@@ -120,6 +121,7 @@ def _cast_array(
                     config.list_value_name,
                     item_array.type,
                     nullable=config.list_value_nullable,
+                    metadata=config.field_metadata(field_descriptor.number),
                 )
             ),
         )

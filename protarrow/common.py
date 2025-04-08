@@ -1,5 +1,5 @@
 import dataclasses
-from typing import TypeVar, Union
+from typing import TypeVar, Union, Optional
 
 import pyarrow as pa
 from google.protobuf.message import Message
@@ -27,9 +27,17 @@ class ProtarrowConfig:
     map_value_nullable: bool = False
     list_value_name: str = "item"
     map_value_name: str = "value"
+    field_number_key: Optional[bytes] = None
 
     def __post_init__(self):
         assert self.enum_type in SUPPORTED_ENUM_TYPES
+        assert isinstance(self.field_number_key, (bytes, type(None)))
+
+    def field_metadata(self, field_number: int) -> Optional[dict[bytes, bytes]]:
+        if self.field_number_key is None:
+            return None
+        else:
+            return {self.field_number_key: str(field_number).encode("utf-8")}
 
 
 def is_binary_enum(data_type: pa.DataType) -> bool:

@@ -75,6 +75,7 @@ CONFIGS = [
     ProtarrowConfig(list_value_nullable=True),
     ProtarrowConfig(list_value_name="list_value"),
     ProtarrowConfig(map_value_name="map_value"),
+    ProtarrowConfig(field_number_key=b"PARQUET:field_id"),
 ]
 
 
@@ -923,3 +924,16 @@ def test_large_list_cast_nested():
         protarrow.table_to_messages(table, SuperNestedExampleMessage)
         == [SuperNestedExampleMessage()] * 10
     )
+
+
+def test_field_metadata():
+    schema = protarrow.message_type_to_schema(
+        NestedExampleMessage, config=ProtarrowConfig(field_number_key=b"FIELD_NUMBER")
+    )
+    assert schema.field("example_message").metadata == {b"FIELD_NUMBER": b"1"}
+    assert schema.field("example_message").type.field("double_value").metadata == {
+        b"FIELD_NUMBER": b"1"
+    }
+    assert schema.field("example_message").type.field(
+        "wrapped_double_value"
+    ).metadata == {b"FIELD_NUMBER": b"16"}
