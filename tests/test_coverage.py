@@ -23,6 +23,7 @@ from protarrow.arrow_to_proto import (
     _extract_map_field,
     _extract_record_batch_messages,
     convert_scalar,
+    OffsetsIterator,
 )
 from protarrow.cast_to_proto import get_arrow_default_value
 from protarrow.message_extractor import (
@@ -35,6 +36,7 @@ from protarrow.proto_to_arrow import (
     _get_converter,
     field_descriptor_to_data_type,
     get_enum_converter,
+    NestedIterable,
 )
 from protarrow_protos.bench_pb2 import (
     ExampleMessage,
@@ -404,3 +406,13 @@ def test_missing_parent_repeated_nested_iterable():
         NestedExampleMessage.DESCRIPTOR.fields_by_name["repeated_example_message"],
     )
     assert list(iterable) == [ExampleMessage(string_value="hello")]
+
+
+def test_coverage_offset_iterator():
+    offsets = OffsetsIterator(pa.array([]))
+    assert list(offsets) == []
+
+
+def test_nested_iterable():
+    nested_iterable = NestedIterable([], lambda x: x.foo)
+    assert len(nested_iterable) == 0
