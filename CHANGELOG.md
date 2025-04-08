@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.12.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.12.0) - 2025-04-08
+
+<small>[Compare with v0.11.0](https://github.com/tradewelltech/protarrow/compare/v0.11.0...v0.12.0)</small>
+
+### Added
+
+- Add latest pre-commit and ruff (#98) ([d0587ca](https://github.com/tradewelltech/protarrow/commit/d0587cae086cd379f06c2b2f30f7100e0b1e0aaf) by 0x26res).
+- Add option to save field number in meta data (#97) ([044cc34](https://github.com/tradewelltech/protarrow/commit/044cc3436188c095baa529fa8e0fbe259bb62217) by 0x26res).
+- Add threads to speed up tests (#99) ([af36813](https://github.com/tradewelltech/protarrow/commit/af368133d3a5d3aef4745708f51cc758f0ac3170) by 0x26res).
+- Add conda badges (#95) ([f8ccbdf](https://github.com/tradewelltech/protarrow/commit/f8ccbdfbfe51bd5139bfab8c375777063e651752) by 0x26res).
+- Add support for large list, string and binary ([2a1e760](https://github.com/tradewelltech/protarrow/commit/2a1e7600d9da12d05a0f6504a6e63e3b41aa507d) by aandres3).
+- Add latest poetry (#92) ([3159c4f](https://github.com/tradewelltech/protarrow/commit/3159c4fd33070a2cebb4cc25aad54e96d11eed21) by 0x26res).
+
 ## [v0.11.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.11.0) - 2025-01-22
 
 <small>[Compare with v0.10.0](https://github.com/tradewelltech/protarrow/compare/v0.10.0...v0.11.0)</small>
@@ -41,7 +54,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add support for large list ([7ed0999](https://github.com/tradewelltech/protarrow/commit/7ed0999b24beb719fec59f7c09f4626e2b39b3a4) by aandres3).
 - Add toml format (#83) ([0458ba6](https://github.com/tradewelltech/protarrow/commit/0458ba6dca84ea37becccbf7c8197b658c9971b6) by 0x26res).
 - add test and ignore type checks (#82) ([30ed8b1](https://github.com/tradewelltech/protarrow/commit/30ed8b18ff91b97d0d4c6e2b3bc58fb3ad3e1c49) by 0x26res).
-
 
 ## [v0.7.0](https://github.com/tradewelltech/protarrow/releases/tag/v0.7.0) - 2024-10-14
 

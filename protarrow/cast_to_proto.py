@@ -6,6 +6,10 @@ from google.protobuf.descriptor import Descriptor, FieldDescriptor
 from google.protobuf.duration_pb2 import Duration
 from google.protobuf.message import Message
 from google.protobuf.timestamp_pb2 import Timestamp
+from google.protobuf.wrappers_pb2 import (
+    BytesValue,
+    StringValue,
+)
 from google.type.timeofday_pb2 import TimeOfDay
 
 from protarrow.arrow_to_proto import is_binary_enum, is_string_enum
@@ -41,6 +45,28 @@ def get_arrow_default_value(
         return field_descriptor.default_value
 
 
+def _cast_to_message_type(
+    array: pa.Array,
+    field_descriptor: FieldDescriptor,
+    config: ProtarrowConfig,
+):
+    if field_descriptor.message_type == TimeOfDay.DESCRIPTOR:
+        return array.cast(config.time_of_day_type)
+    elif field_descriptor.message_type == Timestamp.DESCRIPTOR:
+        return array.cast(config.timestamp_type)
+    elif field_descriptor.message_type == Duration.DESCRIPTOR:
+        return array.cast(config.duration_type)
+    elif field_descriptor.message_type == StringValue.DESCRIPTOR:
+        return array.cast(config.string_type)
+    elif field_descriptor.message_type == BytesValue.DESCRIPTOR:
+        return array.cast(config.binary_type)
+    elif field_descriptor.message_type in _PROTO_DESCRIPTOR_TO_PYARROW:
+        return array.cast(_PROTO_DESCRIPTOR_TO_PYARROW[field_descriptor.message_type])
+    else:
+        assert isinstance(array, pa.StructArray), field_descriptor.message_type.name
+        return cast_struct_array(array, field_descriptor.message_type, config)
+
+
 def _cast_flat_array(
     array: pa.Array,
     field_descriptor: FieldDescriptor,
@@ -51,19 +77,7 @@ def _cast_flat_array(
     )
     assert not pa.types.is_map(array.type), field_descriptor.name
     if field_descriptor.type == FieldDescriptor.TYPE_MESSAGE:
-        if field_descriptor.message_type == TimeOfDay.DESCRIPTOR:
-            return array.cast(config.time_of_day_type)
-        elif field_descriptor.message_type == Timestamp.DESCRIPTOR:
-            return array.cast(config.timestamp_type)
-        elif field_descriptor.message_type == Duration.DESCRIPTOR:
-            return array.cast(config.duration_type)
-        elif field_descriptor.message_type in _PROTO_DESCRIPTOR_TO_PYARROW:
-            return array.cast(
-                _PROTO_DESCRIPTOR_TO_PYARROW[field_descriptor.message_type]
-            )
-        else:
-            assert isinstance(array, pa.StructArray), field_descriptor.message_type
-            return cast_struct_array(array, field_descriptor.message_type, config)
+        return _cast_to_message_type(array, field_descriptor, config)
     else:
         if field_descriptor.type == FieldDescriptor.TYPE_ENUM:
             if pa.types.is_dictionary(config.enum_type) and not pa.types.is_dictionary(
@@ -73,6 +87,10 @@ def _cast_flat_array(
                 assert results.type == config.enum_type
             else:
                 results = array.cast(config.enum_type)
+        elif field_descriptor.type == FieldDescriptor.TYPE_BYTES:
+            results = array.cast(config.binary_type)
+        elif field_descriptor.type == FieldDescriptor.TYPE_STRING:
+            results = array.cast(config.string_type)
         else:
             results = array.cast(
                 _PROTO_PRIMITIVE_TYPE_TO_PYARROW[field_descriptor.type]
@@ -113,17 +131,11 @@ def _cast_array(
     elif field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
         assert isinstance(array, (pa.ListArray, pa.LargeListArray))
         item_array = _cast_flat_array(array.values, field_descriptor, config)
-        return pa.ListArray.from_arrays(
+        return config.list_array_type.from_arrays(
             array.offsets,
             item_array,
-            pa.list_(
-                pa.field(
-                    config.list_value_name,
-                    item_array.type,
-                    nullable=config.list_value_nullable,
-                    metadata=config.field_metadata(field_descriptor.number),
-                )
-            ),
+            # TODO: meta data
+            config.list_(item_array.type),
         )
     else:
         return _cast_flat_array(array, field_descriptor, config)

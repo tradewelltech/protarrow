@@ -1,3 +1,5 @@
+# Protarrow
+
 [![PyPI Version][pypi-image]][pypi-url]
 [![Conda Version][conda-image]][conda-url]
 [![Python Version][versions-image]][versions-url]
@@ -17,22 +19,19 @@
 [![FOSSA Status][fossa-image]][fossa-url]
 [![Python][python-image]][python-url]
 
-
-# Protarrow
-
 **Protarrow** is a python library for converting from Protocol Buffers to Apache Arrow and back.
 
-It is used at [Tradewell Technologies](https://www.tradewelltech.co/), 
+It is used at [Tradewell Technologies](https://www.tradewelltech.co/),
 to share data between transactional and analytical applications,
 with little boilerplate code and zero data loss.
 
-# Installation
+## Installation
 
 ```shell
 pip install protarrow
 ```
 
-# Usage
+## Usage
 
 Taking a simple protobuf:
 
@@ -57,7 +56,6 @@ my_protos = [
 table = protarrow.messages_to_table(my_protos, MyProto)
 ```
 
-
 | name   |   id | values   |
 |:-------|-----:|:---------|
 | foo    |    1 | [1 2 4]  |
@@ -70,7 +68,6 @@ protos_from_table = protarrow.table_to_messages(table, MyProto)
 ```
 
 See the [documentation](https://protarrow.readthedocs.io/en/latest/)
-
 
 <!-- Badges: -->
 
@@ -106,7 +103,6 @@ See the [documentation](https://protarrow.readthedocs.io/en/latest/)
 [contributing-url]: https://protarrow.readthedocs.io/en/latest/contributing/
 [python-image]: https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54
 [python-url]: https://www.python.org/
-[repo-size-image]: https://img.shields.io/github/repo-size/tradewelltech/protarrow
 [repo-size-url]: https://github.com/tradewelltech/protarrow
 [fossa-image]: https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftradewelltech%2Fprotarrow.svg?type=shield
 [fossa-url]: https://app.fossa.com/projects/git%2Bgithub.com%2Ftradewelltech%2protarrow?ref=badge_shield

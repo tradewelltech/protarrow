@@ -76,6 +76,9 @@ CONFIGS = [
     ProtarrowConfig(list_value_name="list_value"),
     ProtarrowConfig(map_value_name="map_value"),
     ProtarrowConfig(field_number_key=b"PARQUET:field_id"),
+    ProtarrowConfig(string_type=pa.large_string()),
+    ProtarrowConfig(binary_type=pa.large_binary()),
+    ProtarrowConfig(list_array_type=pa.LargeListArray),
 ]
 
 
@@ -937,3 +940,83 @@ def test_field_metadata():
     assert schema.field("example_message").type.field(
         "wrapped_double_value"
     ).metadata == {b"FIELD_NUMBER": b"16"}
+
+
+def test_to_large_list():
+    protobufs = [
+        ExampleMessage(double_values=[1.0, 2.0]),
+    ]
+    table = protarrow.messages_to_table(
+        protobufs,
+        ExampleMessage,
+        config=ProtarrowConfig(list_array_type=pa.LargeListArray),
+    )
+    assert table.schema.field("double_values").type == pa.large_list(
+        pa.field("item", pa.float64(), nullable=False)
+    )
+
+
+def test_to_large_list_schema():
+    schema_large_str = str(
+        protarrow.messages_to_table(
+            [],
+            NestedExampleMessage,
+            config=ProtarrowConfig(list_array_type=pa.LargeListArray),
+        ).schema
+    )
+    assert " large_list" in schema_large_str
+    assert " list" not in schema_large_str
+
+    schema_small_str = str(
+        protarrow.messages_to_table(
+            [],
+            NestedExampleMessage,
+            config=ProtarrowConfig(list_array_type=pa.ListArray),
+        ).schema
+    )
+    assert ": large_list" not in schema_small_str
+    assert ": list" in schema_small_str
+
+
+def test_to_large_string_schema():
+    schema_large_str = str(
+        protarrow.messages_to_table(
+            [],
+            NestedExampleMessage,
+            config=ProtarrowConfig(string_type=pa.large_string()),
+        ).schema
+    )
+    assert ": large_string" in schema_large_str
+    assert ": string" not in schema_large_str
+
+    schema_small_str = str(
+        protarrow.messages_to_table(
+            [],
+            NestedExampleMessage,
+            config=ProtarrowConfig(string_type=pa.string()),
+        ).schema
+    )
+    assert ": large_string" not in schema_small_str
+    assert ": string" in schema_small_str
+
+
+def test_to_large_binary_schema():
+    schema_large_str = str(
+        protarrow.messages_to_table(
+            [],
+            NestedExampleMessage,
+            config=ProtarrowConfig(binary_type=pa.large_binary()),
+        ).schema
+    )
+    assert ": large_binary" in schema_large_str
+    assert ": binary" not in schema_large_str
+
+    schema_small_str = str(
+        protarrow.messages_to_table(
+            [],
+            NestedExampleMessage,
+            config=ProtarrowConfig(binary_type=pa.binary()),
+        ).schema
+    )
+    assert ": large_binary" not in schema_small_str
+    assert ": binary" in schema_small_str
