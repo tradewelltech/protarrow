@@ -265,6 +265,7 @@ def field_descriptor_to_field(
                 pa.field(config.map_value_name, value_type, config.map_value_nullable),
             ),
             nullable=config.map_nullable,
+            metadata=config.field_metadata(field_descriptor.number),
         )
     elif field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
         return pa.field(
@@ -277,12 +278,14 @@ def field_descriptor_to_field(
                 ),
             ),
             nullable=config.list_nullable,
+            metadata=config.field_metadata(field_descriptor.number),
         )
     else:
         return pa.field(
             field_descriptor.name,
             field_descriptor_to_data_type(field_descriptor, config),
             nullable=field_descriptor.has_presence,
+            metadata=config.field_metadata(field_descriptor.number),
         )
 
 
@@ -518,6 +521,7 @@ def _messages_to_array(
                 field_descriptor.name,
                 array.type,
                 nullable=_proto_field_nullable(field_descriptor, config),
+                metadata=config.field_metadata(field_descriptor.number),
             )
         )
     if validity_mask is not None:
