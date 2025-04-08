@@ -15,6 +15,7 @@ from google.protobuf.wrappers_pb2 import BoolValue, DoubleValue
 import protarrow
 from protarrow.arrow_to_proto import (
     MapItemAssigner,
+    OffsetsIterator,
     OffsetToSize,
     OptionalNestedIterable,
     PlainAssigner,
@@ -23,7 +24,6 @@ from protarrow.arrow_to_proto import (
     _extract_map_field,
     _extract_record_batch_messages,
     convert_scalar,
-    OffsetsIterator,
 )
 from protarrow.cast_to_proto import get_arrow_default_value
 from protarrow.message_extractor import (
@@ -33,10 +33,10 @@ from protarrow.message_extractor import (
     StructScalarConverter,
 )
 from protarrow.proto_to_arrow import (
+    NestedIterable,
     _get_converter,
     field_descriptor_to_data_type,
     get_enum_converter,
-    NestedIterable,
 )
 from protarrow_protos.bench_pb2 import (
     ExampleMessage,
@@ -97,7 +97,7 @@ def test_optional_nested_iterable():
 
 def test_map_item_assigner():
     array = pa.array(
-        [[("hello", True), ("world", None)], None, tuple()],
+        [[("hello", True), ("world", None)], None, ()],
         pa.map_(pa.string(), pa.bool_()),
     )
 

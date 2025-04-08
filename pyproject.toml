@@ -44,12 +44,6 @@ skips = ["B101", "B311"]
 exclude = "venv/|tox/|protarrow_protos/.*"
 target-version = ["py39"]
 
-[tool.isort]
-known_first_party = ["protarrow", "protarrow_protos"]
-profile = "black"
-skip = [".gitignore"]
-src_paths = ["protarrow", "tests"]
-
 [tool.poetry.group.dev.dependencies]
 Jinja2 = ">=3.1.2"
 black = ">=22.10.0"
@@ -79,3 +73,9 @@ folders = [{path = "protarrow"}]
 
 [tool.ruff]
 line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "C", "I", "PERF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["protarrow", "protarrow_protos"]

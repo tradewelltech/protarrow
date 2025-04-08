@@ -210,10 +210,13 @@ def cast_table(
     table: pa.Table, message_type: Type[Message], config: ProtarrowConfig
 ) -> pa.Table:
     proto_schema = message_type_to_schema(message_type, config)
-    record_batches = []
-    for record_batch in table.to_reader():
-        record_batches.append(cast_record_batch(record_batch, message_type, config))
-    return pa.Table.from_batches(record_batches, proto_schema)
+    return pa.Table.from_batches(
+        [
+            cast_record_batch(record_batch, message_type, config)
+            for record_batch in table.to_reader()
+        ],
+        proto_schema,
+    )
 
 
 def maybe_copy_offsets(offsets: pa.Array) -> pa.Array:

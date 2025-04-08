@@ -191,31 +191,36 @@ def truncate_nanos(
     else:
         for field in message.DESCRIPTOR.fields:
             if field.type == FieldDescriptor.TYPE_MESSAGE:
-                if field.label == FieldDescriptor.LABEL_REPEATED:
-                    field_value = getattr(message, field.name)
-                    if (
-                        field.message_type is not None
-                        and field.message_type.GetOptions().map_entry
-                    ):
-                        if (
-                            field.message_type.fields_by_name["value"].type
-                            == FieldDescriptor.TYPE_MESSAGE
-                        ):
-                            for key, value in field_value.items():
-                                truncate_nanos(
-                                    value, timestamp_unit, time_unit, duration_unit
-                                )
-
-                    else:
-                        for item in field_value:
-                            truncate_nanos(
-                                item, timestamp_unit, time_unit, duration_unit
-                            )
-                elif message.HasField(field.name):
-                    truncate_nanos(
-                        getattr(message, field.name),
-                        timestamp_unit,
-                        time_unit,
-                        duration_unit,
-                    )
+                truncate_nanos_message(
+                    duration_unit, field, message, time_unit, timestamp_unit
+                )
     return message
+
+
+def truncate_nanos_message(
+    duration_unit: str,
+    field: FieldDescriptor,
+    message: Message,
+    time_unit: str,
+    timestamp_unit: str,
+) -> None:
+    if field.label == FieldDescriptor.LABEL_REPEATED:
+        field_value = getattr(message, field.name)
+        if field.message_type is not None and field.message_type.GetOptions().map_entry:
+            if (
+                field.message_type.fields_by_name["value"].type
+                == FieldDescriptor.TYPE_MESSAGE
+            ):
+                for value in field_value.values():
+                    truncate_nanos(value, timestamp_unit, time_unit, duration_unit)
+
+        else:
+            for item in field_value:
+                truncate_nanos(item, timestamp_unit, time_unit, duration_unit)
+    elif message.HasField(field.name):
+        truncate_nanos(
+            getattr(message, field.name),
+            timestamp_unit,
+            time_unit,
+            duration_unit,
+        )

@@ -1,5 +1,5 @@
 import dataclasses
-from typing import TypeVar, Union, Optional
+from typing import Optional, TypeVar, Union
 
 import pyarrow as pa
 from google.protobuf.message import Message
