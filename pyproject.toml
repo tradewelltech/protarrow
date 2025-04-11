@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "poetry_dynamic_versioning.backend"
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
 
 [project]
 authors = [{name = "Tradewell Tech", email = "engineering@tradewelltech.co"}]
@@ -21,6 +21,7 @@ dependencies = [
 ]
 description = "Convert from protobuf to arrow and back"
 documentation = "https://protarrow.readthedocs.io/en/latest/"
+dynamic = ["version"]
 keywords = ["apache-arrow", "protobuf", "data"]
 license = "Apache-2.0"
 maintainers = [{name = "0x26res", email = "0x26res@gmail.com"}]
@@ -44,6 +45,9 @@ skips = ["B101", "B311"]
 exclude = "venv/|tox/|protarrow_protos/.*"
 target-version = ["py39"]
 
+[tool.poetry]
+version = "0.0.0"
+
 [tool.poetry.group.dev.dependencies]
 Jinja2 = ">=3.1.2"
 black = ">=22.10.0"
@@ -63,6 +67,9 @@ pytest = ">=7.2.0"
 pytest-benchmark = ">=4.0.0"
 pytest-cov = "*"
 pytest-xdist = ">=3.1.0"
+
+[tool.poetry.requires-plugins]
+poetry-dynamic-versioning = {version = ">=1.0.0,<2.0.0", extras = ["plugin"]}
 
 [tool.poetry-dynamic-versioning]
 enable = true
