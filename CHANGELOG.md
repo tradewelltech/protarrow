@@ -6,9 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
-## [v13.0.1](https://github.com/tradewelltech/protarrow/releases/tag/v13.0.1) - 2025-04-14
+## [v0.13.1](https://github.com/tradewelltech/protarrow/releases/tag/v0.13.1) - 2025-04-14
 
-<small>[Compare with v0.13.0](https://github.com/tradewelltech/protarrow/compare/v0.13.0...v13.0.1)</small>
+<small>[Compare with v0.13.0](https://github.com/tradewelltech/protarrow/compare/v0.13.0...v0.13.1)</small>
 
 ### Added
 
