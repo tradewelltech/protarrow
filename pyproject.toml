@@ -32,7 +32,6 @@ packages = [
 readme = "README.md"
 repository = "https://github.com/tradewelltech/protarrow"
 requires-python = ">=3.9,<4"
-version = "0.0.0"
 
 [project.urls]
 "Bug Tracker" = "https://github.com/tradewelltech/protarrow/issues"
