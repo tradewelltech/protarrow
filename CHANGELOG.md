@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.13.3](https://github.com/tradewelltech/protarrow/releases/tag/v0.13.3) - 2025-04-15
+
+<small>[Compare with v0.13.2](https://github.com/tradewelltech/protarrow/compare/v0.13.2...v0.13.3)</small>
+
+### Added
+
+- Add latest protobuf and other updates ([416ee20](https://github.com/tradewelltech/protarrow/commit/416ee2004861082a53aeafeb40536a7bdfcaecd1) by aandres3).
+
 ## [v0.13.2](https://github.com/tradewelltech/protarrow/releases/tag/v0.13.2) - 2025-04-14
 
 <small>[Compare with v0.13.1](https://github.com/tradewelltech/protarrow/compare/v0.13.1...v0.13.2)</small>
