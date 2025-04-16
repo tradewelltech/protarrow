@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.13.5](https://github.com/tradewelltech/protarrow/releases/tag/v0.13.5) - 2025-04-16
+
+<small>[Compare with v0.13.4](https://github.com/tradewelltech/protarrow/compare/v0.13.4...v0.13.5)</small>
+
+### Added
+
+- Add missing permission ([0ef45d2](https://github.com/tradewelltech/protarrow/commit/0ef45d2d09ecc6ccc54fc032501ca3cab2aab108) by aandres3).
+
 ## [v0.13.4](https://github.com/tradewelltech/protarrow/releases/tag/v0.13.4) - 2025-04-16
 
 <small>[Compare with v0.13.3](https://github.com/tradewelltech/protarrow/compare/v0.13.3...v0.13.4)</small>
