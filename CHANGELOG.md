@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.13.4](https://github.com/tradewelltech/protarrow/releases/tag/v0.13.4) - 2025-04-16
+
+<small>[Compare with v0.13.3](https://github.com/tradewelltech/protarrow/compare/v0.13.3...v0.13.4)</small>
+
+### Added
+
+- Add support for trusted publishing with git hub action ([9647853](https://github.com/tradewelltech/protarrow/commit/96478538178c27a4b56948cea1d956b9d0cbd3d3) by aandres3).
+
 ## [v0.13.3](https://github.com/tradewelltech/protarrow/releases/tag/v0.13.3) - 2025-04-15
 
 <small>[Compare with v0.13.2](https://github.com/tradewelltech/protarrow/compare/v0.13.2...v0.13.3)</small>

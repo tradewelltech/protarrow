@@ -27,12 +27,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install poetry==2.1.1 'poetry-dynamic-versioning[plugin]'
 
-      - name: Configure poetry
-        env:
-          pypi_token: ${{ secrets.PyPI_TOKEN }}
-        run: poetry config pypi-token.pypi $pypi_token
-
-      - name: Build and publish
+      - name: Build
         run: |
           poetry build
-          poetry publish
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
