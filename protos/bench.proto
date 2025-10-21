@@ -187,3 +187,36 @@ message SuperNestedExampleMessage {
   map<string, ExampleMessage> nested_example_message_string_map = 5;
   
 }
+
+// Recursion tests: self-reference
+message CyclicalDirectMessage { 
+  CyclicalDirectMessage next = 1; 
+  int32 depth = 2; 
+}
+
+// Recursion tests: indirect cyclical
+message CyclicalIndirectMessageLevel1 {
+  CyclicalIndirectMessageLevel2 next = 1; 
+  string name = 2;
+}
+message CyclicalIndirectMessageLevel2 {
+  CyclicalIndirectMessageLevel3 next = 1; 
+  string name = 2;
+}
+message CyclicalIndirectMessageLevel3 {
+  CyclicalIndirectMessageLevel1 next = 1; 
+  string name = 2;
+}
+
+
+// Recursion tests: repeated self-reference
+message CyclicalRepeatedMessage {
+  repeated CyclicalRepeatedMessage children = 1;
+  int32 depth = 2;
+}
+
+// Recursion tests: map self-reference
+message CyclicalMapMessage {
+  map<string, CyclicalMapMessage> children_map = 1;
+  string name = 2;
+}

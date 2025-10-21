@@ -67,6 +67,12 @@ _PROTO_PRIMITIVE_TYPE_TO_PYARROW = {
 }
 
 
+class ProtarrowCycleError(Exception):
+    """Raised when a cycle is found and cannot be safely processed."""
+
+    pass
+
+
 def _time_of_day_to_nanos(time_of_day: TimeOfDay) -> int:
     return (
         (time_of_day.hours * 60 + time_of_day.minutes) * 60 + time_of_day.seconds
@@ -363,6 +369,7 @@ def _proto_field_to_array(
     field_descriptor: FieldDescriptor,
     validity_mask: Optional[Sequence[bool]],
     config: ProtarrowConfig,
+    descriptor_trace: Optional[List[str]] = None,
 ) -> pa.Array:
     converter = _get_converter(field_descriptor, config)
 
@@ -392,6 +399,7 @@ def _proto_field_to_array(
             field_descriptor.message_type,
             validity_mask=validity_mask,
             config=config,
+            descriptor_trace=descriptor_trace,
         )
 
 
@@ -414,6 +422,7 @@ def _repeated_proto_to_array(
     repeated_values: Iterable[RepeatedScalarFieldContainer],
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig,
+    descriptor_trace: Optional[List[str]] = None,
 ) -> pa.ListArray:
     """
     Convert Protobuf embedded lists to a 1-dimensional PyArrow ListArray with offsets
@@ -421,7 +430,11 @@ def _repeated_proto_to_array(
     """
     offsets = _get_offsets(repeated_values)
     array = _proto_field_to_array(
-        FlattenedIterable(repeated_values), field_descriptor, None, config
+        FlattenedIterable(repeated_values),
+        field_descriptor,
+        None,
+        config,
+        descriptor_trace,
     )
     return config.list_array_type.from_arrays(
         offsets,
@@ -434,6 +447,7 @@ def _proto_map_to_array(
     maps: Iterable[MessageMap],
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig = ProtarrowConfig(),
+    descriptor_trace: Optional[List[str]] = None,
 ) -> pa.MapArray:
     """
     Convert Protobuf maps to a 1-dimensional PyArrow MapArray with offsets
@@ -453,6 +467,7 @@ def _proto_map_to_array(
         value_field,
         validity_mask=None,
         config=config,
+        descriptor_trace=descriptor_trace,
     )
     return pa.MapArray.from_arrays(offsets, keys, values).cast(
         pa.map_(
@@ -490,14 +505,27 @@ def _proto_field_validity_mask(
     return mask
 
 
+def _raise_recursion_error(descriptor_name: str, trace: List[str]):
+    raise ProtarrowCycleError(
+        "Cyclical structure detected in protobuf message "
+        f"{descriptor_name}, with trace: [{', '.join(trace)}]."
+        " Consider setting 'purge_cyclical_messages=True'"
+        "in ProtarrowConfig."
+    )
+
+
 def _messages_to_array(
     messages: Iterable[Message],
     descriptor: Descriptor,
     validity_mask: Optional[Sequence[bool]],
     config: ProtarrowConfig,
+    descriptor_trace: Optional[List[str]] = None,
 ) -> pa.StructArray:
     arrays = []
     fields = []
+
+    if descriptor_trace is None:
+        descriptor_trace = []
 
     for field_descriptor in descriptor.fields:
         if (
@@ -511,14 +539,36 @@ def _messages_to_array(
             field_values = NestedIterable(
                 messages, operator.attrgetter(field_descriptor.name)
             )
+
+        is_cycle = descriptor.name in descriptor_trace
+        is_repeated = field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED
+        this_trace = descriptor_trace + [descriptor.name]
+
+        if is_cycle and (is_map(field_descriptor) or is_repeated):
+            _raise_recursion_error(descriptor.name, this_trace)
+
         if is_map(field_descriptor):
-            array = _proto_map_to_array(field_values, field_descriptor, config)
-        elif field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED:
-            array = _repeated_proto_to_array(field_values, field_descriptor, config)
+            array = _proto_map_to_array(
+                field_values, field_descriptor, config, this_trace
+            )
+        elif is_repeated:
+            array = _repeated_proto_to_array(
+                field_values, field_descriptor, config, this_trace
+            )
         else:
+            if is_cycle:
+                if config.purge_cyclical_messages:
+                    continue
+                else:
+                    _raise_recursion_error(descriptor.name, this_trace)
+
             mask = _proto_field_validity_mask(messages, field_descriptor)
             array = _proto_field_to_array(
-                field_values, field_descriptor, validity_mask=mask, config=config
+                field_values,
+                field_descriptor,
+                validity_mask=mask,
+                config=config,
+                descriptor_trace=this_trace,
             )
 
         arrays.append(array)

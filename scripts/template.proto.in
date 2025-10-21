@@ -70,3 +70,31 @@ message SuperNestedExampleMessage {
   map<{{map_key}}, ExampleMessage> nested_example_message_{{map_key}}_map = {{ 3 + loop.index}};
   {% endfor %}
 }
+
+// Recursion tests: self-reference
+message CyclicalDirectMessage { 
+  CyclicalDirectMessage next = 1; 
+  int32 depth = 2; 
+}
+
+// Recursion tests: indirect cyclical
+{% set RECURSION_DEPTH = 3 -%}
+{% for i in range(1, RECURSION_DEPTH + 1) -%}
+message CyclicalIndirectMessageLevel{{ i }} {
+  {% set next_level = i + 1 if i < RECURSION_DEPTH else 1 -%}
+  CyclicalIndirectMessageLevel{{ next_level }} next = 1; 
+  string name = 2;
+}
+{% endfor %}
+
+// Recursion tests: repeated self-reference
+message CyclicalRepeatedMessage {
+  repeated CyclicalRepeatedMessage children = 1;
+  int32 depth = 2;
+}
+
+// Recursion tests: map self-reference
+message CyclicalMapMessage {
+  map<string, CyclicalMapMessage> children_map = 1;
+  string name = 2;
+}
