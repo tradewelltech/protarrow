@@ -16,7 +16,7 @@ classifiers = [
 ]
 dependencies = [
   "googleapis-common-protos>=1.53.0",
-  "protobuf>=3.20.1",
+  "protobuf",
   "pyarrow>=16.0.0"
 ]
 description = "Convert from protobuf to arrow and back"
