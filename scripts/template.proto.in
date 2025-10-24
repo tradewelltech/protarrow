@@ -71,30 +71,29 @@ message SuperNestedExampleMessage {
   {% endfor %}
 }
 
-// Recursion tests: self-reference
-message CyclicalDirectMessage { 
-  CyclicalDirectMessage next = 1; 
+// Recursive message tests: self-reference
+message RecursiveSelfReferentialMessage { 
+  RecursiveSelfReferentialMessage next = 1; 
   int32 depth = 2; 
 }
 
-// Recursion tests: indirect cyclical
-{% set RECURSION_DEPTH = 3 -%}
-{% for i in range(1, RECURSION_DEPTH + 1) -%}
-message CyclicalIndirectMessageLevel{{ i }} {
-  {% set next_level = i + 1 if i < RECURSION_DEPTH else 1 -%}
-  CyclicalIndirectMessageLevel{{ next_level }} next = 1; 
-  string name = 2;
+// Recursive message tests: nested
+{% for i in range(1, recursion_depth + 1) -%}
+message RecursiveNestedMessageLevel{{ i }} {
+  {% set next_level = i + 1 if i < recursion_depth else 1 -%}
+  string name = 1;
+  RecursiveNestedMessageLevel{{ next_level }} next = 2; 
 }
 {% endfor %}
 
-// Recursion tests: repeated self-reference
-message CyclicalRepeatedMessage {
-  repeated CyclicalRepeatedMessage children = 1;
-  int32 depth = 2;
+// Recursive message tests: repeated self-reference
+message RecursiveSelfReferentialRepeatedMessage {
+  int32 depth = 1;
+  repeated RecursiveSelfReferentialRepeatedMessage children = 2;
 }
 
-// Recursion tests: map self-reference
-message CyclicalMapMessage {
-  map<string, CyclicalMapMessage> children_map = 1;
-  string name = 2;
+// Recursive message tests: map self-reference
+message RecursiveSelfReferentialMapMessage {
+  string name = 1;
+  map<string, RecursiveSelfReferentialMapMessage> children_map = 2;
 }

@@ -71,11 +71,15 @@ TYPES = [
 
 MAP_KEYS = ["int32", "string"]
 
+RECURSION_DEPTH = 3  # Level at which recursion occurs on a nested recursive message
+
 
 def generate():
     env = Environment(loader=FileSystemLoader(DIR.as_posix()), autoescape=True)
     template = env.get_template("template.proto.in")
-    generated = template.render(types=TYPES, map_keys=MAP_KEYS)
+    generated = template.render(
+        types=TYPES, map_keys=MAP_KEYS, recursion_depth=RECURSION_DEPTH
+    )
     with (DIR.parent / "protos" / "bench.proto").open("w") as fp:
         fp.write(generated)
 

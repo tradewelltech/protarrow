@@ -1,0 +1,3 @@
+{"name": "M1_L1", "children_map": {"A": {"name": "M1_L2", "children_map": {"B": {"name": "M1_L3", "children_map": {"C": {"name": "M1_L4"}}}}}}}
+{"name": "M2_L1", "children_map": {"D": {"name": "M2_L2", "children_map": {}}, "E": {"name": "M2_L2b", "children_map": {}}}}
+{"name": "M3_L1", "children_map": {}}

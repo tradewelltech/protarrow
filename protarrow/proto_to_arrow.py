@@ -67,12 +67,6 @@ _PROTO_PRIMITIVE_TYPE_TO_PYARROW = {
 }
 
 
-class ProtarrowCycleError(Exception):
-    """Raised when a cycle is found and cannot be safely processed."""
-
-    pass
-
-
 def _time_of_day_to_nanos(time_of_day: TimeOfDay) -> int:
     return (
         (time_of_day.hours * 60 + time_of_day.minutes) * 60 + time_of_day.seconds
@@ -422,7 +416,7 @@ def _repeated_proto_to_array(
     repeated_values: Iterable[RepeatedScalarFieldContainer],
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig,
-    descriptor_trace: Optional[List[str]] = None,
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.ListArray:
     """
     Convert Protobuf embedded lists to a 1-dimensional PyArrow ListArray with offsets
@@ -447,7 +441,7 @@ def _proto_map_to_array(
     maps: Iterable[MessageMap],
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig = ProtarrowConfig(),
-    descriptor_trace: Optional[List[str]] = None,
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.MapArray:
     """
     Convert Protobuf maps to a 1-dimensional PyArrow MapArray with offsets
@@ -505,11 +499,13 @@ def _proto_field_validity_mask(
     return mask
 
 
-def _raise_recursion_error(descriptor_name: str, trace: List[str]):
-    raise ProtarrowCycleError(
-        "Cyclical structure detected in protobuf message "
-        f"{descriptor_name}, with trace: [{', '.join(trace)}]."
-        " Consider setting 'purge_cyclical_messages=True'"
+def _raise_recursion_error(trace: Tuple[Descriptor, ...]):
+    trace_names = (d.full_name for d in trace)
+
+    raise TypeError(
+        "Cyclical structure detected in the protobuf message. "
+        f"Full trace: ({', '.join(trace_names)})."
+        " Consider setting 'skip_recursive_messages=True'"
         "in ProtarrowConfig."
     )
 
@@ -519,13 +515,10 @@ def _messages_to_array(
     descriptor: Descriptor,
     validity_mask: Optional[Sequence[bool]],
     config: ProtarrowConfig,
-    descriptor_trace: Optional[List[str]] = None,
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.StructArray:
     arrays = []
     fields = []
-
-    if descriptor_trace is None:
-        descriptor_trace = []
 
     for field_descriptor in descriptor.fields:
         if (
@@ -540,28 +533,22 @@ def _messages_to_array(
                 messages, operator.attrgetter(field_descriptor.name)
             )
 
-        is_cycle = descriptor.name in descriptor_trace
-        is_repeated = field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED
-        this_trace = descriptor_trace + [descriptor.name]
-
-        if is_cycle and (is_map(field_descriptor) or is_repeated):
-            _raise_recursion_error(descriptor.name, this_trace)
+        this_trace = descriptor_trace + (descriptor,)
+        if descriptor in descriptor_trace:
+            if config.skip_recursive_messages:
+                continue
+            else:
+                _raise_recursion_error(this_trace)
 
         if is_map(field_descriptor):
             array = _proto_map_to_array(
                 field_values, field_descriptor, config, this_trace
             )
-        elif is_repeated:
+        elif field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED:
             array = _repeated_proto_to_array(
                 field_values, field_descriptor, config, this_trace
             )
         else:
-            if is_cycle:
-                if config.purge_cyclical_messages:
-                    continue
-                else:
-                    _raise_recursion_error(descriptor.name, this_trace)
-
             mask = _proto_field_validity_mask(messages, field_descriptor)
             array = _proto_field_to_array(
                 field_values,

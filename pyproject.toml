@@ -76,11 +76,6 @@ enable = true
 [tool.poetry-dynamic-versioning.substitution]
 files = ["*/__init__.py"]
 folders = [{path = "protarrow"}]
-
-[tool.ruff]
-ignore = [
-  "I001"  # suppresses noisy "Import block is un-sorted or un-formatted"
-]
 line-length = 88
 
 [tool.ruff.lint]
@@ -88,6 +83,3 @@ select = ["E", "F", "C", "I", "PERF"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["protarrow", "protarrow_protos"]
-
-[tool.ruff.mccabe]
-max-complexity = 11
