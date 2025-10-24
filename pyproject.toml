@@ -76,8 +76,6 @@ enable = true
 [tool.poetry-dynamic-versioning.substitution]
 files = ["*/__init__.py"]
 folders = [{path = "protarrow"}]
-
-[tool.ruff]
 line-length = 88
 
 [tool.ruff.lint]

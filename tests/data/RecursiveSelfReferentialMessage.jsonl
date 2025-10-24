@@ -1,0 +1,3 @@
+{"depth": 1, "next": {"depth": 2, "next": {"depth": 3, "next": {}}}}
+{"depth": 11, "next": {"depth": 12, "next": {"depth": 13, "next": {}}}}
+{"depth": 21, "next": {"depth": 22, "next": {"depth": 23, "next": {}}}}

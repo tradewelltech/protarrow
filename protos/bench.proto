@@ -187,3 +187,36 @@ message SuperNestedExampleMessage {
   map<string, ExampleMessage> nested_example_message_string_map = 5;
   
 }
+
+// Recursive message tests: self-reference
+message RecursiveSelfReferentialMessage { 
+  RecursiveSelfReferentialMessage next = 1; 
+  int32 depth = 2; 
+}
+
+// Recursive message tests: nested
+message RecursiveNestedMessageLevel1 {
+  string name = 1;
+  RecursiveNestedMessageLevel2 next = 2; 
+}
+message RecursiveNestedMessageLevel2 {
+  string name = 1;
+  RecursiveNestedMessageLevel3 next = 2; 
+}
+message RecursiveNestedMessageLevel3 {
+  string name = 1;
+  RecursiveNestedMessageLevel1 next = 2; 
+}
+
+
+// Recursive message tests: repeated self-reference
+message RecursiveSelfReferentialRepeatedMessage {
+  int32 depth = 1;
+  repeated RecursiveSelfReferentialRepeatedMessage children = 2;
+}
+
+// Recursive message tests: map self-reference
+message RecursiveSelfReferentialMapMessage {
+  string name = 1;
+  map<string, RecursiveSelfReferentialMapMessage> children_map = 2;
+}
