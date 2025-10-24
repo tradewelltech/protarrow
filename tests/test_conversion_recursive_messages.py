@@ -7,6 +7,8 @@ from google.protobuf.message import Message
 
 from protarrow.common import ProtarrowConfig
 from protarrow.proto_to_arrow import (
+    message_type_to_schema,
+    message_type_to_struct_type,
     messages_to_record_batch,
     messages_to_table,
 )
@@ -36,14 +38,14 @@ def _load_data(filename: str, message_type: Type[Message]) -> List[Message]:
 
 
 # ====================================================================
-# DIRECT SELF-REFERENCE
+# RECURSIVE SELF-REFERENTIAL MESSAGES:
 #  mes A:         mes A:
 #    mes A:  =>     (ES)
 #
 # (ES): empty struct
 # ====================================================================
 @pytest.mark.parametrize("config", CONFIGS)
-def test_cyclical_direct_message_handling(config: ProtarrowConfig):
+def test_recursive_self_referential_message_handling(config: ProtarrowConfig):
     messages = _load_data(
         "RecursiveSelfReferentialMessage.jsonl", RecursiveSelfReferentialMessage
     )
@@ -58,8 +60,20 @@ def test_cyclical_direct_message_handling(config: ProtarrowConfig):
         with pytest.raises(TypeError, match=regex_pattern):
             messages_to_table(messages, RecursiveSelfReferentialMessage, config)
 
+        with pytest.raises(TypeError, match=regex_pattern):
+            message_type_to_schema(RecursiveSelfReferentialMessage, config)
+
+        with pytest.raises(TypeError, match=regex_pattern):
+            message_type_to_struct_type(RecursiveSelfReferentialMessage, config)
+
     else:
         rb = messages_to_record_batch(messages, RecursiveSelfReferentialMessage, config)
+        inferred_schema = message_type_to_schema(
+            RecursiveSelfReferentialMessage, config
+        )
+        inferred_type = message_type_to_struct_type(
+            RecursiveSelfReferentialMessage, config
+        )
 
         # Check schema
         expected_schema = pa.schema(
@@ -68,7 +82,11 @@ def test_cyclical_direct_message_handling(config: ProtarrowConfig):
                 pa.field("depth", pa.int32(), nullable=False),
             ]
         )
+        expected_type = pa.struct(expected_schema)
+
         assert rb.schema == expected_schema
+        assert inferred_schema == expected_schema
+        assert inferred_type == expected_type
 
         # Check values
         expected_depth_array = pa.array([1, 11, 21], type=pa.int32())
@@ -89,7 +107,7 @@ def test_cyclical_direct_message_handling(config: ProtarrowConfig):
 
 
 # ====================================================================
-# INDIRECT RECURSIVE CYCLE
+# NESTED RECURSIVE MESSAGES:
 # mes A:       mes A:
 #   mes B:  =>   mes B:
 #     mes A:       (ES)
@@ -97,7 +115,7 @@ def test_cyclical_direct_message_handling(config: ProtarrowConfig):
 # (ES): empty struct
 # ====================================================================
 @pytest.mark.parametrize("config", CONFIGS)
-def test_cyclical_indirect_message_handling(config: ProtarrowConfig):
+def test_recursive_nested_message_handling(config: ProtarrowConfig):
     messages = _load_data(
         "RecursiveNestedMessageLevel1.jsonl", RecursiveNestedMessageLevel1
     )
@@ -115,8 +133,18 @@ def test_cyclical_indirect_message_handling(config: ProtarrowConfig):
         with pytest.raises(TypeError, match=regex_pattern):
             messages_to_table(messages, RecursiveNestedMessageLevel1, config)
 
+        with pytest.raises(TypeError, match=regex_pattern):
+            message_type_to_schema(RecursiveNestedMessageLevel1, config)
+
+        with pytest.raises(TypeError, match=regex_pattern):
+            message_type_to_struct_type(RecursiveNestedMessageLevel1, config)
+
     else:
         rb = messages_to_record_batch(messages, RecursiveNestedMessageLevel1, config)
+        inferred_schema = message_type_to_schema(RecursiveNestedMessageLevel1, config)
+        inferred_type = message_type_to_struct_type(
+            RecursiveNestedMessageLevel1, config
+        )
 
         # Check schema
         pruned_struct = pa.struct([])
@@ -138,7 +166,11 @@ def test_cyclical_indirect_message_handling(config: ProtarrowConfig):
                 pa.field("next", level2_struct),
             ]
         )
+        expected_type = pa.struct(expected_schema)
+
         assert rb.schema == expected_schema
+        assert inferred_schema == expected_schema
+        assert inferred_type == expected_type
 
         # Check values
         num_rows = 3
@@ -177,14 +209,14 @@ def test_cyclical_indirect_message_handling(config: ProtarrowConfig):
 
 
 # ====================================================================
-# CYCLICAL REPEATED MESSAGE
+# RECURSIVE SELF-REFERENTIAL REPEATED MESSAGES
 # mes A:                      mes A:
 #   [mes A, mes A, mes A]  =>   [(ES), (ES), (ES)]
 #
 # (ES): empty struct
 # ====================================================================
 @pytest.mark.parametrize("config", CONFIGS)
-def test_cyclical_repeated_message_handling(config: ProtarrowConfig):
+def test_recursive_self_referential_repeated_message_handling(config: ProtarrowConfig):
     messages = _load_data(
         "RecursiveSelfReferentialRepeatedMessage.jsonl",
         RecursiveSelfReferentialRepeatedMessage,
@@ -202,9 +234,21 @@ def test_cyclical_repeated_message_handling(config: ProtarrowConfig):
         with pytest.raises(TypeError, match=regex_pattern):
             messages_to_table(messages, RecursiveSelfReferentialRepeatedMessage, config)
 
+        with pytest.raises(TypeError, match=regex_pattern):
+            message_type_to_schema(RecursiveSelfReferentialRepeatedMessage, config)
+
+        with pytest.raises(TypeError, match=regex_pattern):
+            message_type_to_struct_type(RecursiveSelfReferentialRepeatedMessage, config)
+
     else:
         rb = messages_to_record_batch(
             messages, RecursiveSelfReferentialRepeatedMessage, config
+        )
+        inferred_schema = message_type_to_schema(
+            RecursiveSelfReferentialRepeatedMessage, config
+        )
+        inferred_type = message_type_to_struct_type(
+            RecursiveSelfReferentialRepeatedMessage, config
         )
 
         # Check schema
@@ -225,7 +269,11 @@ def test_cyclical_repeated_message_handling(config: ProtarrowConfig):
                 ),
             ]
         )
+        expected_type = pa.struct(expected_schema)
+
         assert rb.schema == expected_schema
+        assert inferred_schema == expected_schema
+        assert inferred_type == expected_type
 
         # Check values
         expected_depth_array = pa.array([1, 11, 21], pa.int32())
@@ -251,12 +299,12 @@ def test_cyclical_repeated_message_handling(config: ProtarrowConfig):
 
 
 # ====================================================================
-# CYCLICAL MAP MESSAGE
+# RECURSIVE SELF-REFERENTIAL MAP MESSAGES
 #  mes A:                mes A:
 #    map<*, mes A>  =>     map<*, (ES)>
 # ====================================================================
 @pytest.mark.parametrize("config", CONFIGS)
-def test_cyclical_map_message_handling(config: ProtarrowConfig):
+def test_recursive_self_referential_map_message_handling(config: ProtarrowConfig):
     messages = _load_data(
         "RecursiveSelfReferentialMapMessage.jsonl", RecursiveSelfReferentialMapMessage
     )
@@ -273,9 +321,21 @@ def test_cyclical_map_message_handling(config: ProtarrowConfig):
         with pytest.raises(TypeError, match=regex_pattern):
             messages_to_table(messages, RecursiveSelfReferentialMapMessage, config)
 
+        with pytest.raises(TypeError, match=regex_pattern):
+            message_type_to_schema(RecursiveSelfReferentialMapMessage, config)
+
+        with pytest.raises(TypeError, match=regex_pattern):
+            message_type_to_struct_type(RecursiveSelfReferentialMapMessage, config)
+
     else:
         rb = messages_to_record_batch(
             messages, RecursiveSelfReferentialMapMessage, config
+        )
+        inferred_schema = message_type_to_schema(
+            RecursiveSelfReferentialMapMessage, config
+        )
+        inferred_type = message_type_to_struct_type(
+            RecursiveSelfReferentialMapMessage, config
         )
 
         # Check schema
@@ -294,9 +354,13 @@ def test_cyclical_map_message_handling(config: ProtarrowConfig):
                 pa.field("children_map", children_map_type, nullable=False),
             ]
         )
+        expected_type = pa.struct(expected_schema)
+
         assert rb.schema == expected_schema, (
             "Schema mismatch for map self-reference pruning."
         )
+        assert inferred_schema == expected_schema
+        assert inferred_type == expected_type
 
         # Check values
         key_array = pa.array(["A", "D", "E"], pa.string())

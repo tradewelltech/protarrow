@@ -198,6 +198,17 @@ class MapValueIterable(collections.abc.Iterable):
         return sum(len(i) for i in self.scalar_map if i)
 
 
+def _raise_recursion_error(trace: Tuple[Descriptor, ...]):
+    trace_names = (d.full_name for d in trace)
+
+    raise TypeError(
+        "Cyclical structure detected in the protobuf message. "
+        f"Full trace: ({', '.join(trace_names)})."
+        " Consider setting 'skip_recursive_messages=True'"
+        "in ProtarrowConfig."
+    )
+
+
 def is_map(field_descriptor: FieldDescriptor) -> bool:
     return (
         field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
@@ -249,11 +260,14 @@ def get_enum_converter(
 def field_descriptor_to_field(
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig,
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.Field:
     if is_map(field_descriptor):
         key_field, value_field = get_map_descriptors(field_descriptor)
-        key_type = field_descriptor_to_data_type(key_field, config)
-        value_type = field_descriptor_to_data_type(value_field, config)
+        key_type = field_descriptor_to_data_type(key_field, config, descriptor_trace)
+        value_type = field_descriptor_to_data_type(
+            value_field, config, descriptor_trace
+        )
         return pa.field(
             field_descriptor.name,
             pa.map_(
@@ -266,14 +280,18 @@ def field_descriptor_to_field(
     elif field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
         return pa.field(
             field_descriptor.name,
-            config.list_(field_descriptor_to_data_type(field_descriptor, config)),
+            config.list_(
+                field_descriptor_to_data_type(
+                    field_descriptor, config, descriptor_trace
+                )
+            ),
             nullable=config.list_nullable,
             metadata=config.field_metadata(field_descriptor.number),
         )
     else:
         return pa.field(
             field_descriptor.name,
-            field_descriptor_to_data_type(field_descriptor, config),
+            field_descriptor_to_data_type(field_descriptor, config, descriptor_trace),
             nullable=field_descriptor.has_presence,
             metadata=config.field_metadata(field_descriptor.number),
         )
@@ -282,6 +300,7 @@ def field_descriptor_to_field(
 def _message_field_to_data_type(
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig,
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.DataType:
     try:
         return _PROTO_DESCRIPTOR_TO_PYARROW[field_descriptor.message_type]
@@ -291,9 +310,19 @@ def _message_field_to_data_type(
         elif field_descriptor.message_type == StringValue.DESCRIPTOR:
             return config.string_type
         else:
+            descriptor = field_descriptor.message_type
+
+            if descriptor in descriptor_trace:
+                if config.skip_recursive_messages:
+                    return pa.struct([])
+                else:
+                    _raise_recursion_error(descriptor_trace + (descriptor,))
+
             return pa.struct(
                 [
-                    field_descriptor_to_field(child_field, config)
+                    field_descriptor_to_field(
+                        child_field, config, descriptor_trace + (descriptor,)
+                    )
                     for child_field in field_descriptor.message_type.fields
                 ]
             )
@@ -302,6 +331,7 @@ def _message_field_to_data_type(
 def field_descriptor_to_data_type(
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig,
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.DataType:
     if field_descriptor.message_type == Timestamp.DESCRIPTOR:
         return config.timestamp_type
@@ -310,7 +340,7 @@ def field_descriptor_to_data_type(
     elif field_descriptor.message_type == Duration.DESCRIPTOR:
         return config.duration_type
     elif field_descriptor.type == FieldDescriptorProto.TYPE_MESSAGE:
-        return _message_field_to_data_type(field_descriptor, config)
+        return _message_field_to_data_type(field_descriptor, config, descriptor_trace)
     elif field_descriptor.type == FieldDescriptorProto.TYPE_ENUM:
         return config.enum_type
     elif field_descriptor.type == FieldDescriptorProto.TYPE_STRING:
@@ -499,17 +529,6 @@ def _proto_field_validity_mask(
     return mask
 
 
-def _raise_recursion_error(trace: Tuple[Descriptor, ...]):
-    trace_names = (d.full_name for d in trace)
-
-    raise TypeError(
-        "Cyclical structure detected in the protobuf message. "
-        f"Full trace: ({', '.join(trace_names)})."
-        " Consider setting 'skip_recursive_messages=True'"
-        "in ProtarrowConfig."
-    )
-
-
 def _messages_to_array(
     messages: Iterable[Message],
     descriptor: Descriptor,
@@ -611,20 +630,25 @@ def message_type_to_schema(
     message_type: Type[Message],
     config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.Schema:
+    descriptor_trace = (message_type.DESCRIPTOR,)
+
     return pa.schema(
         [
-            field_descriptor_to_field(field_descriptor, config)
+            field_descriptor_to_field(field_descriptor, config, descriptor_trace)
             for field_descriptor in message_type.DESCRIPTOR.fields
         ]
     )
 
 
 def message_type_to_struct_type(
-    message_type: Type[Message], config: ProtarrowConfig = ProtarrowConfig()
+    message_type: Type[Message],
+    config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.StructType:
+    descriptor_trace = (message_type.DESCRIPTOR,)
+
     return pa.struct(
         [
-            field_descriptor_to_field(field_descriptor, config)
+            field_descriptor_to_field(field_descriptor, config, descriptor_trace)
             for field_descriptor in message_type.DESCRIPTOR.fields
         ]
     )
