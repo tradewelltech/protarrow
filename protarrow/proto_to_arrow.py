@@ -323,7 +323,7 @@ def _message_field_to_data_type(
                     field_descriptor_to_field(
                         child_field, config, descriptor_trace + (descriptor,)
                     )
-                    for child_field in field_descriptor.message_type.fields
+                    for child_field in descriptor.fields
                 ]
             )
 
