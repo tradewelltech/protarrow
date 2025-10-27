@@ -362,7 +362,7 @@ def test_recursive_self_referential_map_message_handling(config: ProtarrowConfig
         assert inferred_schema == expected_schema
         assert inferred_type == expected_type
 
-        # Check values
+        # Check values: map key order is arbitrary, so don't compare at the table level
         key_array = pa.array(["A", "D", "E"], pa.string())
         pruned_value_array = pa.StructArray.from_arrays(
             arrays=[], fields=[], mask=pa.array([False] * len(key_array))
@@ -370,16 +370,30 @@ def test_recursive_self_referential_map_message_handling(config: ProtarrowConfig
         expected_name_array = pa.array(["M1_L1", "M2_L1", "M3_L1"], pa.string())
         # Offsets for 1 item (M1), 2 items (M2), 0 items (M3)
         list_offsets = pa.array([0, 1, 3, 3], pa.int32())
-
         expected_children_map_array = pa.MapArray.from_arrays(
             offsets=list_offsets,
             keys=key_array,
             items=pruned_value_array,
             type=children_map_type,
         )
-        expected_table = pa.Table.from_arrays(
-            [expected_name_array, expected_children_map_array], schema=expected_schema
-        )
 
-        actual_table = pa.Table.from_batches([rb])
-        assert actual_table.equals(expected_table)
+        inferred_table = pa.Table.from_batches([rb])
+        assert inferred_table.column("name").num_chunks == 1
+        inferred_name_array = inferred_table.column("name").chunk(0)
+        assert inferred_name_array.equals(expected_name_array)
+
+        expected_children_list = expected_children_map_array.to_pylist()
+        inferred_children_list = inferred_table.column("children_map").to_pylist()
+
+        sorted_expected_children_list = [
+            sorted(row, key=lambda x: x[0]) for row in expected_children_list
+        ]
+        sorted_inferred_children_list = [
+            sorted(row, key=lambda x: x[0]) for row in inferred_children_list
+        ]
+        assert sorted_expected_children_list == sorted_inferred_children_list
+
+        # Finally, assert all nested messages in the recursive map were skipped
+        for row in sorted_inferred_children_list:
+            for key, value in row:
+                assert not value
