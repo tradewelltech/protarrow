@@ -70,3 +70,30 @@ message SuperNestedExampleMessage {
   map<{{map_key}}, ExampleMessage> nested_example_message_{{map_key}}_map = {{ 3 + loop.index}};
   {% endfor %}
 }
+
+// Recursive message tests: self-reference
+message RecursiveSelfReferentialMessage { 
+  RecursiveSelfReferentialMessage next = 1; 
+  int32 depth = 2; 
+}
+
+// Recursive message tests: nested
+{% for i in range(1, recursion_depth + 1) -%}
+message RecursiveNestedMessageLevel{{ i }} {
+  {% set next_level = i + 1 if i < recursion_depth else 1 -%}
+  string name = 1;
+  RecursiveNestedMessageLevel{{ next_level }} next = 2; 
+}
+{% endfor %}
+
+// Recursive message tests: repeated self-reference
+message RecursiveSelfReferentialRepeatedMessage {
+  int32 depth = 1;
+  repeated RecursiveSelfReferentialRepeatedMessage children = 2;
+}
+
+// Recursive message tests: map self-reference
+message RecursiveSelfReferentialMapMessage {
+  string name = 1;
+  map<string, RecursiveSelfReferentialMapMessage> children_map = 2;
+}

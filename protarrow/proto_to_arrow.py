@@ -198,6 +198,17 @@ class MapValueIterable(collections.abc.Iterable):
         return sum(len(i) for i in self.scalar_map if i)
 
 
+def _raise_recursion_error(trace: Tuple[Descriptor, ...]):
+    trace_names = (d.full_name for d in trace)
+
+    raise TypeError(
+        "Recursive structure detected in the protobuf message. "
+        f"Full trace: ({', '.join(trace_names)})."
+        " Consider setting 'skip_recursive_messages=True'"
+        "in ProtarrowConfig."
+    )
+
+
 def is_map(field_descriptor: FieldDescriptor) -> bool:
     return (
         field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
@@ -249,11 +260,14 @@ def get_enum_converter(
 def field_descriptor_to_field(
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig,
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.Field:
     if is_map(field_descriptor):
         key_field, value_field = get_map_descriptors(field_descriptor)
-        key_type = field_descriptor_to_data_type(key_field, config)
-        value_type = field_descriptor_to_data_type(value_field, config)
+        key_type = field_descriptor_to_data_type(key_field, config, descriptor_trace)
+        value_type = field_descriptor_to_data_type(
+            value_field, config, descriptor_trace
+        )
         return pa.field(
             field_descriptor.name,
             pa.map_(
@@ -266,14 +280,18 @@ def field_descriptor_to_field(
     elif field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
         return pa.field(
             field_descriptor.name,
-            config.list_(field_descriptor_to_data_type(field_descriptor, config)),
+            config.list_(
+                field_descriptor_to_data_type(
+                    field_descriptor, config, descriptor_trace
+                )
+            ),
             nullable=config.list_nullable,
             metadata=config.field_metadata(field_descriptor.number),
         )
     else:
         return pa.field(
             field_descriptor.name,
-            field_descriptor_to_data_type(field_descriptor, config),
+            field_descriptor_to_data_type(field_descriptor, config, descriptor_trace),
             nullable=field_descriptor.has_presence,
             metadata=config.field_metadata(field_descriptor.number),
         )
@@ -282,6 +300,7 @@ def field_descriptor_to_field(
 def _message_field_to_data_type(
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig,
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.DataType:
     try:
         return _PROTO_DESCRIPTOR_TO_PYARROW[field_descriptor.message_type]
@@ -291,9 +310,19 @@ def _message_field_to_data_type(
         elif field_descriptor.message_type == StringValue.DESCRIPTOR:
             return config.string_type
         else:
+            descriptor = field_descriptor.message_type
+
+            if descriptor in descriptor_trace:
+                if config.skip_recursive_messages:
+                    return pa.struct([])
+                else:
+                    _raise_recursion_error(descriptor_trace + (descriptor,))
+
             return pa.struct(
                 [
-                    field_descriptor_to_field(child_field, config)
+                    field_descriptor_to_field(
+                        child_field, config, descriptor_trace + (descriptor,)
+                    )
                     for child_field in field_descriptor.message_type.fields
                 ]
             )
@@ -302,6 +331,7 @@ def _message_field_to_data_type(
 def field_descriptor_to_data_type(
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig,
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.DataType:
     if field_descriptor.message_type == Timestamp.DESCRIPTOR:
         return config.timestamp_type
@@ -310,7 +340,7 @@ def field_descriptor_to_data_type(
     elif field_descriptor.message_type == Duration.DESCRIPTOR:
         return config.duration_type
     elif field_descriptor.type == FieldDescriptorProto.TYPE_MESSAGE:
-        return _message_field_to_data_type(field_descriptor, config)
+        return _message_field_to_data_type(field_descriptor, config, descriptor_trace)
     elif field_descriptor.type == FieldDescriptorProto.TYPE_ENUM:
         return config.enum_type
     elif field_descriptor.type == FieldDescriptorProto.TYPE_STRING:
@@ -363,6 +393,7 @@ def _proto_field_to_array(
     field_descriptor: FieldDescriptor,
     validity_mask: Optional[Sequence[bool]],
     config: ProtarrowConfig,
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.Array:
     converter = _get_converter(field_descriptor, config)
 
@@ -392,6 +423,7 @@ def _proto_field_to_array(
             field_descriptor.message_type,
             validity_mask=validity_mask,
             config=config,
+            descriptor_trace=descriptor_trace,
         )
 
 
@@ -414,6 +446,7 @@ def _repeated_proto_to_array(
     repeated_values: Iterable[RepeatedScalarFieldContainer],
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig,
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.ListArray:
     """
     Convert Protobuf embedded lists to a 1-dimensional PyArrow ListArray with offsets
@@ -421,7 +454,11 @@ def _repeated_proto_to_array(
     """
     offsets = _get_offsets(repeated_values)
     array = _proto_field_to_array(
-        FlattenedIterable(repeated_values), field_descriptor, None, config
+        FlattenedIterable(repeated_values),
+        field_descriptor,
+        None,
+        config,
+        descriptor_trace,
     )
     return config.list_array_type.from_arrays(
         offsets,
@@ -434,6 +471,7 @@ def _proto_map_to_array(
     maps: Iterable[MessageMap],
     field_descriptor: FieldDescriptor,
     config: ProtarrowConfig = ProtarrowConfig(),
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.MapArray:
     """
     Convert Protobuf maps to a 1-dimensional PyArrow MapArray with offsets
@@ -453,6 +491,7 @@ def _proto_map_to_array(
         value_field,
         validity_mask=None,
         config=config,
+        descriptor_trace=descriptor_trace,
     )
     return pa.MapArray.from_arrays(offsets, keys, values).cast(
         pa.map_(
@@ -495,6 +534,7 @@ def _messages_to_array(
     descriptor: Descriptor,
     validity_mask: Optional[Sequence[bool]],
     config: ProtarrowConfig,
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.StructArray:
     arrays = []
     fields = []
@@ -511,14 +551,30 @@ def _messages_to_array(
             field_values = NestedIterable(
                 messages, operator.attrgetter(field_descriptor.name)
             )
+
+        this_trace = descriptor_trace + (descriptor,)
+        if descriptor in descriptor_trace:
+            if config.skip_recursive_messages:
+                continue
+            else:
+                _raise_recursion_error(this_trace)
+
         if is_map(field_descriptor):
-            array = _proto_map_to_array(field_values, field_descriptor, config)
+            array = _proto_map_to_array(
+                field_values, field_descriptor, config, this_trace
+            )
         elif field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED:
-            array = _repeated_proto_to_array(field_values, field_descriptor, config)
+            array = _repeated_proto_to_array(
+                field_values, field_descriptor, config, this_trace
+            )
         else:
             mask = _proto_field_validity_mask(messages, field_descriptor)
             array = _proto_field_to_array(
-                field_values, field_descriptor, validity_mask=mask, config=config
+                field_values,
+                field_descriptor,
+                validity_mask=mask,
+                config=config,
+                descriptor_trace=this_trace,
             )
 
         arrays.append(array)
@@ -574,20 +630,25 @@ def message_type_to_schema(
     message_type: Type[Message],
     config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.Schema:
+    descriptor_trace = (message_type.DESCRIPTOR,)
+
     return pa.schema(
         [
-            field_descriptor_to_field(field_descriptor, config)
+            field_descriptor_to_field(field_descriptor, config, descriptor_trace)
             for field_descriptor in message_type.DESCRIPTOR.fields
         ]
     )
 
 
 def message_type_to_struct_type(
-    message_type: Type[Message], config: ProtarrowConfig = ProtarrowConfig()
+    message_type: Type[Message],
+    config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.StructType:
+    descriptor_trace = (message_type.DESCRIPTOR,)
+
     return pa.struct(
         [
-            field_descriptor_to_field(field_descriptor, config)
+            field_descriptor_to_field(field_descriptor, config, descriptor_trace)
             for field_descriptor in message_type.DESCRIPTOR.fields
         ]
     )
