@@ -202,7 +202,7 @@ def _raise_recursion_error(trace: Tuple[Descriptor, ...]):
     trace_names = (d.full_name for d in trace)
 
     raise TypeError(
-        "Cyclical structure detected in the protobuf message. "
+        "Recursive structure detected in the protobuf message. "
         f"Full trace: ({', '.join(trace_names)})."
         " Consider setting 'skip_recursive_messages=True'"
         "in ProtarrowConfig."
@@ -393,7 +393,7 @@ def _proto_field_to_array(
     field_descriptor: FieldDescriptor,
     validity_mask: Optional[Sequence[bool]],
     config: ProtarrowConfig,
-    descriptor_trace: Optional[List[str]] = None,
+    descriptor_trace: Tuple[Descriptor, ...] = (),
 ) -> pa.Array:
     converter = _get_converter(field_descriptor, config)
 
