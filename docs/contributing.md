@@ -6,11 +6,9 @@ Welcome! We're happy to have you here. Thank you in advance for your contributio
 
 ```shell
 python3 -m venv --clear venv
-source venv/bin/activate
-poetry self add "poetry-dynamic-versioning[plugin]"
-poetry install
-python ./scripts/generate_proto.py
-python ./scripts/protoc.py
+uv sync --all-groups
+uv run python ./scripts/generate_proto.py
+uv run python ./scripts/protoc.py
 pre-commit install
 ```
 
@@ -70,7 +68,7 @@ mkdocs serve --livereload --watch=./
 
 ## Updating dependencies
 
-- For the repo `poetry update`
+- For the repo `uv update`
 - For the doc: `(cd docs/; pip-compile ./requirements.in > ./requirements.txt)`
 - For pre-commit: `pre-commit autoupdate; pre-commit run --all-files`
 

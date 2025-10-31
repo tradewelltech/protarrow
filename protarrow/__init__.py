@@ -1,3 +1,4 @@
+from protarrow._version import version
 from protarrow.arrow_to_proto import record_batch_to_messages, table_to_messages
 from protarrow.cast_to_proto import cast_record_batch, cast_struct_array, cast_table
 from protarrow.common import ProtarrowConfig
@@ -9,7 +10,7 @@ from protarrow.proto_to_arrow import (
     messages_to_table,
 )
 
-__version__ = "0.4.0.post3.dev0+cf1e1bf"
+__version__ = version
 __all__ = [
     "MessageExtractor",
     "ProtarrowConfig",

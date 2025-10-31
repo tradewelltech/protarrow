@@ -1,6 +1,28 @@
 [build-system]
-build-backend = "poetry_dynamic_versioning.backend"
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "hatchling.build"
+requires = ["hatchling", "uv-dynamic-versioning"]
+
+[dependency-groups]
+dev = [
+  "Jinja2>=3.1.2",
+  "coverage>=6.5.0",
+  "flake8>=5.0.4",
+  "git-changelog>=2.2.0",
+  "grpcio-tools>=1.46.0",
+  "inflection>=0.5.1",
+  "isort>=5.10.1",
+  "mkdocs>=1.4.2",
+  "mkdocs-material>=9.0.3",
+  "mkdocstrings[python]>=0.21.2",
+  "pip-tools>=6.12.1",
+  "pre-commit>=2.20.0",
+  "pylint>=2.15.0",
+  "pytest>=7.2.0",
+  "pytest-benchmark>=4.0.0",
+  "pytest-cov",
+  "pytest-xdist>=3.1.0",
+  "ruff"
+]
 
 [project]
 authors = [{name = "Tradewell Tech", email = "engineering@tradewelltech.co"}]
@@ -15,9 +37,9 @@ classifiers = [
   "Programming Language :: Python :: 3.13"
 ]
 dependencies = [
-  "googleapis-common-protos>=1.53.0",
+  "googleapis-common-protos",
   "protobuf",
-  "pyarrow>=16.0.0"
+  "pyarrow"
 ]
 description = "Convert from protobuf to arrow and back"
 documentation = "https://protarrow.readthedocs.io/en/latest/"
@@ -40,42 +62,14 @@ requires-python = ">=3.9,<4"
 [tool.bandit]
 skips = ["B101", "B311"]
 
-[tool.black]
-exclude = "venv/|tox/|protarrow_protos/.*"
-target-version = ["py39"]
+[tool.hatch.build.hooks.version]
+path = "protarrow/_version.py"
+template = '''
+version = "{version}"
+'''
 
-[tool.poetry]
-version = "0.0.0"
-
-[tool.poetry.group.dev.dependencies]
-Jinja2 = ">=3.1.2"
-black = ">=22.10.0"
-coverage = ">=6.5.0"
-flake8 = ">=5.0.4"
-git-changelog = ">=2.2.0"
-grpcio-tools = ">=1.46.0"
-inflection = ">=0.5.1"
-isort = ">=5.10.1"
-mkdocs = ">=1.4.2"
-mkdocs-material = ">=9.0.3"
-mkdocstrings = {version = ">=0.21.2", extras = ["python"]}
-pip-tools = ">=6.12.1"
-pre-commit = ">=2.20.0"
-pylint = ">=2.15.0"
-pytest = ">=7.2.0"
-pytest-benchmark = ">=4.0.0"
-pytest-cov = "*"
-pytest-xdist = ">=3.1.0"
-
-[tool.poetry.requires-plugins]
-poetry-dynamic-versioning = {version = ">=1.0.0,<2.0.0", extras = ["plugin"]}
-
-[tool.poetry-dynamic-versioning]
-enable = true
-
-[tool.poetry-dynamic-versioning.substitution]
-files = ["*/__init__.py"]
-folders = [{path = "protarrow"}]
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
 
 [tool.ruff]
 line-length = 88
