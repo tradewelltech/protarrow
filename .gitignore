@@ -106,6 +106,7 @@ celerybeat.pid
 .venv
 env/
 venv/
+.venv/
 ENV/
 env.bak/
 venv.bak/
@@ -132,3 +133,4 @@ dmypy.json
 # Custom
 /protarrow_protos
 .idea
+/protarrow/_version.py
