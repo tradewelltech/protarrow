@@ -12,7 +12,7 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    Union,
+    Union, Sized, Collection,
 )
 
 import pyarrow as pa
@@ -38,6 +38,7 @@ from google.type.date_pb2 import Date
 from google.type.timeofday_pb2 import TimeOfDay
 
 from protarrow.common import M, ProtarrowConfig, is_binary_enum, is_string_enum
+from typing import cast
 
 _PROTO_DESCRIPTOR_TO_PYARROW = {
     BoolValue.DESCRIPTOR: pa.bool_(),
@@ -134,7 +135,7 @@ _DURATION_CONVERTERS = {
 
 @dataclasses.dataclass(frozen=True)
 class FlattenedIterable(collections.abc.Iterable):
-    parents: Iterable[Iterable[Optional[Any]]]
+    parents: Iterable[Collection[Optional[Any]]]
 
     def __iter__(self) -> Iterator[Any]:
         for parent in self.parents:
@@ -148,7 +149,7 @@ class FlattenedIterable(collections.abc.Iterable):
 
 @dataclasses.dataclass(frozen=True)
 class NestedIterable(collections.abc.Iterable):
-    parents: Iterable[Optional[Message]]
+    parents: Collection[Optional[Message]]
     getter: Callable[[Message], Any]
 
     def __iter__(self) -> Iterator[Optional[Any]]:
@@ -389,7 +390,7 @@ def _get_converter(
 
 
 def _proto_field_to_array(
-    proto_field_values: Iterable[Any],
+    proto_field_values: Collection[Any],
     field_descriptor: FieldDescriptor,
     validity_mask: Optional[Sequence[bool]],
     config: ProtarrowConfig,
@@ -530,7 +531,7 @@ def _proto_field_validity_mask(
 
 
 def _messages_to_array(
-    messages: Iterable[Message],
+    messages: Collection[Message],
     descriptor: Descriptor,
     validity_mask: Optional[Sequence[bool]],
     config: ProtarrowConfig,
@@ -601,14 +602,14 @@ def _messages_to_array(
 
 
 def messages_to_record_batch(
-    messages: Iterable[M],
+    messages: Collection[M],
     message_type: Type[M],
     config: ProtarrowConfig = ProtarrowConfig(),
 ):
     return pa.RecordBatch.from_struct_array(
         _messages_to_array(
             messages,
-            message_type.DESCRIPTOR,
+            cast(Descriptor, message_type.DESCRIPTOR),
             validity_mask=None,
             config=config,
         )
@@ -616,7 +617,7 @@ def messages_to_record_batch(
 
 
 def messages_to_table(
-    messages: Iterable[M],
+    messages: Collection[M],
     message_type: Type[M],
     config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.Table:
@@ -630,7 +631,7 @@ def message_type_to_schema(
     message_type: Type[Message],
     config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.Schema:
-    descriptor_trace = (message_type.DESCRIPTOR,)
+    descriptor_trace =  (cast(Descriptor, message_type.DESCRIPTOR),)
 
     return pa.schema(
         [
@@ -644,7 +645,7 @@ def message_type_to_struct_type(
     message_type: Type[Message],
     config: ProtarrowConfig = ProtarrowConfig(),
 ) -> pa.StructType:
-    descriptor_trace = (message_type.DESCRIPTOR,)
+    descriptor_trace: Tuple[Descriptor, ...] = (cast(Descriptor, message_type.DESCRIPTOR),)
 
     return pa.struct(
         [

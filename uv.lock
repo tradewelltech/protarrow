@@ -1246,6 +1246,7 @@ dev = [
     { name = "mkdocstrings", extra = ["python"] },
     { name = "pip-tools" },
     { name = "pre-commit" },
+    { name = "pyarrow-stubs" },
     { name = "pylint", version = "3.3.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pylint", version = "4.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "pytest" },
@@ -1276,6 +1277,7 @@ dev = [
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.21.2" },
     { name = "pip-tools", specifier = ">=6.12.1" },
     { name = "pre-commit", specifier = ">=2.20.0" },
+    { name = "pyarrow-stubs" },
     { name = "pylint", specifier = ">=2.15.0" },
     { name = "pytest", specifier = ">=7.2.0" },
     { name = "pytest-benchmark", specifier = ">=4.0.0" },
@@ -1423,6 +1425,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ee/62/45abedde480168e83a1de005b7b7043fd553321c1e8c5a9a114425f64842/pyarrow-22.0.0-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:f633074f36dbc33d5c05b5dc75371e5660f1dbf9c8b1d95669def05e5425989c", size = 48066543, upload-time = "2025-10-24T10:09:34.908Z" },
     { url = "https://files.pythonhosted.org/packages/84/e9/7878940a5b072e4f3bf998770acafeae13b267f9893af5f6d4ab3904b67e/pyarrow-22.0.0-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:4c19236ae2402a8663a2c8f21f1870a03cc57f0bef7e4b6eb3238cc82944de80", size = 50288838, upload-time = "2025-10-24T10:09:44.394Z" },
     { url = "https://files.pythonhosted.org/packages/7b/03/f335d6c52b4a4761bcc83499789a1e2e16d9d201a58c327a9b5cc9a41bd9/pyarrow-22.0.0-cp314-cp314t-win_amd64.whl", hash = "sha256:0c34fe18094686194f204a3b1787a27456897d8a2d62caf84b61e8dfbc0252ae", size = 29185594, upload-time = "2025-10-24T10:09:53.111Z" },
+]
+
+[[package]]
+name = "pyarrow-stubs"
+version = "20.0.0.20251104"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyarrow", version = "21.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "pyarrow", version = "22.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f2/52/5ce506962bc64d92b572499489f16ca05e8f466bbb9ed91b032fc653e624/pyarrow_stubs-20.0.0.20251104.tar.gz", hash = "sha256:a08964a67627c28354668af64d7021fb8d51fd69322ddb8b7a9c0336e49a367b", size = 236544, upload-time = "2025-11-04T02:16:09.485Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ac/b8/d130c794e61a719eb5de0e64cff0e01928986aade997486730c42c79843d/pyarrow_stubs-20.0.0.20251104-py3-none-any.whl", hash = "sha256:aea08b72754e342b982cbf764ab5dbfbdf041d8cca95d3c3b89d829d48f509c8", size = 235721, upload-time = "2025-11-04T02:16:07.749Z" },
 ]
 
 [[package]]
