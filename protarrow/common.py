@@ -1,7 +1,9 @@
 import dataclasses
-from typing import Optional, TypeVar, Union
+from operator import attrgetter
+from typing import Optional, TypeVar, Union, Callable
 
 import pyarrow as pa
+from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.message import Message
 
 M = TypeVar("M", bound=Message)
@@ -40,6 +42,7 @@ class ProtarrowConfig:
     binary_type: pa.DataType = pa.binary()
     list_array_type: type = pa.ListArray
     skip_recursive_messages: bool = False
+    field_name_extractor: Callable[[FieldDescriptor], str] = attrgetter("name")
 
     def __post_init__(self):
         assert self.enum_type in SUPPORTED_ENUM_TYPES

@@ -5,6 +5,7 @@ They cover scenarios that don't make sense IRL.
 
 import dataclasses
 import datetime
+from operator import attrgetter
 from typing import Optional
 
 import pyarrow as pa
@@ -13,6 +14,7 @@ from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescript
 from google.protobuf.wrappers_pb2 import BoolValue, DoubleValue
 
 import protarrow
+from protarrow import ProtarrowConfig
 from protarrow.arrow_to_proto import (
     MapItemAssigner,
     OffsetsIterator,
@@ -42,6 +44,10 @@ from protarrow_protos.bench_pb2 import (
     ExampleMessage,
     NestedExampleMessage,
     SuperNestedExampleMessage,
+)
+from protarrow_protos.example_pb2 import (
+    EmptyMessage,
+    NestedEmptyMessage,
 )
 
 
@@ -416,3 +422,77 @@ def test_coverage_offset_iterator():
 def test_nested_iterable():
     nested_iterable = NestedIterable([], lambda x: x.foo)
     assert len(nested_iterable) == 0
+
+
+def test_name():
+    field_descriptor = NestedExampleMessage.DESCRIPTOR.fields_by_name["example_message"]
+
+    assert attrgetter("name")(field_descriptor) == "example_message"
+    assert attrgetter("camelcase_name")(field_descriptor) == "exampleMessage"
+
+
+def test_use_camel_case():
+    assert protarrow.message_type_to_schema(EmptyMessage) == pa.schema(
+        [
+            pa.field("empty_value", pa.struct([])),
+        ]
+    )
+
+    assert protarrow.message_type_to_schema(
+        EmptyMessage, ProtarrowConfig(field_name_extractor=attrgetter("camelcase_name"))
+    ) == pa.schema(
+        [
+            pa.field("emptyValue", pa.struct([]), nullable=True),
+        ]
+    )
+
+    empty_message_struct = pa.struct([pa.field("emptyValue", pa.struct([]))])
+    expected_schema = pa.schema(
+        [
+            pa.field("emptyMessage", empty_message_struct),
+            pa.field(
+                "repeatedEmptyMessage",
+                pa.list_(pa.field("item", empty_message_struct, nullable=False)),
+                nullable=False,
+            ),
+            pa.field(
+                "emptyExampleMessageInt32Map",
+                pa.map_(
+                    pa.int32(),
+                    pa.field("value", empty_message_struct, nullable=False),
+                ),
+                nullable=False,
+            ),
+            pa.field(
+                "emptyExampleMessageStringMap",
+                pa.map_(
+                    pa.utf8(),
+                    pa.field("value", empty_message_struct, nullable=False),
+                ),
+                nullable=False,
+            ),
+        ]
+    )
+
+    assert (
+        protarrow.message_type_to_schema(
+            NestedEmptyMessage,
+            ProtarrowConfig(field_name_extractor=attrgetter("camelcase_name")),
+        )
+        == expected_schema
+    )
+
+    assert (
+        protarrow.messages_to_table(
+            [
+                NestedEmptyMessage(
+                    empty_message=EmptyMessage(),
+                    repeated_empty_message=[EmptyMessage()],
+                    empty_example_message_int32_map={1: EmptyMessage()},
+                )
+            ],
+            NestedEmptyMessage,
+            ProtarrowConfig(field_name_extractor=attrgetter("camelcase_name")),
+        ).schema
+        == expected_schema
+    )

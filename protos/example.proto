@@ -44,3 +44,13 @@ message MessageWithOptional {
   repeated google.protobuf.StringValue string_values = 4;
 
 }
+
+message CamelCaseMessage1 {
+  string camelCaseString = 1;
+}
+
+message CamelCaseMessage2 {
+    CamelCaseMessage1 camelCaseMessage1 = 1;
+    repeated CamelCaseMessage1 repeatedCamelCaseMessage1 = 2;
+    map<int32, CamelCaseMessage1> mapCamelCaseMessage1 = 3;
+}

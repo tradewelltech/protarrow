@@ -269,7 +269,7 @@ def field_descriptor_to_field(
             value_field, config, descriptor_trace
         )
         return pa.field(
-            field_descriptor.name,
+            config.field_name_extractor(field_descriptor),
             pa.map_(
                 key_type,
                 pa.field(config.map_value_name, value_type, config.map_value_nullable),
@@ -279,7 +279,7 @@ def field_descriptor_to_field(
         )
     elif field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
         return pa.field(
-            field_descriptor.name,
+            config.field_name_extractor(field_descriptor),
             config.list_(
                 field_descriptor_to_data_type(
                     field_descriptor, config, descriptor_trace
@@ -290,7 +290,7 @@ def field_descriptor_to_field(
         )
     else:
         return pa.field(
-            field_descriptor.name,
+            config.field_name_extractor(field_descriptor),
             field_descriptor_to_data_type(field_descriptor, config, descriptor_trace),
             nullable=field_descriptor.has_presence,
             metadata=config.field_metadata(field_descriptor.number),
@@ -521,11 +521,11 @@ def _proto_field_validity_mask(
         return None
     mask = []
     field_name = field_descriptor.name
-    for record in messages:
-        if record is None:
+    for message in messages:
+        if message is None:
             mask.append(False)
         else:
-            mask.append(record.HasField(field_name))
+            mask.append(message.HasField(field_name))
     return mask
 
 
@@ -580,7 +580,7 @@ def _messages_to_array(
         arrays.append(array)
         fields.append(
             pa.field(
-                field_descriptor.name,
+                config.field_name_extractor(field_descriptor),
                 array.type,
                 nullable=_proto_field_nullable(field_descriptor, config),
                 metadata=config.field_metadata(field_descriptor.number),
