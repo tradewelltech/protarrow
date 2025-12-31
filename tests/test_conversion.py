@@ -2,6 +2,7 @@ import pathlib
 from typing import Any, Iterable, List, Type
 
 import pyarrow as pa
+import pyarrow.compute as pc
 import pytest
 from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.duration_pb2 import Duration
@@ -41,7 +42,12 @@ from protarrow_protos.bench_pb2 import (
     NestedExampleMessage,
     SuperNestedExampleMessage,
 )
-from protarrow_protos.example_pb2 import EmptyMessage, NestedEmptyMessage
+from protarrow_protos.example_pb2 import (
+    EmptyMessage,
+    NestedEmptyMessage,
+    NestedWithRepeated,
+    WithRepeated,
+)
 from tests.random_generator import generate_messages, truncate_messages, truncate_nanos
 
 TEST_MESSAGE_COUNT = 5
@@ -283,7 +289,7 @@ def test_repeated_enum_values_as_string(config: ProtarrowConfig, expected: list)
     assert array.to_pylist() == expected
 
 
-def test_nested_list_can_be_null():
+def test_nested_list_can_be_null_transitively():
     messages = [
         NestedExampleMessage(),
         NestedExampleMessage(example_message=ExampleMessage()),
@@ -291,7 +297,13 @@ def test_nested_list_can_be_null():
     record_batch = messages_to_record_batch(messages, NestedExampleMessage)
     field_index = record_batch["example_message"].type.get_field_index("double_values")
     double_values = record_batch["example_message"].field(field_index)
-    assert double_values.is_valid().to_pylist() == [False, True]
+    assert double_values.is_valid().to_pylist() == [True, True]
+    assert double_values.to_pylist() == [[], []]
+    nested_double_values = pc.struct_field(
+        record_batch["example_message"], "double_values"
+    )
+    assert nested_double_values.is_valid().to_pylist() == [False, True]
+    assert nested_double_values.to_pylist() == [None, []]
 
 
 def test_unit_for_time_of_day():
@@ -1020,3 +1032,34 @@ def test_to_large_binary_schema():
     )
     assert ": large_binary" not in schema_small_str
     assert ": binary" in schema_small_str
+
+
+def test_nested_list_of_primitive():
+    messages = [
+        NestedExampleMessage(example_message=ExampleMessage(double_values=[1.0, 2, 0])),
+        NestedExampleMessage(example_message=None),
+    ]
+
+    record_batch = protarrow.messages_to_record_batch(messages, NestedExampleMessage)
+    struct_array = record_batch["example_message"]
+    list_array = struct_array.field(struct_array.type.get_field_index("double_values"))
+    assert list_array.to_pylist() == [[1.0, 2.0, 0.0], []]
+    assert struct_array.type.field("double_values").nullable is False
+    assert ExampleMessage.DESCRIPTOR.fields_by_name["double_values"].default_value == []
+    # Check the nested field correctly reflect the fact that the nested array is null:
+    assert pc.struct_field(struct_array, "double_values").to_pylist() == [
+        [1.0, 2.0, 0.0],
+        None,
+    ]
+
+
+def test_nested_list_of_primitive_simple():
+    messages = [
+        NestedWithRepeated(with_repeated=WithRepeated(repeated_doubles=[1.0, 2.0])),
+        NestedWithRepeated(),
+    ]
+    record_batch_protarrow = protarrow.messages_to_record_batch(
+        messages, NestedWithRepeated
+    )
+    array = record_batch_protarrow["with_repeated"].field(0)
+    assert array.to_pylist() == [[1.0, 2.0], []]

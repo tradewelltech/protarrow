@@ -41,6 +41,7 @@ def main():
         "--proto_path={}".format(_GRPC_PROTOS_INCLUDE),
         "--proto_path={}".format(_SRC_DIR),
         "--python_out={}".format(out_dir),
+        "--pyi_out={}".format(out_dir),
     ] + proto_files
     print(" ".join(proto_args))
     run_protoc(proto_args)
