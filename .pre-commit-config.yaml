@@ -2,27 +2,27 @@ default_language_version:
   python: python3.12
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-toml
       - id: check-yaml
       - id: end-of-file-fixer
       - id: mixed-line-ending
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.11.5
+    rev: v0.14.10
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.8.3
+    rev: 1.9.2
     hooks:
       - id: bandit
         additional_dependencies:
           - ".[toml]"
         args: [--config=pyproject.toml]
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.14.0
+    rev: v2.15.0
     hooks:
       - id: pretty-format-toml
         files: "^.*.toml"
@@ -31,11 +31,11 @@ repos:
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.9.6
+    rev: 0.9.21
     hooks:
       - id: uv-lock
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.44.0
+    rev: v0.47.0
     hooks:
         - id: markdownlint
           exclude: ^(CHANGELOG.md)

@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
       fail-fast: false
     steps:
       - name: Checkout sources
@@ -41,12 +41,12 @@ jobs:
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
-        if: "matrix.python-version == '3.11'"
+        if: "matrix.python-version == '3.12'"
         with:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Run pre-commit
-        if: "matrix.python-version == '3.11'"
+        if: "matrix.python-version == '3.12'"
         run: |
           uv run pre-commit run --all-files
