@@ -433,10 +433,8 @@ def _get_offsets(
     last_offset = 0
     offsets = []
     for record in repeated_values:
-        if record is None:
-            offsets.append(None)
-        else:
-            offsets.append(last_offset)
+        offsets.append(last_offset)
+        if record is not None:
             last_offset += len(record)
     offsets.append(last_offset)
     return offsets
