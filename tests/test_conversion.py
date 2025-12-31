@@ -591,7 +591,7 @@ def test_only_messages_default_to_null_on_missing_array(config):
         expected = (
             None
             if field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
-            and field_descriptor.label != FieldDescriptor.LABEL_REPEATED
+            and not field_descriptor.is_repeated
             else []
         )
         assert get_casted_array(field_descriptor, None, 1, config)[0].to_pylist() == [
@@ -611,7 +611,7 @@ def test_only_messages_stay_to_null_on_casted_array(config):
         expected = (
             None
             if field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
-            and field_descriptor.label != FieldDescriptor.LABEL_REPEATED
+            and not field_descriptor.is_repeated
             else []
         )
         arrow_field = field_descriptor_to_field(field_descriptor, config)

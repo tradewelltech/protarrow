@@ -30,7 +30,7 @@ def get_arrow_default_value(
     if field_descriptor.type == FieldDescriptor.TYPE_ENUM:
         default_value = (
             field_descriptor.enum_type.values[0].number
-            if field_descriptor.label == FieldDescriptor.LABEL_REPEATED
+            if field_descriptor.is_repeated
             else field_descriptor.default_value
         )
         if pa.types.is_integer(config.enum_type):
@@ -128,7 +128,7 @@ def _cast_array(
             )
         )
 
-    elif field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
+    elif field_descriptor.is_repeated:
         assert isinstance(array, (pa.ListArray, pa.LargeListArray))
         item_array = _cast_flat_array(array.values, field_descriptor, config)
         return config.list_array_type.from_arrays(
@@ -159,7 +159,7 @@ def get_casted_array(
     else:
         default_value = (
             []
-            if field_descriptor.label == FieldDescriptor.LABEL_REPEATED
+            if field_descriptor.is_repeated
             else get_arrow_default_value(field_descriptor, config)
         )
         casted_array = pa.array(
