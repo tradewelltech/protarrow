@@ -69,7 +69,7 @@ mkdocs serve --livereload --watch=./
 ## Updating dependencies
 
 - For the repo `uv update`
-- For the doc: `(cd docs/; pip-compile ./requirements.in > ./requirements.txt)`
+- For the doc: `(cd docs/;uvx --from=pip pip-compile ./requirements.in > ./requirements.txt)`
 - For pre-commit: `pre-commit autoupdate; pre-commit run --all-files`
 
 ## Resources
