@@ -20,14 +20,14 @@ Tests convert randomly generated data from protobuf to arrow and back, making su
 To run tests fast:
 
 ```shell
-pytest -n auto tests
+uv run pytest -n auto tests
 ```
 
 To Get coverage:
 
 ```shell
-coverage run --branch --include "./protarrow/*" -m pytest tests
-coverage report --show-missing
+uv run coverage run --branch --include "./protarrow/*" -m pytest tests
+uv run coverage report --show-missing
 ```
 
 ## Generating the change log
@@ -63,13 +63,13 @@ The CI will deploy to pypi automatically from then.
 ## Testing the documentation
 
 ```shell
-mkdocs serve --livereload --watch=./
+uv run mkdocs serve --livereload --watch=./
 ```
 
 ## Updating dependencies
 
-- For the repo `uv update`
-- For the doc: `(cd docs/;uvx --from=pip pip-compile ./requirements.in > ./requirements.txt)`
+- For the repo `uv lock --upgrade`
+- For the doc: `(cd docs/;uv pip compile ./requirements.in > ./requirements.txt)`
 - For pre-commit: `pre-commit autoupdate; pre-commit run --all-files`
 
 ## Resources
