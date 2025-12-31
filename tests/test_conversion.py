@@ -2,6 +2,7 @@ import pathlib
 from typing import Any, Iterable, List, Type
 
 import pyarrow as pa
+import pyarrow.compute as pc
 import pytest
 from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.duration_pb2 import Duration
@@ -48,7 +49,6 @@ from protarrow_protos.example_pb2 import (
     WithRepeated,
 )
 from tests.random_generator import generate_messages, truncate_messages, truncate_nanos
-import pyarrow.compute as pc
 
 TEST_MESSAGE_COUNT = 5
 MESSAGES = [ExampleMessage, NestedExampleMessage, SuperNestedExampleMessage]
