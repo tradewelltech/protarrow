@@ -212,7 +212,7 @@ def _raise_recursion_error(trace: Tuple[Descriptor, ...]):
 def is_map(field_descriptor: FieldDescriptor) -> bool:
     return (
         field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
-        and field_descriptor.label == FieldDescriptor.LABEL_REPEATED
+        and field_descriptor.is_repeated
         and field_descriptor.message_type.GetOptions().map_entry
     )
 
@@ -277,7 +277,7 @@ def field_descriptor_to_field(
             nullable=config.map_nullable,
             metadata=config.field_metadata(field_descriptor.number),
         )
-    elif field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
+    elif field_descriptor.is_repeated:
         return pa.field(
             field_descriptor.name,
             config.list_(
@@ -405,7 +405,7 @@ def _proto_field_to_array(
                 field_descriptor.has_presence
                 # We use none for repeated field as there should not
                 # be any missing list elements, they are not nullable
-                or field_descriptor.label == FieldDescriptor.LABEL_REPEATED
+                or field_descriptor.is_repeated
             )
             else converter(field_descriptor.default_value)
         )
@@ -506,7 +506,7 @@ def _proto_field_nullable(
 ) -> bool:
     if is_map(field_descriptor):
         return config.map_nullable
-    elif field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED:
+    elif field_descriptor.is_repeated:
         return config.list_nullable
     else:
         return field_descriptor.has_presence
@@ -540,7 +540,7 @@ def _messages_to_array(
     for field_descriptor in descriptor.fields:
         if (
             field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
-            and field_descriptor.label != FieldDescriptor.LABEL_REPEATED
+            and not field_descriptor.is_repeated
         ):
             field_values = NestedIterable(
                 messages, NestedMessageGetter(field_descriptor.name)
@@ -561,7 +561,7 @@ def _messages_to_array(
             array = _proto_map_to_array(
                 field_values, field_descriptor, config, this_trace
             )
-        elif field_descriptor.label == FieldDescriptorProto.LABEL_REPEATED:
+        elif field_descriptor.is_repeated:
             array = _repeated_proto_to_array(
                 field_values, field_descriptor, config, this_trace
             )

@@ -2,7 +2,6 @@
 Tests the behavior of Google protobuf
 """
 
-from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import StringValue
 
@@ -20,7 +19,7 @@ def test_empty_has_field():
 
 def test_repeated_no_presence():
     field = MessageWithOptional.DESCRIPTOR.fields_by_name["string_values"]
-    assert field.label == FieldDescriptor.LABEL_REPEATED
+    assert field.is_repeated
     assert not field.has_presence
 
 
