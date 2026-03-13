@@ -517,14 +517,14 @@ def test_arrow_missing_function():
     with pytest.raises(
         pa.ArrowNotImplementedError,
         match="DictionaryArray converter for type"
-        " dictionary\<values=large_string, indices=int32, ordered=0\> not implemented",
+        r" dictionary\<values=large_string, indices=int32, ordered=0\> not implemented",
     ):
         pa.array([], pa.dictionary(pa.int32(), pa.large_string()))
 
     with pytest.raises(
         pa.ArrowNotImplementedError,
         match="DictionaryArray converter for type"
-        " dictionary\<values=large_binary, indices=int32, ordered=0\> not implemented",
+        r" dictionary\<values=large_binary, indices=int32, ordered=0\> not implemented",
     ):
         pa.array([], pa.dictionary(pa.int32(), pa.large_binary()))
 
