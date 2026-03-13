@@ -257,7 +257,7 @@ class RepeatedNestedIterable(collections.abc.Iterable):
     field_descriptor: FieldDescriptor
 
     def __post_init__(self):
-        assert self.field_descriptor.label == FieldDescriptor.LABEL_REPEATED
+        assert self.field_descriptor.is_repeated
         assert self.field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
 
     def __iter__(self) -> Iterator[Any]:
@@ -339,7 +339,7 @@ class AppendAssigner(collections.abc.Iterable):
     ):
         self.messages = messages
         self.field_descriptor = field_descriptor
-        assert self.field_descriptor.label == FieldDescriptor.LABEL_REPEATED
+        assert self.field_descriptor.is_repeated
         self.sizes = sizes
         self.converter = converter
         self.attribute = None
@@ -367,7 +367,7 @@ class MapKeyAssigner(collections.abc.Iterable):
     attribute: Any = None
 
     def __post_init__(self, key_arrow_type: pa.DataType):
-        assert self.field_descriptor.label == FieldDescriptor.LABEL_REPEATED
+        assert self.field_descriptor.is_repeated
         assert self.field_descriptor.message_type.GetOptions().map_entry
         self.converter = get_converter(
             self.field_descriptor.message_type.fields_by_name["key"], key_arrow_type
@@ -410,7 +410,7 @@ class MapItemAssigner(collections.abc.Iterable):
     attribute: Optional[MessageMap] = None
 
     def __post_init__(self, key_arrow_type: pa.DataType, value_arrow_type: pa.DataType):
-        assert self.field_descriptor.label == FieldDescriptor.LABEL_REPEATED
+        assert self.field_descriptor.is_repeated
         assert self.field_descriptor.message_type.GetOptions().map_entry
         self.key_converter = get_converter(
             self.field_descriptor.message_type.fields_by_name["key"], key_arrow_type
@@ -580,7 +580,7 @@ def _extract_repeated_message(
 def _extract_field(
     array: pa.Array, field_descriptor: FieldDescriptor, messages: Iterable[Message]
 ) -> None:
-    if field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
+    if field_descriptor.is_repeated:
         _extract_repeated_field(array, field_descriptor, messages)
     elif field_descriptor.message_type in TEMPORAL_CONVERTERS:
         extractor = TEMPORAL_CONVERTERS[field_descriptor.message_type](array.type)

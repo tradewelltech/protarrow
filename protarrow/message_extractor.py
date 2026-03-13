@@ -101,7 +101,7 @@ def get_field_converter(
         key, value = get_map_descriptors(field_descriptor)
         return MapConverterAdapter(field.type, key, value)
     else:
-        if field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
+        if field_descriptor.is_repeated:
             return RepeatedConverterAdapter(
                 get_flat_field_converter(field.type.value_type, field_descriptor)
             )
