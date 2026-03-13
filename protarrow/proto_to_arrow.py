@@ -37,7 +37,13 @@ from google.protobuf.wrappers_pb2 import (
 from google.type.date_pb2 import Date
 from google.type.timeofday_pb2 import TimeOfDay
 
-from protarrow.common import M, ProtarrowConfig, is_binary_enum, is_string_enum
+from protarrow.common import (
+    _INVALID_DATE_SENTINEL,
+    M,
+    ProtarrowConfig,
+    is_binary_enum,
+    is_string_enum,
+)
 
 _PROTO_DESCRIPTOR_TO_PYARROW = {
     BoolValue.DESCRIPTOR: pa.bool_(),
@@ -89,15 +95,12 @@ def _time_of_day_to_seconds(time_of_day: TimeOfDay) -> int:
     return (time_of_day.hours * 60 + time_of_day.minutes) * 60 + time_of_day.seconds
 
 
-_INVALID_DATE_SENTINEL = -719163
-
-
 def _proto_date_to_date32(proto_date: Date) -> int:
     if proto_date.year == 0:
         return _INVALID_DATE_SENTINEL
     else:
         date = datetime.date(proto_date.year, proto_date.month, proto_date.day)
-        return date.toordinal() - 719163
+        return date.toordinal() + _INVALID_DATE_SENTINEL
 
 
 _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER = {

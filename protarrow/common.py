@@ -6,6 +6,8 @@ from google.protobuf.message import Message
 
 M = TypeVar("M", bound=Message)
 
+_INVALID_DATE_SENTINEL = -719163
+
 SUPPORTED_ENUM_TYPES = (
     pa.int32(),
     pa.binary(),

@@ -23,7 +23,13 @@ from google.protobuf.wrappers_pb2 import (
 from google.type.date_pb2 import Date
 from google.type.timeofday_pb2 import TimeOfDay
 
-from protarrow.common import M, is_binary_enum, is_string_enum, offset_values_array
+from protarrow.common import (
+    _INVALID_DATE_SENTINEL,
+    M,
+    is_binary_enum,
+    is_string_enum,
+    offset_values_array,
+)
 
 _NANOS_PER_UNIT = {"ns": 1, "us": 1_000, "ms": 1_000_000, "s": 1_000_000_000}
 _TIME_CONVERTER = {
@@ -56,9 +62,6 @@ def _timestamp_s_scalar_to_proto(scalar: pa.TimestampScalar) -> Timestamp:
     timestamp = Timestamp()
     timestamp.FromSeconds(scalar.value)
     return timestamp
-
-
-_INVALID_DATE_SENTINEL = -719163
 
 
 def _date_scalar_to_proto(scalar: pa.Date32Scalar) -> Date:
