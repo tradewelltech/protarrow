@@ -451,9 +451,16 @@ def test_get_arrow_default_value(enum_type: pa.DataType, expected: Any):
 
 
 def _check_messages_same(actual: Iterable[Message], expected: Iterable[Message]):
-    for left, right in zip(actual, expected):
-        assert left == right
-    assert actual == expected
+    for i, (left, right) in enumerate(zip(actual, expected)):
+        if left != right:
+            left_path = pathlib.Path(f"protarrow_mismatch_left_{i}.binpb")
+            right_path = pathlib.Path(f"protarrow_mismatch_right_{i}.binpb")
+            left_path.write_bytes(left.SerializeToString())
+            right_path.write_bytes(right.SerializeToString())
+            raise AssertionError(
+                f"Message {i} differs. Saved to {left_path} and {right_path}"
+            )
+    assert len(actual) == len(expected)
 
 
 def test_nested_field_values_not_null_when_message_missing():

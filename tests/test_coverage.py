@@ -11,6 +11,7 @@ import pyarrow as pa
 import pytest
 from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
 from google.protobuf.wrappers_pb2 import BoolValue, DoubleValue
+from google.type.date_pb2 import Date
 
 import protarrow
 from protarrow import cast_record_batch
@@ -575,3 +576,27 @@ class TestProtarrowConfigValidation:
             binary_type=pa.large_binary(),
         )
         assert config.enum_type == pa.dictionary(pa.int32(), pa.binary())
+
+
+def test_flaky():
+    default_date = Date()
+    date = Date(year=1, month=1, day=1)
+
+    assert default_date != date
+
+    example = ExampleMessage(date_value=date, date_values=[date])
+    nested = NestedExampleMessage(
+        example_message=example,
+        repeated_example_message=[example],
+    )
+    nested.example_message_int32_map[1].CopyFrom(example)
+    nested.example_message_string_map["a"].CopyFrom(example)
+    message = SuperNestedExampleMessage(
+        nested_example_message=nested,
+        repeated_nested_example_message=[nested],
+    )
+    message.nested_example_message_int32_map[1].CopyFrom(example)
+    message.nested_example_message_string_map["a"].CopyFrom(example)
+    table = protarrow.messages_to_table([message], SuperNestedExampleMessage)
+    result = protarrow.table_to_messages(table, SuperNestedExampleMessage)
+    assert result == [message]
