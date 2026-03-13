@@ -53,7 +53,8 @@ my_proto_1 = message_extractor.read_table_row(table, 1)
 
 ## Customize arrow type
 
-The arrow type for `Enum`, `Timestamp` and `TimeOfDay` and `Duration` can be configured:
+The arrow type for `Enum`, `Timestamp`, `TimeOfDay` and `Duration` can be configured.
+Enums can be stored as int32, string, binary, large_string, large_binary, or dictionary-encoded (string or binary):
 
 ```python
 config = protarrow.ProtarrowConfig(

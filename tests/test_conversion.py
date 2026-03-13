@@ -58,6 +58,8 @@ CONFIGS = [
     ProtarrowConfig(enum_type=pa.string()),
     ProtarrowConfig(enum_type=pa.dictionary(pa.int32(), pa.binary())),
     ProtarrowConfig(enum_type=pa.dictionary(pa.int32(), pa.string())),
+    ProtarrowConfig(enum_type=pa.large_binary(), binary_type=pa.large_binary()),
+    ProtarrowConfig(enum_type=pa.large_string(), string_type=pa.large_string()),
     ProtarrowConfig(timestamp_type=pa.timestamp("s")),
     ProtarrowConfig(timestamp_type=pa.timestamp("ms")),
     ProtarrowConfig(timestamp_type=pa.timestamp("us")),

@@ -13,6 +13,7 @@ from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescript
 from google.protobuf.wrappers_pb2 import BoolValue, DoubleValue
 
 import protarrow
+from protarrow import cast_record_batch
 from protarrow.arrow_to_proto import (
     MapItemAssigner,
     OffsetsIterator,
@@ -43,6 +44,7 @@ from protarrow_protos.bench_pb2 import (
     NestedExampleMessage,
     SuperNestedExampleMessage,
 )
+from protarrow_protos.example_pb2 import TestEnum, WithEnum
 
 
 def test_map_converter_adapter():
@@ -416,3 +418,160 @@ def test_coverage_offset_iterator():
 def test_nested_iterable():
     nested_iterable = NestedIterable([], lambda x: x.foo)
     assert len(nested_iterable) == 0
+
+
+@pytest.mark.parametrize(
+    ("config", "expected"),
+    [
+        (protarrow.ProtarrowConfig(enum_type=pa.int32()), [0, 1, 2, 0]),
+        # [(protarrow.ProtarrowConfig(enum_type=pa.int64()), [0, 1, 2, 0])],
+        (
+            protarrow.ProtarrowConfig(enum_type=pa.string()),
+            ["UNKNOWN_TEST_ENUM", "TEST_ENUM_1", "TEST_ENUM_2", "UNKNOWN_TEST_ENUM"],
+        ),
+        (
+            protarrow.ProtarrowConfig(
+                string_type=pa.large_string(), enum_type=pa.large_string()
+            ),
+            ["UNKNOWN_TEST_ENUM", "TEST_ENUM_1", "TEST_ENUM_2", "UNKNOWN_TEST_ENUM"],
+        ),
+        (
+            protarrow.ProtarrowConfig(enum_type=pa.binary()),
+            [
+                b"UNKNOWN_TEST_ENUM",
+                b"TEST_ENUM_1",
+                b"TEST_ENUM_2",
+                b"UNKNOWN_TEST_ENUM",
+            ],
+        ),
+        (
+            protarrow.ProtarrowConfig(
+                binary_type=pa.large_binary(), enum_type=pa.large_binary()
+            ),
+            [
+                b"UNKNOWN_TEST_ENUM",
+                b"TEST_ENUM_1",
+                b"TEST_ENUM_2",
+                b"UNKNOWN_TEST_ENUM",
+            ],
+        ),
+        (
+            protarrow.ProtarrowConfig(enum_type=pa.dictionary(pa.int32(), pa.string())),
+            ["UNKNOWN_TEST_ENUM", "TEST_ENUM_1", "TEST_ENUM_2", "UNKNOWN_TEST_ENUM"],
+        ),
+        (
+            protarrow.ProtarrowConfig(enum_type=pa.dictionary(pa.int32(), pa.binary())),
+            [
+                b"UNKNOWN_TEST_ENUM",
+                b"TEST_ENUM_1",
+                b"TEST_ENUM_2",
+                b"UNKNOWN_TEST_ENUM",
+            ],
+        ),
+        (
+            protarrow.ProtarrowConfig(
+                enum_type=pa.dictionary(pa.int32(), pa.string()),
+                string_type=pa.large_string(),
+            ),
+            ["UNKNOWN_TEST_ENUM", "TEST_ENUM_1", "TEST_ENUM_2", "UNKNOWN_TEST_ENUM"],
+        ),
+        (
+            protarrow.ProtarrowConfig(
+                enum_type=pa.dictionary(pa.int32(), pa.binary()),
+                binary_type=pa.large_binary(),
+            ),
+            [
+                b"UNKNOWN_TEST_ENUM",
+                b"TEST_ENUM_1",
+                b"TEST_ENUM_2",
+                b"UNKNOWN_TEST_ENUM",
+            ],
+        ),
+    ],
+    ids=lambda _: None,
+)
+def test_enum_config(config, expected):
+    messages = [
+        WithEnum(),
+        WithEnum(test_enum=TestEnum.TEST_ENUM_1),
+        WithEnum(test_enum=TestEnum.TEST_ENUM_2),
+        WithEnum(test_enum=TestEnum.UNKNOWN_TEST_ENUM),
+    ]
+
+    record_batch = protarrow.messages_to_record_batch(messages, WithEnum, config)
+
+    casted = cast_record_batch(record_batch, WithEnum, config)
+    assert casted == record_batch
+    assert cast_record_batch(record_batch[:0], WithEnum, config) == record_batch[:0]
+
+    assert record_batch["test_enum"] == pa.array(expected, config.enum_type)
+
+    messages_back = protarrow.record_batch_to_messages(record_batch, WithEnum)
+    assert messages_back == messages
+
+
+def test_arrow_missing_function():
+    pa.array([], pa.dictionary(pa.int32(), pa.string()))
+    pa.array([], pa.dictionary(pa.int32(), pa.binary()))
+
+    with pytest.raises(
+        pa.ArrowNotImplementedError,
+        match="DictionaryArray converter for type"
+        " dictionary\<values=large_string, indices=int32, ordered=0\> not implemented",
+    ):
+        pa.array([], pa.dictionary(pa.int32(), pa.large_string()))
+
+    with pytest.raises(
+        pa.ArrowNotImplementedError,
+        match="DictionaryArray converter for type"
+        " dictionary\<values=large_binary, indices=int32, ordered=0\> not implemented",
+    ):
+        pa.array([], pa.dictionary(pa.int32(), pa.large_binary()))
+
+
+class TestProtarrowConfigValidation:
+    def test_invalid_enum_type(self):
+        with pytest.raises(ValueError, match="Unsupported enum_type"):
+            protarrow.ProtarrowConfig(enum_type=pa.float64())
+
+    def test_invalid_string_type(self):
+        with pytest.raises(ValueError, match="Unsupported string_type"):
+            protarrow.ProtarrowConfig(string_type=pa.binary())
+
+    def test_invalid_binary_type(self):
+        with pytest.raises(ValueError, match="Unsupported binary_type"):
+            protarrow.ProtarrowConfig(binary_type=pa.string())
+
+    def test_invalid_list_array_type(self):
+        with pytest.raises(ValueError, match="Unsupported list_array_type"):
+            protarrow.ProtarrowConfig(list_array_type=pa.MapArray)
+
+    def test_invalid_field_number_key(self):
+        with pytest.raises(TypeError, match="field_number_key must be bytes or None"):
+            protarrow.ProtarrowConfig(field_number_key="not_bytes")
+
+    def test_string_enum_mismatch(self):
+        with pytest.raises(ValueError, match="does not match string_type"):
+            protarrow.ProtarrowConfig(
+                enum_type=pa.large_string(), string_type=pa.string()
+            )
+
+    def test_binary_enum_mismatch(self):
+        with pytest.raises(ValueError, match="does not match binary_type"):
+            protarrow.ProtarrowConfig(
+                enum_type=pa.large_binary(), binary_type=pa.binary()
+            )
+
+    def test_dict_string_enum_with_large_string(self):
+        config = protarrow.ProtarrowConfig(
+            enum_type=pa.dictionary(pa.int32(), pa.string()),
+            string_type=pa.large_string(),
+        )
+        assert config.enum_type == pa.dictionary(pa.int32(), pa.string())
+
+    def test_dict_binary_enum_with_large_binary(self):
+        config = protarrow.ProtarrowConfig(
+            enum_type=pa.dictionary(pa.int32(), pa.binary()),
+            binary_type=pa.large_binary(),
+        )
+        assert config.enum_type == pa.dictionary(pa.int32(), pa.binary())

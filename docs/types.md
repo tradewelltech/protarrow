@@ -2,25 +2,25 @@
 
 ## Native Types
 
-| Proto    | Pyarrow                                           | Note         |
-|----------|---------------------------------------------------|--------------|
-| bool     | bool_                                             |              |
-| bytes    | **binary**/large_binary                           | Configurable |
-| double   | float64                                           |              |
-| enum     | **int32**/string/binary/large_string/large_binary | Configurable |
-| fixed32  | int32                                             |              |
-| fixed64  | int64                                             |              |
-| float    | float32                                           |              |
-| int32    | int32                                             |              |
-| int64    | int64                                             |              |
-| message  | struct                                            |              |
-| sfixed32 | int32                                             |              |
-| sfixed64 | int64                                             |              |
-| sint32   | int32                                             |              |
-| sint64   | int64                                             |              |
-| string   | **string**/large_string                           | Configurable |
-| uint32   | uint32                                            |              |
-| uint64   | uint64                                            |              |
+| Proto    | Pyarrow                                                                                               | Note         |
+|----------|-------------------------------------------------------------------------------------------------------|--------------|
+| bool     | bool_                                                                                                 |              |
+| bytes    | **binary**/large_binary                                                                               | Configurable |
+| double   | float64                                                                                               |              |
+| enum     | **int32**/string/binary/large_string/large_binary/dictionary(int32, string)/dictionary(int32, binary) | Configurable |
+| fixed32  | int32                                                                                                 |              |
+| fixed64  | int64                                                                                                 |              |
+| float    | float32                                                                                               |              |
+| int32    | int32                                                                                                 |              |
+| int64    | int64                                                                                                 |              |
+| message  | struct                                                                                                |              |
+| sfixed32 | int32                                                                                                 |              |
+| sfixed64 | int64                                                                                                 |              |
+| sint32   | int32                                                                                                 |              |
+| sint64   | int64                                                                                                 |              |
+| string   | **string**/large_string                                                                               | Configurable |
+| uint32   | uint32                                                                                                |              |
+| uint64   | uint64                                                                                                |              |
 
 ```python
 protarrow.ProtarrowConfig(
@@ -29,6 +29,23 @@ protarrow.ProtarrowConfig(
     enum_type=pa.large_string(),
 )
 ```
+
+When using a string or binary `enum_type`, the type must match the corresponding `string_type` or `binary_type`.
+For example, `enum_type=pa.large_string()` requires `string_type=pa.large_string()`.
+
+### Dictionary-encoded enums
+
+Enums can be dictionary-encoded for memory-efficient string or binary representation:
+
+```python
+protarrow.ProtarrowConfig(
+    enum_type=pa.dictionary(pa.int32(), pa.string()),
+)
+```
+
+Dictionary-encoded enums with `pa.large_string()` or `pa.large_binary()` values are not currently
+supported due to a [limitation in PyArrow](https://github.com/apache/arrow/issues/49505) that
+prevents creating `DictionaryArray` with large string or large binary value types.
 
 ## Other types
 
