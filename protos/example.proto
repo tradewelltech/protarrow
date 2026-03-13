@@ -50,3 +50,14 @@ message WithRepeated {
 message NestedWithRepeated {
   WithRepeated with_repeated = 1;
 }
+
+
+enum TestEnum {
+  UNKNOWN_TEST_ENUM = 0;
+  TEST_ENUM_1 = 1;
+  TEST_ENUM_2 = 2;
+}
+
+message WithEnum {
+  TestEnum test_enum = 1;
+}
