@@ -578,25 +578,57 @@ class TestProtarrowConfigValidation:
         assert config.enum_type == pa.dictionary(pa.int32(), pa.binary())
 
 
-def test_flaky():
+def test_date_behavior():
+    assert pa.scalar(0, pa.date32()).as_py() == datetime.date(1970, 1, 1)
+    assert pa.scalar(-1, pa.date32()).as_py() == datetime.date(1969, 12, 31)
+    assert pa.scalar(-719162, pa.date32()).as_py() == datetime.date(1, 1, 1)
+    with pytest.raises(OverflowError, match=r"date value out of range"):
+        assert pa.scalar(-719163, pa.date32()).as_py()
+
+    assert datetime.date(1970, 1, 1).toordinal() == 719163
+    assert datetime.date.min.toordinal() == 1
+    assert datetime.date.max.toordinal() == 3652059
+
+    assert datetime.date.fromordinal(1) == datetime.date.min
+    assert datetime.date.fromordinal(3652059) == datetime.date.max
+
+
+def test_bad_date():
     default_date = Date()
-    date = Date(year=1, month=1, day=1)
+    min_date = Date(year=1, month=1, day=1)
 
-    assert default_date != date
+    assert default_date != min_date
 
-    example = ExampleMessage(date_value=date, date_values=[date])
-    nested = NestedExampleMessage(
-        example_message=example,
-        repeated_example_message=[example],
+
+def test_can_pass_min_max_date():
+    default_date = Date()
+    bad_date = Date(year=0, month=1, day=1)
+    min_date = Date(year=1, month=1, day=1)
+    max_date = Date(year=9999, month=12, day=31)
+
+    messages = [
+        ExampleMessage(date_value=default_date),
+        ExampleMessage(date_value=bad_date),
+        ExampleMessage(date_value=min_date),
+        ExampleMessage(date_value=max_date),
+    ]
+    table = protarrow.messages_to_table(messages, ExampleMessage)
+    assert table["date_value"] == pa.chunked_array(
+        pa.array(
+            [
+                -719163,
+                -719163,
+                -719162,
+                2932896,
+            ],
+            type=pa.date32(),
+        )
     )
-    nested.example_message_int32_map[1].CopyFrom(example)
-    nested.example_message_string_map["a"].CopyFrom(example)
-    message = SuperNestedExampleMessage(
-        nested_example_message=nested,
-        repeated_nested_example_message=[nested],
-    )
-    message.nested_example_message_int32_map[1].CopyFrom(example)
-    message.nested_example_message_string_map["a"].CopyFrom(example)
-    table = protarrow.messages_to_table([message], SuperNestedExampleMessage)
-    result = protarrow.table_to_messages(table, SuperNestedExampleMessage)
-    assert result == [message]
+
+    messages_back = protarrow.table_to_messages(table, ExampleMessage)
+    assert messages_back == [
+        ExampleMessage(date_value=default_date),
+        ExampleMessage(date_value=default_date),  # This changed
+        ExampleMessage(date_value=min_date),
+        ExampleMessage(date_value=max_date),
+    ]

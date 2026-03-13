@@ -89,15 +89,19 @@ def _time_of_day_to_seconds(time_of_day: TimeOfDay) -> int:
     return (time_of_day.hours * 60 + time_of_day.minutes) * 60 + time_of_day.seconds
 
 
-def _proto_date_to_py_date(proto_date: Date) -> datetime.date:
+_INVALID_DATE_SENTINEL = -719163
+
+
+def _proto_date_to_date32(proto_date: Date) -> int:
     if proto_date.year == 0:
-        return datetime.date.min
+        return _INVALID_DATE_SENTINEL
     else:
-        return datetime.date(proto_date.year, proto_date.month, proto_date.day)
+        date = datetime.date(proto_date.year, proto_date.month, proto_date.day)
+        return date.toordinal() - 719163
 
 
 _PROTO_DESCRIPTOR_TO_ARROW_CONVERTER = {
-    Date.DESCRIPTOR: _proto_date_to_py_date,
+    Date.DESCRIPTOR: _proto_date_to_date32,
     TimeOfDay.DESCRIPTOR: _time_of_day_to_nanos,
     BoolValue.DESCRIPTOR: operator.attrgetter("value"),
     BytesValue.DESCRIPTOR: operator.attrgetter("value"),

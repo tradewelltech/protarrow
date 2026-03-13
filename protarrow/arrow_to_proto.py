@@ -58,12 +58,14 @@ def _timestamp_s_scalar_to_proto(scalar: pa.TimestampScalar) -> Timestamp:
     return timestamp
 
 
+_INVALID_DATE_SENTINEL = -719163
+
+
 def _date_scalar_to_proto(scalar: pa.Date32Scalar) -> Date:
-    date: datetime.date = scalar.as_py()
-    if date == datetime.date.min:
+    if scalar.value == _INVALID_DATE_SENTINEL:
         return Date()
-    else:
-        return Date(year=date.year, month=date.month, day=date.day)
+    date: datetime.date = scalar.as_py()
+    return Date(year=date.year, month=date.month, day=date.day)
 
 
 def _time_64_ns_scalar_to_proto(scalar: pa.Time64Scalar) -> TimeOfDay:

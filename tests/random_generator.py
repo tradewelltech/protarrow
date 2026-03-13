@@ -42,7 +42,7 @@ def random_duration() -> Duration:
 
 
 def random_date() -> Date:
-    date = datetime.date.min + datetime.timedelta(days=random.randint(0, 3652058))
+    date = datetime.date.fromordinal(random.randint(1, 3652059))
     return Date(year=date.year, month=date.month, day=date.day)
 
 
