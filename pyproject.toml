@@ -1,82 +1,67 @@
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling", "uv-dynamic-versioning"]
-
-[dependency-groups]
-dev = [
-  "Jinja2>=3.1.2",
-  "coverage>=6.5.0",
-  "flake8>=5.0.4",
-  "git-changelog>=2.2.0",
-  "grpcio-tools>=1.46.0",
-  "inflection>=0.5.1",
-  "isort>=5.10.1",
-  "mkdocs>=1.4.2",
-  "mkdocs-material>=9.0.3",
-  "mkdocstrings[python]>=0.21.2",
-  "pip-tools>=6.12.1",
-  "pre-commit>=2.20.0",
-  "pylint>=2.15.0",
-  "pytest>=7.2.0",
-  "pytest-benchmark>=4.0.0",
-  "pytest-cov",
-  "pytest-xdist>=3.1.0",
-  "ruff"
-]
+requires = [ "hatchling", "uv-dynamic-versioning" ]
 
 [project]
-authors = [{name = "Tradewell Tech", email = "engineering@tradewelltech.co"}]
+name = "protarrow"
+description = "Convert from protobuf to arrow and back"
+readme = "README.md"
+keywords = [ "apache-arrow", "data", "protobuf" ]
+license = "Apache-2.0"
+maintainers = [ { name = "0x26res", email = "0x26res@gmail.com" } ]
+authors = [ { name = "Tradewell Tech", email = "engineering@tradewelltech.co" } ]
+requires-python = ">=3.9,<4"
 classifiers = [
   "Development Status :: 4 - Beta",
   "License :: OSI Approved :: Apache Software License",
   "Natural Language :: English",
+  "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
-  "Programming Language :: Python :: 3.14"
+  "Programming Language :: Python :: 3.14",
 ]
-dependencies = [
-  "googleapis-common-protos",
-  "protobuf",
-  "pyarrow"
-]
-description = "Convert from protobuf to arrow and back"
+dynamic = [ "version" ]
+dependencies = [ "googleapis-common-protos", "protobuf", "pyarrow" ]
+urls."Bug Tracker" = "https://github.com/tradewelltech/protarrow/issues"
+urls.Changelog = "https://github.com/tradewelltech/protarrow/blob/main/CHANGELOG.md"
 documentation = "https://protarrow.readthedocs.io/en/latest/"
-dynamic = ["version"]
-keywords = ["apache-arrow", "protobuf", "data"]
-license = "Apache-2.0"
-maintainers = [{name = "0x26res", email = "0x26res@gmail.com"}]
-name = "protarrow"
-packages = [
-  {include = "protarrow"}
-]
-readme = "README.md"
+packages = [ { include = "protarrow" } ]
 repository = "https://github.com/tradewelltech/protarrow"
-requires-python = ">=3.9,<4"
 
-[project.urls]
-"Bug Tracker" = "https://github.com/tradewelltech/protarrow/issues"
-"Changelog" = "https://github.com/tradewelltech/protarrow/blob/main/CHANGELOG.md"
+[dependency-groups]
+dev = [
+  "coverage>=6.5",
+  "flake8>=5.0.4",
+  "git-changelog>=2.2",
+  "grpcio-tools>=1.46",
+  "inflection>=0.5.1",
+  "isort>=5.10.1",
+  "jinja2>=3.1.2",
+  "mkdocs>=1.4.2",
+  "mkdocs-material>=9.0.3",
+  "mkdocstrings[python]>=0.21.2",
+  "pip-tools>=6.12.1",
+  "pre-commit>=2.20",
+  "pylint>=2.15",
+  "pytest>=7.2",
+  "pytest-benchmark>=4",
+  "pytest-cov",
+  "pytest-xdist>=3.1",
+  "ruff"
+]
 
-[tool.bandit]
-skips = ["B101", "B311"]
-
-[tool.hatch.build.hooks.version]
-path = "protarrow/_version.py"
-template = '''
-version = "{version}"
-'''
-
-[tool.hatch.version]
-source = "uv-dynamic-versioning"
+[tool.hatch]
+build.hooks.version.path = "protarrow/_version.py"
+build.hooks.version.template = """version = "{version}"
+"""
+version.source = "uv-dynamic-versioning"
 
 [tool.ruff]
 line-length = 88
+lint.select = [ "C", "E", "F", "I", "PERF" ]
 
-[tool.ruff.lint]
-select = ["E", "F", "C", "I", "PERF"]
-
-[tool.ruff.lint.isort]
-known-first-party = ["protarrow", "protarrow_protos"]
+[tool.bandit]
+skips = [ "B101", "B311" ]

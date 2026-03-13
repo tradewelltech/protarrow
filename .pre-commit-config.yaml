@@ -9,29 +9,20 @@ repos:
       - id: end-of-file-fixer
       - id: mixed-line-ending
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.14.10
+    rev: v0.15.6
     hooks:
-      - id: ruff
+      - id: ruff-check
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.9.2
+    rev: 1.9.4
     hooks:
       - id: bandit
         additional_dependencies:
           - ".[toml]"
         args: [--config=pyproject.toml]
-  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.15.0
-    hooks:
-      - id: pretty-format-toml
-        files: "^.*.toml"
-        args:
-          - "--autofix"
-
   - repo: https://github.com/astral-sh/uv-pre-commit
-    # uv version.
-    rev: 0.9.21
+    rev: 0.10.9
     hooks:
       - id: uv-lock
   - repo: https://github.com/igorshubovych/markdownlint-cli
@@ -42,3 +33,7 @@ repos:
           args:
             - "--disable=MD013"
             - "--fix"
+  - repo: https://github.com/tox-dev/pyproject-fmt
+    rev: v2.18.1
+    hooks:
+      - id: pyproject-fmt
