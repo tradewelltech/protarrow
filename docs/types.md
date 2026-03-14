@@ -76,6 +76,13 @@ protarrow.ProtarrowConfig(
 )
 ```
 
+## Date range limitation
+
+`google.type.Date` is converted through Python's `datetime.date`, which only supports dates from
+`0001-01-01` to `9999-12-31`. Proto `Date` values outside this range (e.g. `Date(year=0, month=0, day=0)`)
+cannot be represented as `datetime.date`. These values are stored using a special sentinel value and
+will round-trip back as `Date(year=0, month=0, day=0)` regardless of the original month and day.
+
 ## Nullability
 
 By default, nullability follows the convention imposed by protobuf:
