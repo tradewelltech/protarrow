@@ -11,7 +11,7 @@
 [![Downloads][downloads-image]][downloads-url]
 [![Downloads][downloads-month-image]][downloads-month-url]
 [![Conda Downloads][downloads-conda-image]][downloads-conda-url]
-[![Code style: black][codestyle-image]][codestyle-url]
+[![Ruff][ruff-image]][ruff-url]
 [![snyk][snyk-image]][snyk-url]
 [![GitHub issues][github-issues-image]][github-issues-url]
 [![Contributing][contributing-image]][contributing-url]
@@ -88,15 +88,15 @@ See the [documentation](https://protarrow.readthedocs.io/en/latest/)
 [codecov-image]: https://codecov.io/gh/tradewelltech/protarrow/branch/master/graph/badge.svg?token=XMFH27IL70
 [codecov-url]: https://codecov.io/gh/tradewelltech/protarrow
 [downloads-image]: https://pepy.tech/badge/protarrow
-[downloads-url]: https://static.pepy.tech/badge/protarrow
+[downloads-url]: https://pepy.tech/projects/protarrow
 [downloads-month-image]: https://pepy.tech/badge/protarrow/month
-[downloads-month-url]: https://static.pepy.tech/badge/protarrow/month
+[downloads-month-url]: https://pepy.tech/projects/protarrow
 [downloads-conda-image]: https://img.shields.io/conda/dn/conda-forge/protarrow.svg?label=Conda%20downloads
 [downloads-conda-url]: https://anaconda.org/conda-forge/protarrow
-[codestyle-image]: https://img.shields.io/badge/code%20style-black-000000.svg
-[codestyle-url]: https://github.com/ambv/black
-[snyk-image]: https://snyk.io/advisor/python/protarrow/badge.svg
-[snyk-url]: https://snyk.io/advisor/python/protarrow
+[ruff-image]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
+[ruff-url]: https://github.com/astral-sh/ruff
+[snyk-image]:  https://snyk.io/test/github/tradewelltech/protarrow/badge.svg
+[snyk-url]: https://security.snyk.io/package/pip/protarrow
 [github-issues-image]: https://img.shields.io/badge/issue_tracking-github-blue.svg
 [github-issues-url]: https://github.com/tradewelltech/protarrow/issues
 [contributing-image]: https://img.shields.io/badge/PR-Welcome-%23FF8300.svg?
@@ -105,4 +105,4 @@ See the [documentation](https://protarrow.readthedocs.io/en/latest/)
 [python-url]: https://www.python.org/
 [repo-size-url]: https://github.com/tradewelltech/protarrow
 [fossa-image]: https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftradewelltech%2Fprotarrow.svg?type=shield
-[fossa-url]: https://app.fossa.com/projects/git%2Bgithub.com%2Ftradewelltech%2protarrow?ref=badge_shield
+[fossa-url]: https://app.fossa.com/projects/git%2Bgithub.com%2Ftradewelltech%2Fprotarrow?ref=badge_shield
