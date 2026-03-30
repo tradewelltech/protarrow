@@ -8,8 +8,8 @@
 | bytes    | **binary**/large_binary                                                                               | Configurable |
 | double   | float64                                                                                               |              |
 | enum     | **int32**/string/binary/large_string/large_binary/dictionary(int32, string)/dictionary(int32, binary) | Configurable |
-| fixed32  | int32                                                                                                 |              |
-| fixed64  | int64                                                                                                 |              |
+| fixed32  | uint32                                                                                                |              |
+| fixed64  | uint64                                                                                                |              |
 | float    | float32                                                                                               |              |
 | int32    | int32                                                                                                 |              |
 | int64    | int64                                                                                                 |              |
