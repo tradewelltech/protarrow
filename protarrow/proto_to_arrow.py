@@ -275,12 +275,31 @@ def field_descriptor_to_field(
         value_type = field_descriptor_to_data_type(
             value_field, config, descriptor_trace
         )
-        return pa.field(
-            field_descriptor.name,
-            pa.map_(
+        if config.map_as_list_of_structs:
+            map_type = config.list_(
+                item_type=pa.struct(
+                    fields=[
+                        pa.field(
+                            name="key",
+                            type=key_type,
+                            nullable=False,
+                        ),
+                        pa.field(
+                            name=config.map_value_name,
+                            type=value_type,
+                            nullable=config.map_value_nullable,
+                        ),
+                    ]
+                )
+            )
+        else:
+            map_type = pa.map_(
                 key_type,
                 pa.field(config.map_value_name, value_type, config.map_value_nullable),
-            ),
+            )
+        return pa.field(
+            field_descriptor.name,
+            map_type,
             nullable=config.map_nullable,
             metadata=config.field_metadata(field_descriptor.number),
         )
