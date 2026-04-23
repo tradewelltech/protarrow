@@ -112,7 +112,8 @@ def _cast_array(
         if pa.types.is_map(array.type):
             keys = array.keys
             values = array.items
-        elif pa.types.is_list(array.type) or pa.types.is_large_list(array.type):
+        else:
+            assert pa.types.is_list(array.type) or pa.types.is_large_list(array.type)
             assert pa.types.is_struct(array.values.type), array.values.type
             keys = array.values.field("key")
             values = array.values.field(config.map_value_name)
