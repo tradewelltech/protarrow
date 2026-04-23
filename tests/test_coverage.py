@@ -29,6 +29,7 @@ from protarrow.arrow_to_proto import (
 )
 from protarrow.cast_to_proto import get_arrow_default_value
 from protarrow.message_extractor import (
+    MapAsListOfStructsConverterAdapter,
     MapConverterAdapter,
     NullableConverterAdapter,
     RepeatedConverterAdapter,
@@ -59,6 +60,23 @@ def test_map_converter_adapter():
     assert map_converter_adapter(pa.scalar([(123, 1.0)], map_type)) == {123: 1.0}
     assert map_converter_adapter(pa.scalar([], map_type)) == {}
     assert map_converter_adapter(pa.scalar(None, map_type)) == {}
+
+
+def test_map_as_list_of_structs_converter_adapter():
+    list_of_structs_type = pa.list_(
+        pa.struct([("key", pa.int32()), ("value", pa.float64())])
+    )
+    map_field = ExampleMessage.DESCRIPTOR.fields_by_name["double_int32_map"]
+    map_converter_adapter = MapAsListOfStructsConverterAdapter(
+        list_of_structs_type=list_of_structs_type,
+        key_descriptor=map_field.message_type.fields_by_name["key"],
+        value_descriptor=map_field.message_type.fields_by_name["value"],
+    )
+    assert map_converter_adapter(pa.scalar([(123, 1.0)], list_of_structs_type)) == {
+        123: 1.0
+    }
+    assert map_converter_adapter(pa.scalar([], list_of_structs_type)) == {}
+    assert map_converter_adapter(pa.scalar(None, list_of_structs_type)) == {}
 
 
 def test_nullable_converter_adapter():
