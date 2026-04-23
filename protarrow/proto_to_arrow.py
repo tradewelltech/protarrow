@@ -517,14 +517,54 @@ def _proto_map_to_array(
         config=config,
         descriptor_trace=descriptor_trace,
     )
-    return pa.MapArray.from_arrays(offsets, keys, values).cast(
-        pa.map_(
-            keys.type,
-            pa.field(
-                config.map_value_name, values.type, nullable=config.map_value_nullable
+    if config.map_as_list_of_structs:
+        array = config.list_array_type.from_arrays(
+            offsets=offsets,
+            values=pa.StructArray.from_arrays(
+                arrays=[keys, values],
+                fields=[
+                    pa.field(
+                        name="key",
+                        type=keys.type,
+                        nullable=False,
+                    ),
+                    pa.field(
+                        name=config.map_value_name,
+                        type=values.type,
+                        nullable=config.map_value_nullable,
+                    ),
+                ],
             ),
+        ).cast(
+            config.list_(
+                item_type=pa.struct(
+                    fields=[
+                        pa.field(
+                            name="key",
+                            type=keys.type,
+                            nullable=False,
+                        ),
+                        pa.field(
+                            name=config.map_value_name,
+                            type=values.type,
+                            nullable=config.map_value_nullable,
+                        ),
+                    ]
+                )
+            )
         )
-    )
+    else:
+        array = pa.MapArray.from_arrays(offsets, keys, values).cast(
+            pa.map_(
+                keys.type,
+                pa.field(
+                    config.map_value_name,
+                    values.type,
+                    nullable=config.map_value_nullable,
+                ),
+            )
+        )
+    return array
 
 
 def _proto_field_nullable(
