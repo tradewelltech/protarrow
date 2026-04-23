@@ -1,7 +1,7 @@
 import collections.abc
 import dataclasses
 import datetime
-from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Type
+from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Type, Union
 
 import pyarrow as pa
 from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
@@ -458,7 +458,7 @@ def _extract_struct_field(
 
 
 def _extract_map_field(
-    array: pa.MapArray | pa.ListArray | pa.LargeListArray,
+    array: Union[pa.MapArray, pa.ListArray, pa.LargeListArray],
     field_descriptor: FieldDescriptor,
     messages: Iterable[Message],
 ) -> None:

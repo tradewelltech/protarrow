@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Generic, List, Type, TypeVar
+from typing import Any, Callable, Dict, Generic, List, Type, TypeVar, Union
 
 import pyarrow as pa
 from google.protobuf.descriptor import Descriptor, FieldDescriptor
@@ -68,7 +68,7 @@ class MapConverterAdapter:
 class MapAsListOfStructsConverterAdapter:
     def __init__(
         self,
-        list_of_structs_type: pa.ListType | pa.LargeListType,
+        list_of_structs_type: Union[pa.ListType, pa.LargeListType],
         key_descriptor: FieldDescriptor,
         value_descriptor: FieldDescriptor,
     ):
@@ -81,7 +81,10 @@ class MapAsListOfStructsConverterAdapter:
             value_field.type, value_descriptor
         )
 
-    def __call__(self, scalar: pa.ListScalar | pa.LargeListScalar) -> Dict[Any, Any]:
+    def __call__(
+        self,
+        scalar: Union[pa.ListScalar, pa.LargeListScalar],
+    ) -> Dict[Any, Any]:
         if scalar.is_valid:
             return {
                 self._key_converter(item.get(0)): self._value_converter(item.get(1))
