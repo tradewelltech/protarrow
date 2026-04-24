@@ -65,14 +65,14 @@ class MapConverterAdapter:
             return {}
 
 
-class MapAsListOfStructsConverterAdapter:
+class MapAsListConverterAdapter:
     def __init__(
         self,
-        list_of_structs_type: Union[pa.ListType, pa.LargeListType],
+        list_type: Union[pa.ListType, pa.LargeListType],
         key_descriptor: FieldDescriptor,
         value_descriptor: FieldDescriptor,
     ):
-        struct_type = list_of_structs_type.value_field.type
+        struct_type = list_type.value_field.type
         assert pa.types.is_struct(struct_type)
         key_field, value_field = struct_type.fields
 
@@ -131,7 +131,7 @@ def get_field_converter(
         if pa.types.is_map(field.type):
             return MapConverterAdapter(field.type, key, value)
         else:
-            return MapAsListOfStructsConverterAdapter(field.type, key, value)
+            return MapAsListConverterAdapter(field.type, key, value)
     else:
         if field_descriptor.is_repeated:
             return RepeatedConverterAdapter(

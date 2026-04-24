@@ -91,7 +91,7 @@ CONFIGS = [
     ProtarrowConfig(field_number_key=b"PARQUET:field_id"),
     ProtarrowConfig(string_type=pa.large_string()),
     ProtarrowConfig(binary_type=pa.large_binary()),
-    ProtarrowConfig(map_as_list_of_structs=True),
+    ProtarrowConfig(map_as_list=True),
     ProtarrowConfig(list_array_type=pa.LargeListArray),
 ]
 

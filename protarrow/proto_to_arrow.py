@@ -275,7 +275,7 @@ def field_descriptor_to_field(
         value_type = field_descriptor_to_data_type(
             value_field, config, descriptor_trace
         )
-        if config.map_as_list_of_structs:
+        if config.map_as_list:
             map_type = config.list_(
                 item_type=pa.struct(
                     fields=[
@@ -517,7 +517,7 @@ def _proto_map_to_array(
         config=config,
         descriptor_trace=descriptor_trace,
     )
-    if config.map_as_list_of_structs:
+    if config.map_as_list:
         array = config.list_array_type.from_arrays(
             offsets=offsets,
             values=pa.StructArray.from_arrays(

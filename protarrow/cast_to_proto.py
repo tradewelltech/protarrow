@@ -126,7 +126,7 @@ def _cast_array(
         keys = _cast_array(keys, key_field, config)
         values = _cast_array(values, value_field, config)
 
-        if config.map_as_list_of_structs:
+        if config.map_as_list:
             return config.list_array_type.from_arrays(
                 offsets=offsets,
                 values=pa.StructArray.from_arrays(
