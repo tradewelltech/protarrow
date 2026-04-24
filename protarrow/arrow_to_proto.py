@@ -457,6 +457,25 @@ def _extract_struct_field(
     _extract_array_messages(array, field_descriptor.message_type, nested_list)
 
 
+def _convert_list_back_to_map(
+    array: Union[pa.ListArray, pa.LargeListArray],
+) -> pa.MapArray:
+    """
+    Converts a list of structs back to a map
+    :param array: A list of structs.
+    :return: A map.
+    """
+    assert pa.types.is_struct(array.values.type), array.values.type
+    assert len(array.values.type.fields) == 2, (
+        f"Must have only 2 fields, got {array.values.type.fields}."
+    )
+    return pa.MapArray.from_arrays(
+        offsets=array.offsets,
+        keys=array.values.field(0),
+        items=array.values.field(1),
+    )
+
+
 def _extract_map_field(
     array: Union[pa.MapArray, pa.ListArray, pa.LargeListArray],
     field_descriptor: FieldDescriptor,
@@ -464,18 +483,7 @@ def _extract_map_field(
 ) -> None:
 
     if pa.types.is_list(array.type) or pa.types.is_large_list(array.type):
-        assert pa.types.is_struct(array.values.type), array.values.type
-        field_names = [field.name for field in array.values.type.fields]
-        assert len(field_names) == 2
-        # Since there's only 2 elements, the index of the key can only be 0 or 1
-        # Therefore, the index of the value is the other choice.
-        key_field_index = field_names.index("key")
-        value_field_index = 1 - key_field_index
-        array = pa.MapArray.from_arrays(
-            offsets=array.offsets,
-            keys=array.values.field(key_field_index),
-            items=array.values.field(value_field_index),
-        )
+        array = _convert_list_back_to_map(array=array)
 
     assert pa.types.is_map(array.type), array.type
     value_descriptor = field_descriptor.message_type.fields_by_name["value"]

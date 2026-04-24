@@ -491,6 +491,58 @@ def _repeated_proto_to_array(
     )
 
 
+def _map_as_list_from_arrays(
+    offsets: pa.Array,
+    keys: pa.Array,
+    values: pa.Array,
+    config: ProtarrowConfig,
+) -> pa.Array:
+    """
+    Creates a "map as list" from arrays.
+
+    :param offsets: An array of offsets.
+    :param keys: An array of keys.
+    :param values: An array of values.
+    :param config: The ProtarrowConfig.
+    :return: An Array.
+    """
+    return config.list_array_type.from_arrays(
+        offsets=offsets,
+        values=pa.StructArray.from_arrays(
+            arrays=[keys, values],
+            fields=[
+                pa.field(
+                    name="key",
+                    type=keys.type,
+                    nullable=False,
+                ),
+                pa.field(
+                    name=config.map_value_name,
+                    type=values.type,
+                    nullable=config.map_value_nullable,
+                ),
+            ],
+        ),
+    ).cast(
+        config.list_(
+            item_type=pa.struct(
+                fields=[
+                    pa.field(
+                        name="key",
+                        type=keys.type,
+                        nullable=False,
+                    ),
+                    pa.field(
+                        name=config.map_value_name,
+                        type=values.type,
+                        nullable=config.map_value_nullable,
+                    ),
+                ]
+            )
+        )
+    )
+
+
 def _proto_map_to_array(
     maps: Iterable[MessageMap],
     field_descriptor: FieldDescriptor,
@@ -518,40 +570,11 @@ def _proto_map_to_array(
         descriptor_trace=descriptor_trace,
     )
     if config.map_as_list:
-        array = config.list_array_type.from_arrays(
+        array = _map_as_list_from_arrays(
             offsets=offsets,
-            values=pa.StructArray.from_arrays(
-                arrays=[keys, values],
-                fields=[
-                    pa.field(
-                        name="key",
-                        type=keys.type,
-                        nullable=False,
-                    ),
-                    pa.field(
-                        name=config.map_value_name,
-                        type=values.type,
-                        nullable=config.map_value_nullable,
-                    ),
-                ],
-            ),
-        ).cast(
-            config.list_(
-                item_type=pa.struct(
-                    fields=[
-                        pa.field(
-                            name="key",
-                            type=keys.type,
-                            nullable=False,
-                        ),
-                        pa.field(
-                            name=config.map_value_name,
-                            type=values.type,
-                            nullable=config.map_value_nullable,
-                        ),
-                    ]
-                )
-            )
+            keys=keys,
+            values=values,
+            config=config,
         )
     else:
         array = pa.MapArray.from_arrays(offsets, keys, values).cast(

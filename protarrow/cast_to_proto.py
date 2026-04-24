@@ -17,6 +17,7 @@ from protarrow.common import ProtarrowConfig
 from protarrow.proto_to_arrow import (
     _PROTO_DESCRIPTOR_TO_PYARROW,
     _PROTO_PRIMITIVE_TYPE_TO_PYARROW,
+    _map_as_list_from_arrays,
     field_descriptor_to_field,
     get_map_descriptors,
     is_map,
@@ -117,8 +118,11 @@ def _cast_array(
                 array.type
             )
             assert pa.types.is_struct(array.values.type), array.values.type
-            keys = array.values.field("key")
-            values = array.values.field(config.map_value_name)
+            assert len(array.values.type.fields) == 2, (
+                f"Must have only 2 fields, got {array.values.type.fields}."
+            )
+            keys = array.values.field(0)
+            values = array.values.field(1)
 
         # TODO: remove when https://github.com/apache/arrow/issues/40750 is fixed
         #  and library is pinned to pyarrow>=17.0.0
@@ -127,40 +131,11 @@ def _cast_array(
         values = _cast_array(values, value_field, config)
 
         if config.map_as_list:
-            return config.list_array_type.from_arrays(
+            return _map_as_list_from_arrays(
                 offsets=offsets,
-                values=pa.StructArray.from_arrays(
-                    arrays=[keys, values],
-                    fields=[
-                        pa.field(
-                            name="key",
-                            type=keys.type,
-                            nullable=False,
-                        ),
-                        pa.field(
-                            name=config.map_value_name,
-                            type=values.type,
-                            nullable=config.map_value_nullable,
-                        ),
-                    ],
-                ),
-            ).cast(
-                config.list_(
-                    item_type=pa.struct(
-                        fields=[
-                            pa.field(
-                                name="key",
-                                type=keys.type,
-                                nullable=False,
-                            ),
-                            pa.field(
-                                name=config.map_value_name,
-                                type=values.type,
-                                nullable=config.map_value_nullable,
-                            ),
-                        ]
-                    )
-                )
+                keys=keys,
+                values=values,
+                config=config,
             )
         else:
             return pa.MapArray.from_arrays(offsets, keys, values).cast(
