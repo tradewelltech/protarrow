@@ -92,7 +92,7 @@ def test_map_as_list_converter_adapter():
     ],
 )
 def test_map_as_list_example_message_1(config: ProtarrowConfig):
-    data_batch_0 = [
+    input_data_batch = [
         {
             1: 0.4,
             -4: -0.6,
@@ -105,23 +105,23 @@ def test_map_as_list_example_message_1(config: ProtarrowConfig):
         {},
     ]
     message_batch = []
-    for data in data_batch_0:
+    for input_ in input_data_batch:
         message = ExampleMessage()
-        for k, v in data.items():
+        for k, v in input_.items():
             message.double_int32_map[k] = v
         message_batch.append(message)
 
     record_batch = messages_to_record_batch(message_batch, ExampleMessage, config)
 
-    data_batch_1 = []
+    output_data_batch = []
     for record in record_batch.to_pylist():
-        data = {}
+        output_data = {}
         for e in record["double_int32_map"]:
-            data[e["key"]] = e[config.map_value_name]
-        data_batch_1.append(data)
+            output_data[e["key"]] = e[config.map_value_name]
+        output_data_batch.append(output_data)
 
-    for data_0, data_1 in zip(data_batch_0, data_batch_1):
-        assert data_0 == data_1
+    for input_data, output_data in zip(input_data_batch, output_data_batch):
+        assert input_data == output_data
 
 
 @pytest.mark.parametrize(
@@ -138,14 +138,14 @@ def test_map_as_list_example_message_1(config: ProtarrowConfig):
 )
 def test_map_as_list_example_message_2(config: ProtarrowConfig):
     schema = message_type_to_schema(ExampleMessage, config)
-    data_1 = {1: 0.4, 2: 0.3, -4: -0.6, 5: 0.2}
+    input_data = {1: 0.4, 2: 0.3, -4: -0.6, 5: 0.2}
     record_batch = pa.RecordBatch.from_pylist(
-        [{"double_int32_map": list(data_1.items())}],
+        [{"double_int32_map": list(input_data.items())}],
         schema=schema,
     )
     (message,) = record_batch_to_messages(record_batch, ExampleMessage)
-    data_2 = message.double_int32_map
-    assert data_1 == data_2
+    output_data = message.double_int32_map
+    assert input_data == output_data
 
 
 def test_nullable_converter_adapter():
