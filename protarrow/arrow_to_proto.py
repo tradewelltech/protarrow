@@ -1,7 +1,7 @@
 import collections.abc
 import dataclasses
 import datetime
-from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Type
+from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Type, Union
 
 import pyarrow as pa
 from google.protobuf.descriptor import Descriptor, EnumDescriptor, FieldDescriptor
@@ -457,11 +457,34 @@ def _extract_struct_field(
     _extract_array_messages(array, field_descriptor.message_type, nested_list)
 
 
+def _convert_list_back_to_map(
+    array: Union[pa.ListArray, pa.LargeListArray],
+) -> pa.MapArray:
+    """
+    Converts a list of structs back to a map
+    :param array: A list of structs.
+    :return: A map.
+    """
+    assert pa.types.is_struct(array.values.type), array.values.type
+    assert len(array.values.type.fields) == 2, (
+        f"Must have only 2 fields, got {array.values.type.fields}."
+    )
+    return pa.MapArray.from_arrays(
+        offsets=array.offsets,
+        keys=array.values.field(0),
+        items=array.values.field(1),
+    )
+
+
 def _extract_map_field(
-    array: pa.MapArray,
+    array: Union[pa.MapArray, pa.ListArray, pa.LargeListArray],
     field_descriptor: FieldDescriptor,
     messages: Iterable[Message],
 ) -> None:
+
+    if pa.types.is_list(array.type) or pa.types.is_large_list(array.type):
+        array = _convert_list_back_to_map(array=array)
+
     assert pa.types.is_map(array.type), array.type
     value_descriptor = field_descriptor.message_type.fields_by_name["value"]
 

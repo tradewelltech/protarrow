@@ -26,9 +26,12 @@ from protarrow.arrow_to_proto import (
     _extract_map_field,
     _extract_record_batch_messages,
     convert_scalar,
+    record_batch_to_messages,
 )
 from protarrow.cast_to_proto import get_arrow_default_value
+from protarrow.common import ProtarrowConfig
 from protarrow.message_extractor import (
+    MapAsListConverterAdapter,
     MapConverterAdapter,
     NullableConverterAdapter,
     RepeatedConverterAdapter,
@@ -39,6 +42,8 @@ from protarrow.proto_to_arrow import (
     _get_converter,
     field_descriptor_to_data_type,
     get_enum_converter,
+    message_type_to_schema,
+    messages_to_record_batch,
 )
 from protarrow_protos.bench_pb2 import (
     ExampleMessage,
@@ -59,6 +64,88 @@ def test_map_converter_adapter():
     assert map_converter_adapter(pa.scalar([(123, 1.0)], map_type)) == {123: 1.0}
     assert map_converter_adapter(pa.scalar([], map_type)) == {}
     assert map_converter_adapter(pa.scalar(None, map_type)) == {}
+
+
+def test_map_as_list_converter_adapter():
+    list_type = pa.list_(pa.struct([("key", pa.int32()), ("value", pa.float64())]))
+    map_field = ExampleMessage.DESCRIPTOR.fields_by_name["double_int32_map"]
+    map_converter_adapter = MapAsListConverterAdapter(
+        list_type=list_type,
+        key_descriptor=map_field.message_type.fields_by_name["key"],
+        value_descriptor=map_field.message_type.fields_by_name["value"],
+    )
+    assert map_converter_adapter(pa.scalar([(123, 1.0)], list_type)) == {123: 1.0}
+    assert map_converter_adapter(pa.scalar([], list_type)) == {}
+    assert map_converter_adapter(pa.scalar(None, list_type)) == {}
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        ProtarrowConfig(list_array_type=pa.ListArray, map_as_list=True),
+        ProtarrowConfig(list_array_type=pa.LargeListArray, map_as_list=True),
+        ProtarrowConfig(
+            list_array_type=pa.LargeListArray,
+            map_as_list=True,
+            map_value_name="something",
+        ),
+    ],
+)
+def test_map_as_list_example_message_1(config: ProtarrowConfig):
+    input_data_batch = [
+        {
+            1: 0.4,
+            -4: -0.6,
+            5: 0.2,
+            2: 0.3,
+        },
+        {
+            6: 0.2,
+        },
+        {},
+    ]
+    message_batch = []
+    for input_ in input_data_batch:
+        message = ExampleMessage()
+        for k, v in input_.items():
+            message.double_int32_map[k] = v
+        message_batch.append(message)
+
+    record_batch = messages_to_record_batch(message_batch, ExampleMessage, config)
+
+    output_data_batch = []
+    for record in record_batch.to_pylist():
+        output_data = {}
+        for e in record["double_int32_map"]:
+            output_data[e["key"]] = e[config.map_value_name]
+        output_data_batch.append(output_data)
+
+    for input_data, output_data in zip(input_data_batch, output_data_batch):
+        assert input_data == output_data
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        ProtarrowConfig(list_array_type=pa.ListArray, map_as_list=True),
+        ProtarrowConfig(list_array_type=pa.LargeListArray, map_as_list=True),
+        ProtarrowConfig(
+            list_array_type=pa.LargeListArray,
+            map_as_list=True,
+            map_value_name="something",
+        ),
+    ],
+)
+def test_map_as_list_example_message_2(config: ProtarrowConfig):
+    schema = message_type_to_schema(ExampleMessage, config)
+    input_data = {1: 0.4, 2: 0.3, -4: -0.6, 5: 0.2}
+    record_batch = pa.RecordBatch.from_pylist(
+        [{"double_int32_map": list(input_data.items())}],
+        schema=schema,
+    )
+    (message,) = record_batch_to_messages(record_batch, ExampleMessage)
+    output_data = message.double_int32_map
+    assert input_data == output_data
 
 
 def test_nullable_converter_adapter():

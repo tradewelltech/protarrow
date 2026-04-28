@@ -61,6 +61,7 @@ class ProtarrowConfig:
     binary_type: pa.DataType = pa.binary()
     list_array_type: type = pa.ListArray
     skip_recursive_messages: bool = False
+    map_as_list: bool = False
 
     def __post_init__(self):
         _validate_enum_type(self.enum_type, self.string_type, self.binary_type)

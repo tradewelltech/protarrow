@@ -275,12 +275,31 @@ def field_descriptor_to_field(
         value_type = field_descriptor_to_data_type(
             value_field, config, descriptor_trace
         )
-        return pa.field(
-            field_descriptor.name,
-            pa.map_(
+        if config.map_as_list:
+            map_type = config.list_(
+                item_type=pa.struct(
+                    fields=[
+                        pa.field(
+                            name="key",
+                            type=key_type,
+                            nullable=False,
+                        ),
+                        pa.field(
+                            name=config.map_value_name,
+                            type=value_type,
+                            nullable=config.map_value_nullable,
+                        ),
+                    ]
+                )
+            )
+        else:
+            map_type = pa.map_(
                 key_type,
                 pa.field(config.map_value_name, value_type, config.map_value_nullable),
-            ),
+            )
+        return pa.field(
+            field_descriptor.name,
+            map_type,
             nullable=config.map_nullable,
             metadata=config.field_metadata(field_descriptor.number),
         )
@@ -472,6 +491,58 @@ def _repeated_proto_to_array(
     )
 
 
+def _map_as_list_from_arrays(
+    offsets: pa.Array,
+    keys: pa.Array,
+    values: pa.Array,
+    config: ProtarrowConfig,
+) -> pa.Array:
+    """
+    Creates a "map as list" from arrays.
+
+    :param offsets: An array of offsets.
+    :param keys: An array of keys.
+    :param values: An array of values.
+    :param config: The ProtarrowConfig.
+    :return: An Array.
+    """
+    return config.list_array_type.from_arrays(
+        offsets=offsets,
+        values=pa.StructArray.from_arrays(
+            arrays=[keys, values],
+            fields=[
+                pa.field(
+                    name="key",
+                    type=keys.type,
+                    nullable=False,
+                ),
+                pa.field(
+                    name=config.map_value_name,
+                    type=values.type,
+                    nullable=config.map_value_nullable,
+                ),
+            ],
+        ),
+    ).cast(
+        config.list_(
+            item_type=pa.struct(
+                fields=[
+                    pa.field(
+                        name="key",
+                        type=keys.type,
+                        nullable=False,
+                    ),
+                    pa.field(
+                        name=config.map_value_name,
+                        type=values.type,
+                        nullable=config.map_value_nullable,
+                    ),
+                ]
+            )
+        )
+    )
+
+
 def _proto_map_to_array(
     maps: Iterable[MessageMap],
     field_descriptor: FieldDescriptor,
@@ -498,14 +569,25 @@ def _proto_map_to_array(
         config=config,
         descriptor_trace=descriptor_trace,
     )
-    return pa.MapArray.from_arrays(offsets, keys, values).cast(
-        pa.map_(
-            keys.type,
-            pa.field(
-                config.map_value_name, values.type, nullable=config.map_value_nullable
-            ),
+    if config.map_as_list:
+        array = _map_as_list_from_arrays(
+            offsets=offsets,
+            keys=keys,
+            values=values,
+            config=config,
         )
-    )
+    else:
+        array = pa.MapArray.from_arrays(offsets, keys, values).cast(
+            pa.map_(
+                keys.type,
+                pa.field(
+                    config.map_value_name,
+                    values.type,
+                    nullable=config.map_value_nullable,
+                ),
+            )
+        )
+    return array
 
 
 def _proto_field_nullable(

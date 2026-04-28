@@ -17,6 +17,7 @@ from protarrow.common import ProtarrowConfig
 from protarrow.proto_to_arrow import (
     _PROTO_DESCRIPTOR_TO_PYARROW,
     _PROTO_PRIMITIVE_TYPE_TO_PYARROW,
+    _map_as_list_from_arrays,
     field_descriptor_to_field,
     get_map_descriptors,
     is_map,
@@ -107,26 +108,47 @@ def _cast_array(
     config: ProtarrowConfig,
 ) -> pa.Array:
     if is_map(field_descriptor):
-        assert isinstance(array, pa.MapArray)
         key_field, value_field = get_map_descriptors(field_descriptor)
-        map_array = pa.MapArray.from_arrays(
-            # TODO: remove when https://github.com/apache/arrow/issues/40750 is fixed
-            #  and library is pinned to pyarrow>=17.0.0
-            maybe_copy_offsets(array.offsets),
-            _cast_array(array.keys, key_field, config),
-            _cast_array(array.items, value_field, config),
-        )
-        return map_array.cast(
-            pa.map_(
-                map_array.type.key_type,
-                pa.field(
-                    config.map_value_name,
-                    map_array.type.item_type,
-                    nullable=config.map_value_nullable,
-                    metadata=config.field_metadata(field_descriptor.number),
-                ),
+
+        if pa.types.is_map(array.type):
+            keys = array.keys
+            values = array.items
+        else:
+            assert pa.types.is_list(array.type) or pa.types.is_large_list(array.type), (
+                array.type
             )
-        )
+            assert pa.types.is_struct(array.values.type), array.values.type
+            assert len(array.values.type.fields) == 2, (
+                f"Must have only 2 fields, got {array.values.type.fields}."
+            )
+            keys = array.values.field(0)
+            values = array.values.field(1)
+
+        # TODO: remove when https://github.com/apache/arrow/issues/40750 is fixed
+        #  and library is pinned to pyarrow>=17.0.0
+        offsets = maybe_copy_offsets(array.offsets)
+        keys = _cast_array(keys, key_field, config)
+        values = _cast_array(values, value_field, config)
+
+        if config.map_as_list:
+            return _map_as_list_from_arrays(
+                offsets=offsets,
+                keys=keys,
+                values=values,
+                config=config,
+            )
+        else:
+            return pa.MapArray.from_arrays(offsets, keys, values).cast(
+                pa.map_(
+                    keys.type,
+                    pa.field(
+                        config.map_value_name,
+                        values.type,
+                        nullable=config.map_value_nullable,
+                        metadata=config.field_metadata(field_descriptor.number),
+                    ),
+                )
+            )
 
     elif field_descriptor.is_repeated:
         assert isinstance(array, (pa.ListArray, pa.LargeListArray))

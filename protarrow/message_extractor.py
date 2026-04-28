@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Generic, List, Type, TypeVar
+from typing import Any, Callable, Dict, Generic, List, Type, TypeVar, Union
 
 import pyarrow as pa
 from google.protobuf.descriptor import Descriptor, FieldDescriptor
@@ -65,6 +65,35 @@ class MapConverterAdapter:
             return {}
 
 
+class MapAsListConverterAdapter:
+    def __init__(
+        self,
+        list_type: Union[pa.ListType, pa.LargeListType],
+        key_descriptor: FieldDescriptor,
+        value_descriptor: FieldDescriptor,
+    ):
+        struct_type = list_type.value_field.type
+        assert pa.types.is_struct(struct_type)
+        key_field, value_field = struct_type.fields
+
+        self._key_converter = get_flat_field_converter(key_field.type, key_descriptor)
+        self._value_converter = get_flat_field_converter(
+            value_field.type, value_descriptor
+        )
+
+    def __call__(
+        self,
+        scalar: Union[pa.ListScalar, pa.LargeListScalar],
+    ) -> Dict[Any, Any]:
+        if scalar.is_valid:
+            return {
+                self._key_converter(item.get(0)): self._value_converter(item.get(1))
+                for item in scalar.values
+            }
+        else:
+            return {}
+
+
 class NullableConverterAdapter:
     def __init__(
         self, converter: Callable[[pa.Scalar], Any], message_type: Type[Message]
@@ -99,7 +128,10 @@ def get_field_converter(
 ) -> Callable[[pa.Scalar], Any]:
     if is_map(field_descriptor):
         key, value = get_map_descriptors(field_descriptor)
-        return MapConverterAdapter(field.type, key, value)
+        if pa.types.is_map(field.type):
+            return MapConverterAdapter(field.type, key, value)
+        else:
+            return MapAsListConverterAdapter(field.type, key, value)
     else:
         if field_descriptor.is_repeated:
             return RepeatedConverterAdapter(

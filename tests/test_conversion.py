@@ -51,7 +51,12 @@ from protarrow_protos.example_pb2 import (
 from tests.random_generator import generate_messages, truncate_messages, truncate_nanos
 
 TEST_MESSAGE_COUNT = 5
-MESSAGES = [ExampleMessage, NestedExampleMessage, SuperNestedExampleMessage]
+MESSAGES = [
+    ExampleMessage,
+    NestedExampleMessage,
+    SuperNestedExampleMessage,
+]
+
 CONFIGS = [
     ProtarrowConfig(),
     ProtarrowConfig(enum_type=pa.binary()),
@@ -86,6 +91,7 @@ CONFIGS = [
     ProtarrowConfig(field_number_key=b"PARQUET:field_id"),
     ProtarrowConfig(string_type=pa.large_string()),
     ProtarrowConfig(binary_type=pa.large_binary()),
+    ProtarrowConfig(map_as_list=True),
     ProtarrowConfig(list_array_type=pa.LargeListArray),
 ]
 
