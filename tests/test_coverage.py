@@ -50,7 +50,7 @@ from protarrow_protos.bench_pb2 import (
     NestedExampleMessage,
     SuperNestedExampleMessage,
 )
-from protarrow_protos.example_pb2 import TestEnum, WithEnum
+from protarrow_protos.example_pb2 import TestEnum, WithEnum, WithOptionalString
 
 
 def test_map_converter_adapter():
@@ -718,4 +718,13 @@ def test_can_pass_min_max_date():
         ExampleMessage(date_value=default_date),  # This changed
         ExampleMessage(date_value=min_date),
         ExampleMessage(date_value=max_date),
+    ]
+
+
+def test_optional_string():
+    record_batch = pa.record_batch({"optional_string": ["", None]})
+    messages = record_batch_to_messages(record_batch, WithOptionalString)
+    assert messages == [
+        WithOptionalString(optional_string=""),
+        WithOptionalString(optional_string=None),
     ]

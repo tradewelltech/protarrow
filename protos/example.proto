@@ -61,3 +61,8 @@ enum TestEnum {
 message WithEnum {
   TestEnum test_enum = 1;
 }
+
+
+message WithOptionalString {
+  optional string optional_string = 1;
+}
