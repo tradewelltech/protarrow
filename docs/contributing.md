@@ -2,14 +2,22 @@
 
 Welcome! We're happy to have you here. Thank you in advance for your contribution to protarrow.
 
+The repo ships a [`justfile`](https://github.com/casey/just) with the common
+development commands. Run `just --list` to see them all.
+
 ## Development environment set up
 
 ```shell
-python3 -m venv --clear venv
-uv sync --all-groups
-uv run python ./scripts/generate_proto.py
-uv run python ./scripts/protoc.py
-pre-commit install
+just setup
+```
+
+This runs `uv sync --all-groups`, regenerates the proto-derived python files,
+and installs the git pre-commit hooks (via [`prek`](https://github.com/j178/prek)).
+
+If you only need to regenerate the proto-derived python files, use:
+
+```shell
+just proto
 ```
 
 ## Testing
@@ -17,60 +25,54 @@ pre-commit install
 This library relies on property based testing.
 Tests convert randomly generated data from protobuf to arrow and back, making sure the end result is the same as the input.
 
-The tests take a long time to run. To run them faster:
+The tests take a long time to run, so `just test` runs them in parallel:
 
 ```shell
-uv run pytest --numprocesses=auto -p no:benchmark ./tests
+just test
 ```
 
-To Get coverage:
+Extra pytest arguments are forwarded:
 
 ```shell
-uv run coverage run --branch --include "./protarrow/*" -m pytest tests
-uv run coverage report --show-missing
+just test -k test_my_thing
 ```
 
-## Generating the change log
-
-We use [git-change-log](https://pawamoy.github.io/git-changelog/usage/) to generate our CHANGELOG.md
-
-Please follow the [basic convention](https://pawamoy.github.io/git-changelog/usage/#basic-convention) for commit message.
-
-To update the change log, run:
+To get coverage:
 
 ```shell
-git-changelog -io CHANGELOG.md
+just coverage
+```
+
+## Linting
+
+```shell
+just lint
 ```
 
 ## New Release
 
-For new release, first prepare the change log, push and merge it.
-
-```shell
-git-changelog --bump=auto -io CHANGELOG.md
-```
-
-Then tag and push:
-
-```shell
-git tag vX.X.X
-git push origin vX.X.X
-```
-
-Lastly on github, go to tags and create a release.
-The CI will deploy to pypi automatically from then.
+Create new releases in github and autogenerate the change log there.
 
 ## Testing the documentation
 
 ```shell
-uv run mkdocs serve --livereload --watch=./
+just docs-serve
+```
+
+To produce a static build:
+
+```shell
+just docs-build
 ```
 
 ## Updating dependencies
 
-- For the repo `uv lock --upgrade`
-- For the doc: `(cd docs/;uv pip compile ./requirements.in > ./requirements.txt)`
-- For pre-commit: `pre-commit autoupdate; pre-commit run --all-files`
+```shell
+just update
+```
+
+This upgrades the `uv.lock`, recompiles `docs/requirements.txt`, and runs
+`prek autoupdate`.
 
 ## Resources
 
