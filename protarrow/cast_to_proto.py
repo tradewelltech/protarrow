@@ -126,19 +126,18 @@ def _cast_array(
 
         # TODO: remove when https://github.com/apache/arrow/issues/40750 is fixed
         #  and library is pinned to pyarrow>=17.0.0
-        offsets = maybe_copy_offsets(array.offsets)
         keys = _cast_array(keys, key_field, config)
         values = _cast_array(values, value_field, config)
 
         if config.map_as_list:
             return _map_as_list_from_arrays(
-                offsets=offsets,
+                offsets=array.offsets,
                 keys=keys,
                 values=values,
                 config=config,
             )
         else:
-            return pa.MapArray.from_arrays(offsets, keys, values).cast(
+            return pa.MapArray.from_arrays(array.offsets, keys, values).cast(
                 pa.map_(
                     keys.type,
                     pa.field(
@@ -251,11 +250,3 @@ def cast_table(
         ],
         proto_schema,
     )
-
-
-def maybe_copy_offsets(offsets: pa.Array) -> pa.Array:
-    if offsets.offset != 0:
-        # TODO: this it not efficient, find a way to copy in arrow
-        return pa.array(offsets.to_pylist(), offsets.type)
-    else:
-        return offsets

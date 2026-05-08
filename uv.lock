@@ -663,6 +663,7 @@ wheels = [
 name = "griffelib"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ad/06/eccbd311c9e2b3ca45dbc063b93134c57a1ccc7607c5e545264ad092c4a9/griffelib-2.0.0.tar.gz", hash = "sha256:e504d637a089f5cab9b5daf18f7645970509bf4f53eda8d79ed71cce8bd97934", size = 166312, upload-time = "2026-03-23T21:06:55.954Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/4d/51/c936033e16d12b627ea334aaaaf42229c37620d0f15593456ab69ab48161/griffelib-2.0.0-py3-none-any.whl", hash = "sha256:01284878c966508b6d6f1dbff9b6fa607bc062d8261c5c7253cb285b06422a7f", size = 142004, upload-time = "2026-02-09T19:09:40.561Z" },
 ]
@@ -1440,15 +1441,15 @@ dev = [
 requires-dist = [
     { name = "googleapis-common-protos" },
     { name = "protobuf" },
-    { name = "pyarrow" },
+    { name = "pyarrow", specifier = ">=17.0.0" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "coverage", specifier = ">=6.5.0" },
+    { name = "coverage", specifier = ">=6.5" },
     { name = "flake8", specifier = ">=5.0.4" },
-    { name = "git-changelog", specifier = ">=2.2.0" },
-    { name = "grpcio-tools", specifier = ">=1.46.0" },
+    { name = "git-changelog", specifier = ">=2.2" },
+    { name = "grpcio-tools", specifier = ">=1.46" },
     { name = "inflection", specifier = ">=0.5.1" },
     { name = "isort", specifier = ">=5.10.1" },
     { name = "jinja2", specifier = ">=3.1.2" },
@@ -1456,12 +1457,12 @@ dev = [
     { name = "mkdocs-material", specifier = ">=9.0.3" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.21.2" },
     { name = "pip-tools", specifier = ">=6.12.1" },
-    { name = "pre-commit", specifier = ">=2.20.0" },
-    { name = "pylint", specifier = ">=2.15.0" },
-    { name = "pytest", specifier = ">=7.2.0" },
-    { name = "pytest-benchmark", specifier = ">=4.0.0" },
+    { name = "pre-commit", specifier = ">=2.20" },
+    { name = "pylint", specifier = ">=2.15" },
+    { name = "pytest", specifier = ">=7.2" },
+    { name = "pytest-benchmark", specifier = ">=4" },
     { name = "pytest-cov" },
-    { name = "pytest-xdist", specifier = ">=3.1.0" },
+    { name = "pytest-xdist", specifier = ">=3.1" },
     { name = "ruff" },
 ]
 

@@ -23,7 +23,6 @@ from protarrow.cast_to_proto import (
     cast_table,
     get_arrow_default_value,
     get_casted_array,
-    maybe_copy_offsets,
 )
 from protarrow.common import M, ProtarrowConfig, offset_values_array
 from protarrow.message_extractor import MessageExtractor
@@ -799,6 +798,8 @@ def test_cast_map_offset():
     )
     assert _cast_array(from_array, field, ProtarrowConfig()) == to_array
 
+    # Test it works with offset array / slice views.
+    # https://github.com/apache/arrow/issues/40750
     assert _cast_array(from_array[1:], field, ProtarrowConfig()) == to_array[1:]
 
 
@@ -823,18 +824,6 @@ def test_cast_list_offset():
 
     assert _cast_array(from_array, field, ProtarrowConfig()) == to_array
     assert _cast_array(from_array[1:], field, ProtarrowConfig()) == to_array[1:]
-
-
-def test_maybe_copy_offsets():
-    array = pa.array([1, 2, 3], pa.int32())
-    assert maybe_copy_offsets(array) is array  # no copy
-    view = array[1:]
-    copy = maybe_copy_offsets(array[1:])
-    assert copy == view
-    assert copy is not view  # copy
-    assert copy.offset == 0
-    # Sadly pa.array is highly optimized
-    assert pa.array(array) is array
 
 
 def test_map_cast():
