@@ -5,6 +5,7 @@ repo_url: https://github.com/tradewelltech/protarrow
 nav:
   - Home: index.md
   - Usage: usage.md
+  - Configuration: configuration.md
   - Types: types.md
   - Contributing: contributing.md
   - Faq: faq.md
