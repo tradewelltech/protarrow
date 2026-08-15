@@ -53,10 +53,10 @@ dev = [
 ]
 
 [tool.hatch]
-build.hooks.version.path = "protarrow/_version.py"
-build.hooks.version.template = """version = "{version}"
-"""
 version.source = "uv-dynamic-versioning"
+build.hooks.version.path = "protarrow/_version.py"
+build.hooks.version.template = '''version = "{version}"
+'''
 
 [tool.ruff]
 line-length = 88
