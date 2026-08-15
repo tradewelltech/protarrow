@@ -12,7 +12,7 @@ maintainers = [ { name = "0x26res", email = "0x26res@gmail.com" } ]
 authors = [ { name = "Tradewell Tech", email = "engineering@tradewelltech.co" } ]
 requires-python = ">=3.9,<4"
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 6 - Mature",
   "License :: OSI Approved :: Apache Software License",
   "Natural Language :: English",
   "Programming Language :: Python :: 3 :: Only",
@@ -26,7 +26,7 @@ classifiers = [
 dynamic = [ "version" ]
 dependencies = [ "googleapis-common-protos", "protobuf", "pyarrow" ]
 urls."Bug Tracker" = "https://github.com/tradewelltech/protarrow/issues"
-urls.Changelog = "https://github.com/tradewelltech/protarrow/blob/main/CHANGELOG.md"
+urls.Changelog = "https://github.com/tradewelltech/protarrow/releases"
 documentation = "https://protarrow.readthedocs.io/en/latest/"
 packages = [ { include = "protarrow" } ]
 repository = "https://github.com/tradewelltech/protarrow"
@@ -35,7 +35,6 @@ repository = "https://github.com/tradewelltech/protarrow"
 dev = [
   "coverage>=6.5",
   "flake8>=5.0.4",
-  "git-changelog>=2.2",
   "grpcio-tools>=1.46",
   "inflection>=0.5.1",
   "isort>=5.10.1",
