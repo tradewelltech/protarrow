@@ -1497,7 +1497,7 @@ dev = [
 requires-dist = [
     { name = "googleapis-common-protos" },
     { name = "protobuf" },
-    { name = "pyarrow" },
+    { name = "pyarrow", specifier = ">=17" },
 ]
 
 [package.metadata.requires-dev]

@@ -24,7 +24,7 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 dynamic = [ "version" ]
-dependencies = [ "googleapis-common-protos", "protobuf", "pyarrow" ]
+dependencies = [ "googleapis-common-protos", "protobuf", "pyarrow>=17" ]
 urls."Bug Tracker" = "https://github.com/tradewelltech/protarrow/issues"
 urls.Changelog = "https://github.com/tradewelltech/protarrow/releases"
 documentation = "https://protarrow.readthedocs.io/en/latest/"
